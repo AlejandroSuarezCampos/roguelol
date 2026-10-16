@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shattered Runeterra — Diseño de interfaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Sprite de iconos (placeholders propios, trazo 2px, sin arte oficial) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-hp" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.8-9.3-9.6A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.3 5C19.500 16.200 12 21 12 21z"/></symbol>
+<symbol id="i-block" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.500 9-8 11-4.500-2-8-6-8-11V5z"/></symbol>
+<symbol id="i-stress" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-wound" viewBox="0 0 24 24"><path d="M6 3l9 18M11 2l9 18M2 6l9 18"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-5 14v3h10v-3a8 8 0 0 0-5-14z"/><path d="M9 12h.01M15 12h.01M10 20v-2m4 2v-2"/></symbol>
+<symbol id="i-ad" viewBox="0 0 24 24"><path d="M14.500 4.500L20 4l-.5 5.500L9 20l-5-5zM7 13l4 4M3 21l3-3"/></symbol>
+<symbol id="i-ap" viewBox="0 0 24 24"><path d="M12 3l2.200 5.800L20 11l-5.800 2.200L12 19l-2.200-5.800L4 11l5.800-2.200z"/></symbol>
+<symbol id="i-crit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></symbol>
+<symbol id="i-armor" viewBox="0 0 24 24"><path d="M6 4h12l3 4-3 2v10H6V10L3 8z"/></symbol>
+<symbol id="i-mr" viewBox="0 0 24 24"><path d="M12 2l8.500 5v10L12 22l-8.500-5V7zM12 8v8"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 3v14M7 12l5 5 5-5M5 21h14"/></symbol>
+<symbol id="i-lifesteal" viewBox="0 0 24 24"><path d="M12 3s6 6.500 6 11a6 6 0 0 1-12 0c0-4.500 6-11 6-11z"/></symbol>
+<symbol id="i-as" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+<symbol id="i-haste" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></symbol>
+<symbol id="i-energy" viewBox="0 0 24 24"><path d="M12 2l8 10-8 10-8-10z"/></symbol>
+<symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></symbol>
+<symbol id="i-burn" viewBox="0 0 24 24"><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-3 2-5 5-5 8-1-1-2-2-2-4-2 2-3 4-3 6 0 4 3 7 7 7z"/></symbol>
+<symbol id="i-charge" viewBox="0 0 24 24"><path d="M6 17l6-6 6 6M6 11l6-6 6 6"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12h15M13 6l6 6-6 6"/></symbol>
+<symbol id="i-stun" viewBox="0 0 24 24"><path d="M5 5l2 3M19 5l-2 3M12 2v3M6 17a6 6 0 0 1 12 0"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-taunt" viewBox="0 0 24 24"><path d="M4 10v4h3l8 4V6L7 10zM18 9a4 4 0 0 1 0 6"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18h.01"/></symbol>
+<symbol id="i-heal" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-gold" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.500 9.500h4a1.500 1.500 0 0 1 0 3h-3a1.500 1.500 0 0 0 0 3h4"/></symbol>
+<symbol id="i-boss" viewBox="0 0 24 24"><path d="M3 18l2-10 5 5 2-7 2 7 5-5 2 10zM4 21h16"/></symbol>
+<symbol id="i-elite" viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-5 14v3h10v-3a8 8 0 0 0-5-14z"/><path d="M9 12h.01M15 12h.01M12 1v2"/></symbol>
+<symbol id="i-shop" viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6zM9 8a3 3 0 0 1 6 0"/></symbol>
+<symbol id="i-event" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.500 9a2.500 2.500 0 1 1 3.500 2.300c-.7.400-1 1-1 1.700M12 17h.01"/></symbol>
+<symbol id="i-chest" viewBox="0 0 24 24"><path d="M3 10h18v10H3zM3 10a9 5 0 0 1 18 0M12 13v3"/></symbol>
+<symbol id="i-shrine" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.500 4.500 2 7.500L12 16l-6.500 5 2-7.500L2 9h7z"/></symbol>
+<symbol id="i-rest" viewBox="0 0 24 24"><path d="M3 21h18M5 21l7-12 7 12M12 9V4M9 21l3-5 3 5"/></symbol>
+<symbol id="i-relic" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l3 6 3-6"/></symbol>
+<symbol id="i-potion" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3z"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.500 9a2.500 2.500 0 1 1 3.500 2.300c-.7.400-1 1-1 1.700M12 17h.01"/></symbol>
+<symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
+<symbol id="i-text" viewBox="0 0 24 24"><path d="M4 7V5h16v2M12 5v14M9 19h6"/></symbol>
+<symbol id="i-motion" viewBox="0 0 24 24"><path d="M3 12c3-6 6 6 9 0s6 6 9 0"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V3M5 4h13l-3 4 3 4H5"/></symbol>
+<symbol id="i-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.500"/><path d="M3 20c0-4 3-6 6-6s6 2 6 6M15 14c3 0 6 1.500 6 5"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V5M6 11l6-6 6 6"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H4zM20 4h-6M20 4v15h-6"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></symbol>
+<symbol id="i-void" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3c-3 4-3 14 0 18M3 12c4 3 14 3 18 0"/></symbol>
+</defs></svg>
+
+<div id="app"></div>
+<div id="modal" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status"></div>
+<nav id="proto" aria-label="Navegación del prototipo"></nav>
+<script src="art.js"></script>
+<script src="app.js"></script>
+<script src="screens.js"></script>
+</body>
+</html>

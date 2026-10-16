@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"design","runtimeExecutable":"python","runtimeArgs":["-m","http.server","5188","--directory","design"],"port":5188}]}
