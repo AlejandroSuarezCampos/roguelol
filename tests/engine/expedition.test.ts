@@ -244,6 +244,16 @@ describe('pociones del botín', () => {
   });
 });
 
+describe('retirada y dificultad', () => {
+  it('en Pesadilla se conserva menos oro al retirarse', () => {
+    const e = createExpedition(4, 'nightmare');
+    e.run.gold = 100;
+    retreat(e);
+    expect(e.run.gold).toBe(25);
+    expect(e.retreat).toEqual({ before: 100, kept: 25 });
+  });
+});
+
 describe('descanso y retirada', () => {
   it('curar recupera el 30 % de la vida máxima sin superar el máximo ni tocar a derribados', () => {
     const e = createExpedition(4);
@@ -298,6 +308,7 @@ describe('descanso y retirada', () => {
     retreat(e);
     expect(e.status).toBe('retreat');
     expect(e.run.gold).toBe(50);
+    expect(e.retreat).toEqual({ before: 100, kept: 50 });
   });
 });
 

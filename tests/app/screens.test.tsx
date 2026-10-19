@@ -11,7 +11,6 @@ const go = (fn: () => void) => act(fn);
 
 beforeEach(() => {
   go(() => game.toMenu());
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
 });
 
 function toBattle(seed = 3) {
@@ -182,13 +181,36 @@ describe('botín y descanso', () => {
   });
 });
 
+describe('confirmación de retirada', () => {
+  it('explica el oro que se conserva según la dificultad, y cancelar no hace nada', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(3, 'nightmare');
+      game.startExpedition();
+      game.getState().expedition!.run.gold = 80;
+      game.notify(null);
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Retirada/ }));
+    const d = screen.getByRole('alertdialog');
+    expect(d).toHaveTextContent(/25%/);
+    expect(d).toHaveTextContent(/20 de 80/);
+    expect(d).toHaveTextContent(/Pesadilla/);
+    await user.click(within(d).getByRole('button', { name: 'Volver' }));
+    expect(game.getState().expedition!.status).toBe('active');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+});
+
 describe('resultado', () => {
   it('retirarse lleva a la pantalla de retirada', async () => {
     const user = userEvent.setup();
     toBattle();
     render(<App />);
     await user.click(screen.getByRole('button', { name: /Retirada/ }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Retirarme' }));
     expect(screen.getByRole('heading', { name: 'Retirada' })).toBeInTheDocument();
+    expect(screen.getByText(/Consecuencias de la retirada/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Menú principal' }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Shattered/);
   });
@@ -299,8 +321,10 @@ describe('menú con guardado', () => {
     });
     render(<App />);
     expect(screen.getByRole('button', { name: /Continuar/ })).toHaveTextContent(/Entrada · 0 de oro/);
-    (window.confirm as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
     await user.click(screen.getByRole('button', { name: /Empezar una nueva/ }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(/se perderá/);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.queryByText('Orden de combate')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Continuar/ }));
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
@@ -484,6 +508,7 @@ describe('Pesadilla en pantalla', () => {
     expect(screen.getByLabelText('Lux: muerto')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Volver al mapa' }));
     await user.click(screen.getByRole('button', { name: /Retirada/ }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Retirarme' }));
     expect(screen.getByText('Muerto para siempre')).toBeInTheDocument();
   });
 });

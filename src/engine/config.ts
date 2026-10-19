@@ -31,7 +31,6 @@ export const CONFIG = {
     rest: { healFraction: 0.3, stressRelief: 20 },
     /** Normal (§12): un campeón derribado sobrevive a la victoria con una herida grave. */
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
-    retreatGoldKept: 0.5,
   },
   relics: { maxActivationsPerDrain: 30 },
   gear: {

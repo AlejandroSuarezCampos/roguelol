@@ -23,6 +23,7 @@ Una segunda dificultad con consecuencias reales y **explicadas antes de empezar*
 | Oro del botín | ×1 | ×0,75 |
 | Probabilidad de poción | ×1 | ×0,5 |
 | Precios del comerciante | ×1 | ×1,25 |
+| Oro conservado al retirarse | 50 % | 25 % |
 
 - **Muerte:** el campeón sale del equipo; su gear vuelve al inventario y **sus cartas salen del mazo** (no quedan cartas muertas). Si mueren los cuatro, derrota.
 - **Avisos:** la regla se explica en la preparación (junto al selector), la etiqueta «Pesadilla» está siempre en la barra superior, y en combate un aviso rojo indica quién morirá si no se reanima. El resultado marca quién murió.

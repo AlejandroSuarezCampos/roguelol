@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Belt } from '../components/Belt';
 import { Hud } from '../components/Hud';
+import { RetreatButton } from '../components/RetreatButton';
 import { RelicList } from '../components/RelicBar';
 import { Icon } from '../components/Icon';
 import { TeamStrip } from '../components/TeamStrip';
@@ -64,9 +65,7 @@ export function ExpeditionMapScreen() {
         <button className="btn" onClick={() => game.openTeam()}>
           <Icon name="team" /> Equipo{e.inventory.length ? ` (${e.inventory.length} sin equipar)` : ''}
         </button>
-        <button className="btn dng" onClick={() => window.confirm('¿Retirarte? Conservas solo la mitad del oro y pierdes la expedición.') && game.retreat()}>
-          <Icon name="flag" /> Retirada
-        </button>
+        <RetreatButton e={e} />
       </Hud>
       <div className="mapbody">
         <div className="mapscroll" ref={scroller}>

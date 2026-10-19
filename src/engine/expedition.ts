@@ -58,6 +58,8 @@ export interface Expedition {
   shop: ShopState | null;
   /** Cartas eliminadas en tiendas: cada una encarece la siguiente. */
   removals: number;
+  /** Lo que costó retirarse (para mostrarlo en el resultado). */
+  retreat?: { before: number; kept: number };
   /** Ids de eventos ya vistos esta expedición. */
   seenEvents: string[];
   stats: { combats: number; elites: number };
@@ -357,6 +359,8 @@ export function rest(e: Expedition, action: RestAction, deckIndex?: number): voi
 
 /** Retirada: acaba la expedición y conserva solo parte del oro. */
 export function retreat(e: Expedition): void {
-  e.run.gold = Math.floor(e.run.gold * CONFIG.expedition.retreatGoldKept);
+  const before = e.run.gold;
+  e.run.gold = Math.floor(before * DIFFICULTIES[e.difficulty].retreatGold);
+  e.retreat = { before, kept: e.run.gold };
   e.status = 'retreat';
 }

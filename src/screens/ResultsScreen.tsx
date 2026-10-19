@@ -25,6 +25,15 @@ export function ResultsScreen() {
         <h1>{b.title}</h1>
         <p className="sub">{b.text}</p>
       </div>
+      {e.status === 'retreat' && e.retreat && (
+        <p className="warnbox notice" role="status">
+          <Icon name="flag" />
+          <span>
+            <b>Consecuencias de la retirada:</b> conservas <b>{e.retreat.kept}</b> de {e.retreat.before} de oro y pierdes la recompensa de la victoria.
+            {e.difficulty === 'nightmare' ? ' En Pesadilla la penalización es mayor.' : ''}
+          </span>
+        </p>
+      )}
       <div className="result-grid">
         <section className="panel">
           <h3>

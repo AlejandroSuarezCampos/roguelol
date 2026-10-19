@@ -17,6 +17,8 @@ export interface DifficultyDef {
   gold: number;
   potionDrop: number;
   shopPrice: number;
+  /** Fracción del oro que se conserva al retirarse (la penalización crece en Pesadilla). */
+  retreatGold: number;
   /** Un campeón que sigue derribado al ganar un combate muere para siempre. */
   permadeath: boolean;
 }
@@ -25,10 +27,10 @@ export interface DifficultyDef {
 export const DIFFICULTIES: Record<DifficultyId, DifficultyDef> = {
   normal: {
     id: 'normal', name: 'Normal', summary: 'Un campeón derribado sobrevive con una herida grave.',
-    enemyHp: 1, enemyAttack: 1, restWeight: 1, restHeal: CONFIG.expedition.rest.healFraction, gold: 1, potionDrop: 1, shopPrice: 1, permadeath: false,
+    enemyHp: 1, enemyAttack: 1, restWeight: 1, restHeal: CONFIG.expedition.rest.healFraction, gold: 1, potionDrop: 1, shopPrice: 1, retreatGold: 0.5, permadeath: false,
   },
   nightmare: {
     id: 'nightmare', name: 'Pesadilla', summary: 'Muerte permanente, menos descansos, recursos escasos y enemigos más duros.',
-    enemyHp: 1.25, enemyAttack: 1.2, restWeight: 0.5, restHeal: 0.2, gold: 0.75, potionDrop: 0.5, shopPrice: 1.25, permadeath: true,
+    enemyHp: 1.25, enemyAttack: 1.2, restWeight: 0.5, restHeal: 0.2, gold: 0.75, potionDrop: 0.5, shopPrice: 1.25, retreatGold: 0.25, permadeath: true,
   },
 };

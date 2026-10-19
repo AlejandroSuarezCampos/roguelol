@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Icon } from '../components/Icon';
 import { game, useGame } from '../state/gameStore';
 
@@ -9,10 +11,8 @@ const SOON = [
 
 export function MainMenuScreen() {
   const { saved, notice } = useGame();
-  const newRun = () => {
-    if (saved && !window.confirm('Ya tienes una expedición guardada. Si empiezas otra, se perderá. ¿Continuar?')) return;
-    game.newExpedition();
-  };
+  const [confirming, setConfirming] = useState(false);
+  const newRun = () => (saved ? setConfirming(true) : game.newExpedition());
   return (
     <div className="screen menu">
       <div className="menubg" />
@@ -52,6 +52,11 @@ export function MainMenuScreen() {
           </button>
         ))}
       </div>
+      {confirming && (
+        <ConfirmModal title="¿Empezar otra expedición?" confirmLabel="Empezar otra" danger onCancel={() => setConfirming(false)} onConfirm={() => game.newExpedition()}>
+          <p>Ya tienes una expedición guardada. Si empiezas otra, <b>se perderá</b>.</p>
+        </ConfirmModal>
+      )}
       <p className="credit">
         Proyecto fan no comercial. Arte de campeones y monstruos © Riot Games, enlazado desde Data Dragon y CommunityDragon.
       </p>

@@ -4,6 +4,7 @@ import { RelicBar } from '../components/RelicBar';
 import { Card } from '../components/Card';
 import { Fighter, type TargetMode } from '../components/Fighter';
 import { Hud } from '../components/Hud';
+import { RetreatButton } from '../components/RetreatButton';
 import { Icon } from '../components/Icon';
 import { deckCardDef, isUpgradedId } from '../data/cards';
 import { CHAMPIONS } from '../data/champions';
@@ -140,9 +141,7 @@ export function BattleScreen() {
           </span>
         }
       >
-        <button className="btn dng" disabled={over} onClick={() => window.confirm('¿Retirarte del combate? Conservas la mitad del oro y pierdes la expedición.') && game.retreat()}>
-          <Icon name="flag" /> Retirada
-        </button>
+        <RetreatButton e={e} disabled={over} />
       </Hud>
 
       <div className="cbtop">
