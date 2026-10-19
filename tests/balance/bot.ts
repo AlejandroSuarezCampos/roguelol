@@ -1,0 +1,104 @@
+import { CARDS } from '../../src/data/cards';
+import { cardCost, cardOf, forcedTarget, playCard, whyCannotPlay } from '../../src/engine/cards';
+import { endTeamTurn } from '../../src/engine/combat';
+import { living } from '../../src/engine/formation';
+import { Rng } from '../../src/engine/rng';
+import type { CardDef, CombatState, Unit } from '../../src/engine/types';
+import type { Expedition } from '../../src/engine/expedition';
+import { availableNodes, claimCard, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+
+interface Option {
+  uid: string;
+  target?: string;
+  score: number;
+}
+
+/** Puntúa una jugada con una heurística de jugador mediocre: ataca al más débil, protege al herido, cura al que lo necesita. */
+function score(s: CombatState, card: CardDef, t: Unit | undefined, rng: Rng): number {
+  const owner = s.units.find((u) => u.id === card.owner)!;
+  const cost = cardCost(s, card);
+  let v = 1 + rng.next() * 2;
+  for (const e of card.effects) {
+    if (e.type === 'damage' && e.on !== 'self') {
+      const dmg = e.amount + (e.scaling ? owner.stats[e.scaling.stat] * e.scaling.ratio : 0);
+      v += dmg * (card.target === 'allEnemies' ? living(s, 'enemy').length : 1) * 0.6;
+      if (t && t.hp <= dmg) v += 8;
+    }
+    if (e.type === 'block') {
+      const who = e.on === 'self' || card.target === 'self' ? owner : t ?? owner;
+      v += who.hp < who.maxHp * 0.5 ? e.amount * 0.7 : e.amount * 0.3;
+    }
+    if (e.type === 'heal') v += t ? Math.min(e.amount, t.maxHp - t.hp) * 0.8 : 3;
+    if (e.type === 'reduceStress') v += t ? (t.stress >= 50 ? t.stress * 0.4 : -2) : 0;
+    if (e.type === 'applyStatus') v += 2;
+    if (e.type === 'revive') v += t?.downed ? 30 : -50;
+  }
+  return v / Math.max(1, cost + 0.5);
+}
+
+export function playTurn(s: CombatState, rng: Rng): void {
+  for (let guard = 0; guard < 20 && s.outcome === 'ongoing'; guard++) {
+    const options: Option[] = [];
+    for (const inst of s.hand) {
+      const card = cardOf(s, inst);
+      const targets: (Unit | undefined)[] =
+        card.target === 'enemy' ? living(s, 'enemy') : card.target === 'ally' ? s.units.filter((u) => u.side === 'ally') : [undefined];
+      for (const t of targets) {
+        const forced = forcedTarget(s, card);
+        if (whyCannotPlay(s, card, forced ?? t) === null && (card.cost > 0 || cardCost(s, card) >= 0))
+          options.push({ uid: inst.uid, target: t?.id, score: score(s, card, forced ?? t, rng) });
+      }
+    }
+    if (!options.length) return;
+    options.sort((a, b) => b.score - a.score);
+    if (options[0].score < 1.2) return;
+    playCard(s, options[0].uid, options[0].target);
+  }
+}
+
+/** Juega un combate entero. Devuelve el resultado y los turnos usados. */
+export function fight(s: CombatState, rng: Rng, maxTurns = 40): { outcome: CombatState['outcome']; turns: number } {
+  while (s.outcome === 'ongoing' && s.turn <= maxTurns) {
+    playTurn(s, rng);
+    if (s.outcome === 'ongoing') endTeamTurn(s);
+  }
+  return { outcome: s.outcome === 'ongoing' ? 'lost' : s.outcome, turns: s.turn };
+}
+
+export interface RunReport {
+  status: Expedition['status'];
+  floorReached: number;
+  fights: { kind: string; won: boolean; turns: number }[];
+}
+
+/** Juega una expedición entera con el bot: elige nodos al azar, descansa curando o calmando, coge una carta al azar. */
+export function playExpedition(e: Expedition, seed: number): RunReport {
+  const rng = new Rng(seed);
+  const report: RunReport = { status: 'active', floorReached: 0, fights: [] };
+  while (e.status === 'active') {
+    const options = availableNodes(e);
+    if (!options.length) break;
+    const node = rng.pick(options);
+    enterNode(e, node.id);
+    report.floorReached = node.floor;
+    const kind = encounterKind(node.type);
+    if (kind) {
+      const s = combatFromExpedition(e, kind);
+      const r = fight(s, rng);
+      report.fights.push({ kind, won: r.outcome === 'won', turns: r.turns });
+      const rewards = finishCombat(e, s, kind);
+      if (rewards) {
+        claimRewards(e, rewards);
+        claimCard(e, rng.next() < 0.7 ? rng.pick(rewards.cards) : null);
+      }
+    } else if (node.type === 'rest') {
+      const hurt = e.run.champions.some((c) => c.hp < c.maxHp * 0.7 || c.downed);
+      const wounded = Object.values(e.wounds).some((w) => w > 0);
+      rest(e, hurt ? 'heal' : e.run.champions.some((c) => c.stress >= 40) ? 'calm' : wounded ? 'treat' : 'heal');
+    }
+  }
+  report.status = e.status;
+  return report;
+}
+
+export const cardName = (id: string) => CARDS[id].name;
