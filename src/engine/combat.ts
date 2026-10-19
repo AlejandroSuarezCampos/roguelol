@@ -1,10 +1,12 @@
 import { CONFIG } from './config';
 import { byPos, living, moveUnit, unitAt } from './formation';
+import { computeDamage } from './damage';
 import { refreshBelt } from './potions';
 import { Rng } from './rng';
+import { getFinalStats } from './stats';
 import { addStress } from './stress';
 import { applyDamage, checkOutcome, gainBlock } from './units';
-import type { BeltSlot, CardDef, ChampionId, CombatMods, CombatState, CrisisKind, EnemyDef, Intent, Omen, Pos, Unit } from './types';
+import type { BeltSlot, CardDef, ChampionId, CombatMods, CombatState, CrisisKind, EnemyDef, Intent, Omen, Pos, StatBlock, Unit } from './types';
 
 export interface AllySetup {
   id: ChampionId;
@@ -14,7 +16,7 @@ export interface AllySetup {
   maxHp: number;
   stress: number;
   crisis: CrisisKind;
-  critChance?: number;
+  stats?: Partial<StatBlock>;
 }
 
 export interface EnemySetup {
@@ -41,7 +43,7 @@ export function startCombat(cfg: CombatSetup): CombatState {
   const rng = new Rng(cfg.seed);
   const allies: Unit[] = cfg.allies.map((a) => ({
     id: a.id, side: 'ally', name: a.name, pos: a.pos, hp: a.hp, maxHp: a.maxHp, block: 0, stress: a.stress,
-    downed: a.hp <= 0, statuses: {}, critChance: a.critChance ?? 0, crisis: a.crisis,
+    downed: a.hp <= 0, statuses: {}, stats: getFinalStats(a.stats), crisis: a.crisis,
     crisisActive: a.stress >= CONFIG.stress.max, virtueActive: false,
   }));
   const enemies: Unit[] = cfg.enemies.map((e) => {
@@ -49,7 +51,7 @@ export function startCombat(cfg: CombatSetup): CombatState {
     const hp = Math.round(d.maxHp * cfg.mods.hpMultiplier);
     return {
       id: e.uid, side: 'enemy', name: d.name, pos: e.pos, hp, maxHp: hp, block: 0, stress: 0, downed: false,
-      statuses: cfg.mods.startShadowMark ? { shadowMark: 1 } : {}, critChance: 0, crisisActive: false, virtueActive: false,
+      statuses: cfg.mods.startShadowMark ? { shadowMark: 1 } : {}, stats: getFinalStats(d.stats), crisisActive: false, virtueActive: false,
     };
   });
   const s: CombatState = {
@@ -103,10 +105,14 @@ export function startTeamTurn(s: CombatState): void {
   s.playedByOwner = {};
   s.otherCardsWhileSelfish = 0;
   s.pendingApMark = 0;
-  for (const a of s.units) if (a.side === 'ally') a.block = 0;
+  for (const a of s.units) if (a.side === 'ally') {
+    a.block = 0;
+    vulnerableTick(a); // la ronda terminó: los enemigos ya actuaron
+  }
   s.discard.push(...s.hand);
   s.hand = [];
   draw(s, CONFIG.handSize);
+  for (const a of byPos(living(s, 'ally'))) burnTick(s, a);
   for (const a of byPos(living(s, 'ally'))) {
     if (a.virtueActive) gainBlock(a, CONFIG.virtue.blockPerTurn);
     if (a.crisisActive && a.crisis === 'rage')
@@ -115,13 +121,38 @@ export function startTeamTurn(s: CombatState): void {
   }
 }
 
-/** Valor que muestra la UI y que se aplica al resolver: ya incluye bonus de posición, crítico y extra de niebla. */
+/** Quemadura: al empezar el turno del afectado, daño verdadero igual a las acumulaciones y −1 acumulación. */
+function burnTick(s: CombatState, u: Unit): void {
+  const stacks = u.statuses.burn ?? 0;
+  if (!stacks || u.downed) return;
+  u.statuses.burn = stacks - 1;
+  applyDamage(s, u, stacks);
+}
+
+/** Vulnerable: al final de cada ronda pierde 1 acumulación (aliados al empezar su turno, enemigos tras actuar). */
+function vulnerableTick(u: Unit): void {
+  if (u.statuses.vulnerable) u.statuses.vulnerable -= 1;
+}
+
+const allyAt = (s: CombatState, p: Pos): Unit | undefined => {
+  const u = unitAt(s, 'ally', p);
+  return u && !u.downed ? u : byPos(living(s, 'ally'))[0];
+};
+
+/**
+ * Valor que muestra la UI y que se aplica al resolver. Ataques: daño final contra su objetivo actual
+ * (bonus de posición, crítico telegrafiado, defensa y vulnerable). Estrés: con el extra de niebla.
+ */
 export function intentValue(s: CombatState, enemy: Unit, i: Intent): number {
   const def = s.enemyDefs[s.enemyOf[enemy.id]];
   switch (i.kind) {
     case 'attack': {
-      const amt = i.amount + (def.idealPositions?.includes(enemy.pos) ? (def.positionBonus ?? 0) : 0);
-      return i.crit ? Math.floor(amt * CONFIG.critMultiplier) : amt;
+      const additive = def.idealPositions?.includes(enemy.pos) ? (def.positionBonus ?? 0) : 0;
+      const t = allyAt(s, i.target);
+      if (!t) return 0;
+      return computeDamage(s, enemy, t, {
+        amount: i.amount, damageType: i.damageType ?? 'physical', additive, crit: i.crit ? 'always' : undefined,
+      }).amount;
     }
     case 'stress':
       return i.amount + s.mods.intentStressBonus;
@@ -133,13 +164,9 @@ export function intentValue(s: CombatState, enemy: Unit, i: Intent): number {
 }
 
 function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
-  const allyAt = (p: Pos) => {
-    const u = unitAt(s, 'ally', p);
-    return u && !u.downed ? u : byPos(living(s, 'ally'))[0];
-  };
   switch (i.kind) {
     case 'attack': {
-      const t = allyAt(i.target);
+      const t = allyAt(s, i.target);
       if (!t) return;
       applyDamage(s, t, intentValue(s, enemy, i), { crit: i.crit });
       if (enemy.statuses.shadowMark) addStress(s, t, CONFIG.mist.shadowMarkStress);
@@ -149,7 +176,7 @@ function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
       gainBlock(enemy, i.amount);
       break;
     case 'stress': {
-      const t = allyAt(i.target);
+      const t = allyAt(s, i.target);
       if (t) addStress(s, t, intentValue(s, enemy, i));
       break;
     }
@@ -164,7 +191,10 @@ export function endTeamTurn(s: CombatState): void {
   if (s.outcome !== 'ongoing') return;
   for (const e of byPos(living(s, 'enemy'))) {
     e.block = 0;
+    burnTick(s, e);
+    if (e.downed || s.outcome !== 'ongoing') continue;
     if (e.statuses.stun) {
+      vulnerableTick(e);
       e.statuses.stun -= 1;
       continue;
     }
@@ -172,6 +202,7 @@ export function endTeamTurn(s: CombatState): void {
       if (s.outcome !== 'ongoing' || e.downed) break;
       resolveIntent(s, e, i);
     }
+    vulnerableTick(e);
   }
   for (const e of living(s, 'enemy')) {
     const sc = s.enemyDefs[s.enemyOf[e.id]].script;

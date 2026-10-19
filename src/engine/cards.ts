@@ -1,8 +1,27 @@
 import { CONFIG } from './config';
+import { computeDamage } from './damage';
 import { byPos, living, moveUnit } from './formation';
 import { addStress } from './stress';
 import { applyDamage, gainBlock, heal, revive } from './units';
-import type { CardDef, CombatState, Effect, Unit } from './types';
+import type { CardDef, CardInstance, CombatState, Effect, Unit } from './types';
+
+/** Definición efectiva de una carta en mano: aplica su mejora si la instancia está mejorada. */
+export function cardOf(s: CombatState, inst: CardInstance): CardDef {
+  const def = s.cards[inst.defId];
+  if (!inst.upgraded || !def.upgrade) return def;
+  const up = def.upgrade;
+  return {
+    ...def,
+    cost: up.cost ?? def.cost,
+    effects: up.effects ?? def.effects,
+    positionBonus: up.positionBonus ?? def.positionBonus,
+    text: up.text,
+  };
+}
+
+/** Una carta es «de AP» si alguno de sus efectos de daño escala con AP. */
+export const isApCard = (card: CardDef): boolean =>
+  card.effects.some((e) => e.type === 'damage' && e.scaling?.stat === 'ap');
 
 export function ownerOf(s: CombatState, card: CardDef): Unit {
   const u = s.units.find((x) => x.side === 'ally' && x.id === card.owner);
@@ -84,10 +103,16 @@ function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void 
   for (const u of e.on === 'self' ? [owner] : targets) {
     switch (e.type) {
       case 'damage': {
-        let amt = e.amount + (crisisOf(owner) === 'rage' ? CONFIG.crisis.rageDamage : 0);
-        const crit = !!e.canCrit && owner.critChance > 0 && s.rng.next() < owner.critChance;
-        if (crit) amt = Math.floor(amt * CONFIG.critMultiplier);
-        applyDamage(s, u, amt, { crit });
+        let additive = crisisOf(owner) === 'rage' ? CONFIG.crisis.rageDamage : 0;
+        if (e.consumeStatus) {
+          const holder = e.consumeStatus.from === 'self' ? owner : u;
+          additive += (holder.statuses[e.consumeStatus.status] ?? 0) * e.consumeStatus.bonusPerStack;
+          delete holder.statuses[e.consumeStatus.status];
+        }
+        const hit = computeDamage(s, owner, u, {
+          amount: e.amount, damageType: e.damageType, scaling: e.scaling, additive, crit: e.canCrit ? 'roll' : undefined,
+        });
+        applyDamage(s, u, hit.amount, { crit: hit.crit });
         break;
       }
       case 'block':
@@ -116,7 +141,7 @@ function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void 
 export function playCard(s: CombatState, uid: string, targetId?: string): void {
   const idx = s.hand.findIndex((c) => c.uid === uid);
   if (idx < 0) throw new Error('La carta no está en la mano');
-  const card = s.cards[s.hand[idx].defId];
+  const card = cardOf(s, s.hand[idx]);
   const owner = ownerOf(s, card);
   const t = forcedTarget(s, card) ?? s.units.find((u) => u.id === targetId);
   const why = whyCannotPlay(s, card, t);
@@ -131,7 +156,7 @@ export function playCard(s: CombatState, uid: string, targetId?: string): void {
 
   const targets = targetsOf(s, card, owner, t);
   for (const e of effectsFor(s, card)) resolve(s, e, owner, targets);
-  if (s.pendingApMark && card.scaling === 'ap') {
+  if (s.pendingApMark && isApCard(card)) {
     for (const u of targets) if (u.side === 'enemy' && !u.downed) u.statuses.mark = (u.statuses.mark ?? 0) + s.pendingApMark;
     s.pendingApMark = 0;
   }

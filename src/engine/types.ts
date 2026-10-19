@@ -5,14 +5,37 @@ export type Side = 'ally' | 'enemy';
 export type ChampionId = 'leona' | 'yasuo' | 'lux' | 'soraka';
 export type CrisisKind = 'rage' | 'selfish' | 'panic' | 'despair';
 export type Omen = 'lament' | 'weight' | 'drift' | 'bleed';
-export type StatusId = 'mark' | 'stun' | 'shadowMark';
+export type StatusId = 'mark' | 'stun' | 'shadowMark' | 'burn' | 'charge' | 'vulnerable';
 export type CardType = 'attack' | 'defense' | 'skill' | 'support' | 'control';
 export type TargetKind = 'enemy' | 'ally' | 'self' | 'allEnemies' | 'allAllies';
+export type DamageType = 'physical' | 'magic' | 'true';
+export type Rarity = 'common' | 'rare' | 'epic';
+export type Keyword = 'block' | 'mark' | 'burn' | 'charge' | 'displacement';
 /** A quién afecta un efecto: al objetivo de la carta (por defecto) o al propio lanzador. */
 export type EffectOn = 'target' | 'self';
 
+/** Estadísticas que usa el cálculo de daño (§5.4). El gear se sumará en la fase 3 vía getFinalStats. */
+export interface StatBlock {
+  ad: number;
+  ap: number;
+  critChance: number;
+  critDamage: number;
+  penetration: number;
+  armor: number;
+  mr: number;
+}
+
 export type Effect =
-  | { type: 'damage'; amount: number; canCrit?: boolean; on?: EffectOn }
+  | {
+      type: 'damage';
+      amount: number;
+      damageType: DamageType;
+      scaling?: { stat: 'ad' | 'ap'; ratio: number };
+      canCrit?: boolean;
+      /** Consume todas las acumulaciones del estado (en el lanzador o en el objetivo) y suma daño por cada una. */
+      consumeStatus?: { status: 'charge' | 'mark'; from: 'self' | 'target'; bonusPerStack: number };
+      on?: EffectOn;
+    }
   | { type: 'block'; amount: number; on?: EffectOn }
   | { type: 'heal'; amount: number; on?: EffectOn }
   | { type: 'applyStatus'; status: StatusId; stacks: number; on?: EffectOn }
@@ -21,6 +44,13 @@ export type Effect =
   | { type: 'reduceStress'; amount: number; on?: EffectOn }
   | { type: 'revive'; hp: number; on?: EffectOn };
 
+export interface CardUpgrade {
+  cost?: number;
+  effects?: Effect[];
+  positionBonus?: Effect[];
+  text: string;
+}
+
 export interface CardDef {
   id: string;
   name: string;
@@ -28,15 +58,19 @@ export interface CardDef {
   cost: number;
   type: CardType;
   target: TargetKind;
+  rarity: Rarity;
+  keywords: Keyword[];
+  text: string;
   effects: Effect[];
-  scaling?: 'ad' | 'ap';
   idealPositions?: Pos[];
   positionBonus?: Effect[];
+  upgrade?: CardUpgrade;
 }
 
 export interface CardInstance {
   uid: string;
   defId: string;
+  upgraded?: boolean;
 }
 
 export interface Unit {
@@ -52,14 +86,14 @@ export interface Unit {
   /** Aliado: derribado. Enemigo: derrotado. */
   downed: boolean;
   statuses: Partial<Record<StatusId, number>>;
-  critChance: number;
+  stats: StatBlock;
   crisis?: CrisisKind;
   crisisActive: boolean;
   virtueActive: boolean;
 }
 
 export type Intent =
-  | { kind: 'attack'; amount: number; target: Pos; crit?: boolean }
+  | { kind: 'attack'; amount: number; target: Pos; crit?: boolean; damageType?: DamageType }
   | { kind: 'block'; amount: number }
   | { kind: 'stress'; amount: number; target: Pos }
   | { kind: 'reposition'; to: Pos };
@@ -69,6 +103,7 @@ export interface EnemyDef {
   name: string;
   maxHp: number;
   script: Intent[];
+  stats?: Partial<StatBlock>;
   idealPositions?: Pos[];
   /** Daño extra de sus ataques desde una posición ideal. */
   positionBonus?: number;

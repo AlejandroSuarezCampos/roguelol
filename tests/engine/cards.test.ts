@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bonusActive, playCard, whyCannotPlay } from '../../src/engine/cards';
+import { bonusActive, cardOf, isApCard, playCard, whyCannotPlay } from '../../src/engine/cards';
 import { CARDS, SeqRng, give, makeState, u } from './fixtures';
 
 describe('jugar cartas', () => {
@@ -82,7 +82,7 @@ describe('jugar cartas', () => {
 
   it('el crítico usa la probabilidad del lanzador y el RNG', () => {
     const s = makeState({ rng: new SeqRng([0]) });
-    u(s, 'yasuo').critChance = 0.5;
+    u(s, 'yasuo').stats.critChance = 0.5;
     const [id] = give(s, 'tempest');
     playCard(s, id, 'e1');
     expect(u(s, 'e1').hp).toBe(15);
@@ -139,5 +139,55 @@ describe('crisis al jugar cartas', () => {
     const [id] = give(s, 'touch');
     playCard(s, id, 'leona');
     expect(u(s, 'soraka').stress).toBe(90);
+  });
+});
+
+describe('modelo de cartas (§9)', () => {
+  it('consumir Carga del lanzador: +4 por acumulación y la elimina', () => {
+    const s = makeState();
+    s.cards = { ...CARDS, finisher: { id: 'finisher', name: 'Último aliento', owner: 'yasuo', cost: 1, type: 'attack', target: 'enemy',
+      rarity: 'rare', keywords: ['charge'], text: 'Inflige 8 +4 por Carga.',
+      effects: [{ type: 'damage', amount: 8, damageType: 'physical', consumeStatus: { status: 'charge', from: 'self', bonusPerStack: 4 } }] } };
+    u(s, 'yasuo').statuses.charge = 3;
+    const [id] = give(s, 'finisher');
+    playCard(s, id, 'e1');
+    expect(u(s, 'e1').hp).toBe(10);
+    expect(u(s, 'yasuo').statuses.charge).toBeUndefined();
+  });
+
+  it('consumir Marca del objetivo: +4 por Marca de cada objetivo', () => {
+    const s = makeState();
+    s.cards = { ...CARDS, burst: { id: 'burst', name: 'Chispa final', owner: 'lux', cost: 2, type: 'skill', target: 'allEnemies',
+      rarity: 'epic', keywords: ['mark'], text: 'Inflige 8 a todos. +4 por Marca consumida.',
+      effects: [{ type: 'damage', amount: 8, damageType: 'magic', consumeStatus: { status: 'mark', from: 'target', bonusPerStack: 4 } }] } };
+    u(s, 'e1').statuses.mark = 2;
+    const [id] = give(s, 'burst');
+    playCard(s, id);
+    expect(u(s, 'e1').hp).toBe(14);
+    expect(u(s, 'e2').hp).toBe(22);
+    expect(u(s, 'e1').statuses.mark).toBeUndefined();
+  });
+
+  it('una carta mejorada usa el coste, los efectos y el texto de su mejora', () => {
+    const s = makeState();
+    s.cards = { ...CARDS, guard: { ...CARDS.guard, upgrade: { cost: 0, effects: [{ type: 'block', amount: 12 }], text: 'Gana 12 de bloqueo.' } } };
+    s.hand.push({ uid: 'up1', defId: 'guard', upgraded: true });
+    expect(cardOf(s, s.hand[0]).text).toBe('Gana 12 de bloqueo.');
+    playCard(s, 'up1');
+    expect(s.energy).toBe(3);
+    expect(u(s, 'leona').block).toBe(12);
+  });
+
+  it('las cartas de AP se reconocen por el escalado de sus efectos', () => {
+    expect(isApCard(CARDS.bind)).toBe(true);
+    expect(isApCard(CARDS.strike)).toBe(false);
+  });
+
+  it('la armadura del enemigo mitiga el daño físico de las cartas', () => {
+    const s = makeState();
+    u(s, 'e1').stats.armor = 100;
+    const [id] = give(s, 'strike');
+    playCard(s, id, 'e1');
+    expect(u(s, 'e1').hp).toBe(26);
   });
 });

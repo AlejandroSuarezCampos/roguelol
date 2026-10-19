@@ -5,6 +5,9 @@ export const CONFIG = {
   cardsPerChampion: 3,
   swapCost: 1,
   critMultiplier: 1.5,
+  /** Escala de la mitigación: daño × escala / (escala + defensa efectiva) (§5.4). */
+  defenseScale: 100,
+  status: { vulnerableBonus: 0.5 },
   stress: { max: 100, critHit: 5, allyDowned: 10, enemyDefeated: -3, virtueChance: 0.25, virtueResetTo: 50 },
   crisis: { rageDamage: 3, rageStressOthers: 5, despairHealFactor: 0.5, despairSelfStress: 3 },
   virtue: { blockPerTurn: 4 },

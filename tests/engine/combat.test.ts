@@ -146,3 +146,54 @@ describe('valor de intención para la UI', () => {
     expect(intentValue(s, u(s, 'e1'), ENEMIES.wolf.script[1])).toBe(13);
   });
 });
+
+describe('quemadura y vulnerable', () => {
+  it('quemadura en un enemigo: daño verdadero antes de actuar y −1 acumulación', () => {
+    const s = startCombat(setup());
+    Object.assign(u(s, 'e1').stats, { armor: 100 });
+    u(s, 'e1').statuses.burn = 3;
+    endTeamTurn(s);
+    expect(u(s, 'e1').hp).toBe(27);
+    expect(u(s, 'e1').statuses.burn).toBe(2);
+  });
+
+  it('la quemadura puede derrotar a un enemigo antes de que actúe', () => {
+    const s = startCombat(setup());
+    u(s, 'e1').hp = 2;
+    u(s, 'e1').statuses.burn = 3;
+    endTeamTurn(s);
+    expect(u(s, 'e1').downed).toBe(true);
+    expect(u(s, 'leona').hp).toBe(40);
+  });
+
+  it('quemadura en un aliado: al empezar el turno del equipo', () => {
+    const s = startCombat(setup());
+    u(s, 'leona').statuses.burn = 2;
+    endTeamTurn(s);
+    expect(u(s, 'leona').hp).toBe(28);
+    expect(u(s, 'leona').statuses.burn).toBe(1);
+  });
+
+  it('vulnerable en un aliado dura la ronda: sufre +50 % del ataque y luego caduca', () => {
+    const s = startCombat(setup());
+    u(s, 'leona').statuses.vulnerable = 1;
+    endTeamTurn(s);
+    expect(u(s, 'leona').hp).toBe(25);
+    expect(u(s, 'leona').statuses.vulnerable).toBe(0);
+  });
+
+  it('vulnerable en un enemigo caduca después de que actúe', () => {
+    const s = startCombat(setup());
+    u(s, 'e1').statuses.vulnerable = 1;
+    endTeamTurn(s);
+    expect(u(s, 'e1').statuses.vulnerable).toBe(0);
+  });
+
+  it('intentValue ya descuenta la armadura del objetivo', () => {
+    const s = startCombat(setup());
+    u(s, 'leona').stats.armor = 100;
+    expect(intentValue(s, u(s, 'e1'), s.intents.e1[0])).toBe(5);
+    endTeamTurn(s);
+    expect(u(s, 'leona').hp).toBe(35);
+  });
+});
