@@ -45,14 +45,19 @@ export function equip(e: Expedition, id: ChampionId, gearId: string): void {
   if (!def || at < 0) throw new Error('Ese objeto no está en el inventario');
   const champ = e.run.champions.find((c) => c.id === id);
   if (!champ) throw new Error('Ese campeón ha muerto');
-  const before = champ.maxHp;
   e.inventory.splice(at, 1);
   const old = e.gear[id][def.slot];
   if (old) e.inventory.push(old);
   e.gear[id][def.slot] = gearId;
-  champ.maxHp = maxHpFor(e, id);
-  if (!champ.downed && champ.maxHp > before) champ.hp += champ.maxHp - before;
-  syncMaxHp(e, champ);
+  shiftMaxHp(e, champ);
+}
+
+/** Ajusta la vida máxima al cambiar de gear y mueve la vida actual la misma cantidad (el equipo no crea ni destruye vida: equipar y quitar no cura gratis). */
+function shiftMaxHp(e: Expedition, c: Expedition['run']['champions'][number]): void {
+  const next = maxHpFor(e, c.id);
+  const delta = next - c.maxHp;
+  c.maxHp = next;
+  if (!c.downed) c.hp = Math.max(1, Math.min(next, c.hp + delta));
 }
 
 export function unequip(e: Expedition, id: ChampionId, slot: GearSlot): void {
@@ -61,7 +66,7 @@ export function unequip(e: Expedition, id: ChampionId, slot: GearSlot): void {
   if (!old) throw new Error('No hay nada equipado en ese slot');
   e.gear[id][slot] = null;
   e.inventory.push(old);
-  syncMaxHp(e, e.run.champions.find((c) => c.id === id)!);
+  shiftMaxHp(e, e.run.champions.find((c) => c.id === id)!);
 }
 
 /** Diferencia de estadísticas y vida si `gearId` sustituyera a lo que lleva el campeón en ese slot (para la comparación). */

@@ -86,6 +86,11 @@ function problem(x: any): string | null {
   return null;
 }
 
+function summaryOf(e: any, savedAt: number): SaveSummary {
+  const cur = e.currentId ? e.map.nodes.find((n: any) => n.id === e.currentId) : null;
+  return { floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt };
+}
+
 /** El RNG se guarda como un número (`state`) y se reconstruye al cargar; lo demás son datos planos. */
 function revive(x: any): Expedition {
   return { ...x, run: { ...x.run, rng: new Rng(x.run.rng.state) }, shop: null, inCombat: false };
@@ -127,8 +132,7 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
       const payload = { version: SAVE_VERSION, savedAt, expedition: { ...e, shop: null } };
       const ok = safe((s) => (s.setItem(SAVE_KEY, JSON.stringify(payload)), true), false);
       if (!ok) return null;
-      const cur = e.currentId ? e.map.nodes.find((n) => n.id === e.currentId) : null;
-      return { floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt };
+      return summaryOf(e, savedAt);
     },
     load(): LoadResult {
       const r = read();
@@ -140,12 +144,23 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
       }
       return { status: 'ok', expedition: revive(r.data.expedition) };
     },
+    /**
+     * Mira el guardado (para el menú): su resumen, o —si está dañado— lo aparta con copia de seguridad y dice por qué.
+     * Así un guardado roto nunca se pisa en silencio con el siguiente autoguardado.
+     */
+    inspect(): { summary: SaveSummary | null; corrupt: string | null } {
+      const r = read();
+      if (!r) return { summary: null, corrupt: null };
+      if ('error' in r) {
+        safe((s) => (s.setItem(CORRUPT_KEY, r.raw), s.removeItem(SAVE_KEY)), undefined);
+        return { summary: null, corrupt: r.error };
+      }
+      return { summary: summaryOf(r.data.expedition, r.data.savedAt), corrupt: null };
+    },
     summary(): SaveSummary | null {
       const r = read();
       if (!r || 'error' in r) return null;
-      const e = r.data.expedition;
-      const cur = e.currentId ? e.map.nodes.find((n: any) => n.id === e.currentId) : null;
-      return { floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt: r.data.savedAt };
+      return summaryOf(r.data.expedition, r.data.savedAt);
     },
     clear(): void {
       safe((s) => s.removeItem(SAVE_KEY), undefined);

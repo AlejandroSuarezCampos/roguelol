@@ -336,7 +336,7 @@ describe('guardado automático', () => {
     const g = createGameStore({ save: createSaveManager(store) });
     g.continueExpedition();
     expect(g.getState().screen).toBe('menu');
-    expect(g.getState().notice).toMatch(/dañado/);
+    expect(g.getState().notice).toMatch(/dañad[ao]/);
     g.dismissNotice();
     expect(g.getState().notice).toBeNull();
   });
@@ -565,5 +565,21 @@ describe('robustez de las acciones de botín', () => {
     expect(e.wounds).toEqual(wounds);
     expect(e.stats.combats).toBe(combats);
     expect(g.getState().screen).toBe('reward');
+  });
+});
+
+describe('guardado dañado al arrancar', () => {
+  it('se avisa, se conserva una copia y el siguiente autoguardado no la destruye', () => {
+    const data = new Map<string, string>();
+    const store: StorageLike = { getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+    data.set(SAVE_KEY, JSON.stringify({ version: 4, savedAt: 1, expedition: { nonsense: true } }));
+    const g = createGameStore({ save: createSaveManager(store) });
+    expect(g.getState().notice).toMatch(/guardada estaba dañada/);
+    expect(g.getState().saved).toBeNull();
+    expect([...data.keys()].some((k) => k.endsWith('.corrupt'))).toBe(true);
+    g.newExpedition(2);
+    g.startExpedition(); // autoguarda una expedición válida
+    expect([...data.keys()].some((k) => k.endsWith('.corrupt'))).toBe(true);
+    expect(data.has(SAVE_KEY)).toBe(true);
   });
 });

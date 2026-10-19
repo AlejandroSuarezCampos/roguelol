@@ -113,6 +113,29 @@ describe('vida máxima', () => {
     expect(champ(e, 'soraka').hp).toBeGreaterThanOrEqual(1);
   });
 
+  it('equipar y quitar en bucle no cura gratis', () => {
+    const e = createExpedition(1);
+    champ(e, 'leona').hp = 5;
+    e.inventory.push('blade');
+    for (let i = 0; i < 6; i++) {
+      equip(e, 'leona', 'blade');
+      unequip(e, 'leona', 'weapon');
+    }
+    expect(champ(e, 'leona').hp).toBe(5);
+    expect(champ(e, 'leona').maxHp).toBe(CHAMPIONS.leona.maxHp);
+  });
+
+  it('cambiar un objeto de vida por otro mueve la vida actual por la diferencia', () => {
+    const e = createExpedition(1);
+    e.inventory.push('blade', 'titanic'); // +15 y +30 de vida, los dos en el slot de arma
+    equip(e, 'leona', 'blade');
+    const hp = champ(e, 'leona').hp;
+    equip(e, 'leona', 'titanic');
+    expect(champ(e, 'leona').hp).toBe(hp + 15);
+    equip(e, 'leona', 'blade');
+    expect(champ(e, 'leona').hp).toBe(hp);
+  });
+
   it('syncMaxHp recalcula tras una herida sin tocar la vida actual por debajo del máximo', () => {
     const e = createExpedition(1);
     champ(e, 'yasuo').hp = 20;

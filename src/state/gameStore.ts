@@ -78,7 +78,12 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
   const metaStore = opts.meta;
   const loaded = metaStore?.load();
   const meta: MetaState = loaded?.meta ?? newMeta();
-  let state = initial(meta, save?.summary() ?? null, loaded?.corrupt ? `El progreso permanente estaba dañado (${loaded.corrupt}) y se ha reiniciado. Se conserva una copia.` : null);
+  const inspected = save?.inspect();
+  const notices = [
+    loaded?.corrupt ? `El progreso permanente estaba dañado (${loaded.corrupt}) y se ha reiniciado.` : '',
+    inspected?.corrupt ? `La expedición guardada estaba dañada (${inspected.corrupt}) y se ha descartado.` : '',
+  ].filter(Boolean);
+  let state = initial(meta, inspected?.summary ?? null, notices.length ? `${notices.join(' ')} Se conserva una copia.` : null);
   let fxKey = 0;
   const listeners = new Set<() => void>();
 
@@ -209,7 +214,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (state.expedition) emit({ screen: 'map', hint: null });
     },
     toMenu() {
-      state = initial(meta, save?.summary() ?? null);
+      state = initial(meta, save?.inspect().summary ?? null);
       emit();
     },
     retreat() {
