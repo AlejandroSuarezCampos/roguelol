@@ -33,5 +33,12 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
     retreatGoldKept: 0.5,
   },
+  shop: {
+    cardPrice: { common: 50, rare: 80, epic: 120 },
+    potionPrice: { health: 35, refillable: 40, iron: 50, sorcery: 45 },
+    treatWound: 25,
+    removeCard: 75,
+    removeCardStep: 25,
+  },
   potions: { drop: { combat: 0.35, elite: 1, boss: 0 }, beltSize: 3, health: 20, refillable: 8, iron: 15, sorceryMarks: 2 },
 } as const;

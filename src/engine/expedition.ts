@@ -52,7 +52,10 @@ export type RestAction = 'heal' | 'calm' | 'treat' | 'stoke';
 
 const F = CONFIG.expedition;
 
-/** Mapa de 8 pisos de 2–3 nodos: combates; élites desde el piso 2; descansos entre 2 y 4; descanso previo al jefe. */
+/**
+ * Mapa de 8 pisos de 2–3 nodos: combates; élites desde el piso 2; descansos entre 2 y 4; comerciantes en 2–5 (uno por piso como
+ * mucho); eventos en 1–5; descanso previo al jefe. Siempre hay al menos un comerciante (2–4) y un evento (1–4).
+ */
 export function generateMap(rng: Rng): ExpeditionMap {
   const nodes: MapNode[] = [];
   const byFloor: MapNode[][] = [];
@@ -60,7 +63,8 @@ export function generateMap(rng: Rng): ExpeditionMap {
     const count = f === F.floors - 1 ? 1 : 2 + rng.int(2);
     const row: MapNode[] = [];
     for (let i = 0; i < count; i++) {
-      row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type: pickType(rng, f), next: [] });
+      const type = pickType(rng, f, row.some((n) => n.type === 'shop'));
+      row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
     }
     byFloor.push(row);
     nodes.push(...row);
@@ -80,16 +84,28 @@ export function generateMap(rng: Rng): ExpeditionMap {
       src.next.push(t.id);
     }
   }
+  ensureType(nodes, rng, 'shop', 2, 4);
+  ensureType(nodes, rng, 'event', 1, 4);
   return { nodes };
 }
 
-function pickType(rng: Rng, floor: number): NodeType {
+/** Si el mapa no tiene ningún nodo de ese tipo en los pisos dados, convierte un combate al azar. */
+function ensureType(nodes: MapNode[], rng: Rng, type: NodeType, from: number, to: number): void {
+  const inRange = nodes.filter((n) => n.floor >= from && n.floor <= to);
+  if (inRange.some((n) => n.type === type)) return;
+  const candidates = inRange.filter((n) => n.type === 'combat');
+  if (candidates.length) rng.pick(candidates).type = type;
+}
+
+function pickType(rng: Rng, floor: number, shopInFloor: boolean): NodeType {
   if (floor === F.floors - 1) return 'boss';
   if (floor === F.floors - 2) return 'rest';
   if (floor === 0) return 'combat';
   const r = rng.next();
-  if (floor >= 2 && r < 0.18) return 'elite';
-  if (floor >= 2 && floor <= F.floors - 4 && r < 0.4) return 'rest';
+  if (floor >= 2 && r < 0.14) return 'elite';
+  if (floor >= 2 && floor <= F.floors - 4 && r < 0.32) return 'rest';
+  if (floor >= 2 && floor <= F.floors - 3 && !shopInFloor && r < 0.44) return 'shop';
+  if (floor <= F.floors - 3 && r < 0.6) return 'event';
   return 'combat';
 }
 

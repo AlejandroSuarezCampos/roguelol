@@ -56,6 +56,15 @@ describe('mapa', () => {
     expect(map.nodes.filter((n) => n.floor === CONFIG.expedition.floors - 2).every((n) => n.type === 'rest')).toBe(true);
   });
 
+  it('siempre hay un comerciante (pisos 2–4) y un evento (pisos 1–4), y como mucho un comerciante por piso', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const m = generateMap(new Rng(seed));
+      expect(m.nodes.some((n) => n.type === 'shop' && n.floor >= 2 && n.floor <= 4), `shop ${seed}`).toBe(true);
+      expect(m.nodes.some((n) => n.type === 'event' && n.floor >= 1 && n.floor <= 4), `event ${seed}`).toBe(true);
+      for (let f = 0; f < CONFIG.expedition.floors; f++) expect(m.nodes.filter((n) => n.floor === f && n.type === 'shop').length).toBeLessThanOrEqual(1);
+    }
+  });
+
   it('cada piso tiene 2–3 nodos salvo el jefe', () => {
     for (let f = 0; f < CONFIG.expedition.floors - 1; f++) {
       const count = map.nodes.filter((n) => n.floor === f).length;
