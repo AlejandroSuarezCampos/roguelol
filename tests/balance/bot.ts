@@ -5,10 +5,14 @@ import { living } from '../../src/engine/formation';
 import { Rng } from '../../src/engine/rng';
 import type { CardDef, CombatState, Unit } from '../../src/engine/types';
 import type { Expedition } from '../../src/engine/expedition';
-import { availableNodes, claimCard, claimPotion, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
 import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
+import { compareGear, equip } from '../../src/engine/gear';
+import { CHAMPION_IDS } from '../../src/data/champions';
+import { GEAR } from '../../src/data/gear';
+import type { ChampionId } from '../../src/engine/types';
 import { POTIONS, usePotion, usePotionOnMap, whyCannotUse } from '../../src/engine/potions';
-import { buyCard, buyPotion, openShop, treatWoundAtShop } from '../../src/engine/shop';
+import { buyCard, buyGear, buyPotion, openShop, treatWoundAtShop } from '../../src/engine/shop';
 
 interface Option {
   uid: string;
@@ -108,6 +112,10 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
         claimRewards(e, rewards);
         claimCard(e, rng.next() < 0.7 ? rng.pick(rewards.cards) : null);
         if (rewards.potion) claimPotion(e, rewards.potion);
+        if (rewards.gear) {
+          claimGear(e, bestGear(e, rewards.gear));
+          equipBest(e);
+        }
       }
     } else if (node.type === 'shop') {
       visitShop(e, rng);
@@ -123,6 +131,33 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
   }
   report.status = e.status;
   return report;
+}
+
+/** Lo que le importa a cada campeón: pesos por estadística para decidir quién se queda con un objeto. */
+const WEIGHTS: Record<ChampionId, Record<string, number>> = {
+  leona: { hp: 0.5, armor: 1, mr: 0.8, ad: 0.5 },
+  yasuo: { ad: 1, critChance: 60, critDamage: 30, penetration: 0.6, hp: 0.2 },
+  lux: { ap: 1, hp: 0.2, mr: 0.3 },
+  soraka: { ap: 0.7, hp: 0.4, mr: 0.4 },
+};
+
+function gearScore(e: Expedition, champ: ChampionId, gearId: string): number {
+  const d = compareGear(e, champ, gearId);
+  const w = WEIGHTS[champ];
+  return Object.entries({ ...d.stats, hp: d.hp }).reduce((a, [k, v]) => a + (w[k] ?? 0) * (v as number), 0);
+}
+
+/** Equipa cada objeto del inventario en quien más gane con él (si alguien gana). */
+function equipBest(e: Expedition): void {
+  for (const id of [...e.inventory]) {
+    const best = CHAMPION_IDS.map((c) => ({ c, s: gearScore(e, c, id) })).sort((a, b) => b.s - a.s)[0];
+    if (best.s > 0) equip(e, best.c, id);
+  }
+}
+
+/** Mejor opción de un botín de gear (la que más sube a su mejor destinatario). */
+function bestGear(e: Expedition, options: string[]): string {
+  return [...options].sort((a, b) => Math.max(...CHAMPION_IDS.map((c) => gearScore(e, c, b))) - Math.max(...CHAMPION_IDS.map((c) => gearScore(e, c, a))))[0];
 }
 
 /** Antes de cada nodo bebe pociones curativas si alguien está por debajo del 50 %. */
@@ -146,6 +181,8 @@ function visitShop(e: Expedition, rng: Rng): void {
   };
   if (Object.values(e.wounds).some((w) => w > 0)) tryBuy(() => treatWoundAtShop(e));
   shop.potions.forEach((p, i) => POTIONS[p.id].healing && !p.sold && tryBuy(() => buyPotion(e, i)));
+  shop.gear.forEach((_, i) => tryBuy(() => buyGear(e, i)));
+  equipBest(e);
   rng.shuffle(shop.cards.map((_, i) => i)).forEach((i) => rng.next() < 0.7 && tryBuy(() => buyCard(e, i)));
 }
 
