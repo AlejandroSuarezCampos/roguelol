@@ -5,7 +5,8 @@
 .menu>*:not(.menubg){position:relative}
 .logo{font-size:clamp(30px,5vw,62px);line-height:1.05;text-transform:uppercase;background:linear-gradient(180deg,#f0e6d2 20%,#c8aa6e 60%,#785a28);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 18px rgba(0,0,0,.8))}
 .logo small{display:block;font-size:.3em;letter-spacing:.45em;margin-bottom:10px}
-.mainbtns{display:grid;grid-template-columns:repeat(4,minmax(150px,220px));gap:18px;position:relative}
+.mainbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,220px));justify-content:center;gap:18px;position:relative;max-width:1000px}
+.notice{max-width:640px;align-items:center;text-align:left}
 .mbtn{padding:24px 14px 20px;border:1px solid var(--line2);background:linear-gradient(180deg,rgba(14,26,44,.85),rgba(1,10,19,.92));display:flex;flex-direction:column;gap:8px;align-items:center;transition:.18s;position:relative}
 .mbtn::after{content:"";position:absolute;left:20%;right:20%;bottom:-1px;height:2px;background:var(--gold);opacity:0;transition:.18s}
 .mbtn:hover:not(:disabled),.mbtn:focus-visible{transform:translateY(-4px);border-color:var(--gold);box-shadow:inset 0 0 24px rgba(10,200,185,.18),0 12px 30px rgba(0,0,0,.6)}

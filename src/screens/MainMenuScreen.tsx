@@ -1,5 +1,5 @@
 import { Icon } from '../components/Icon';
-import { game } from '../state/gameStore';
+import { game, useGame } from '../state/gameStore';
 
 const SOON = [
   { icon: 'team', name: 'Equipo', text: 'Fichas, gear y mazo' },
@@ -8,6 +8,11 @@ const SOON = [
 ];
 
 export function MainMenuScreen() {
+  const { saved, notice } = useGame();
+  const newRun = () => {
+    if (saved && !window.confirm('Ya tienes una expedición guardada. Si empiezas otra, se perderá. ¿Continuar?')) return;
+    game.newExpedition();
+  };
   return (
     <div className="screen menu">
       <div className="menubg" />
@@ -18,11 +23,26 @@ export function MainMenuScreen() {
         Runeterra
       </h1>
       <p className="sub">Roguelike táctico de cartas · Islas de la Sombra</p>
+      {notice && (
+        <p className="warnbox red notice" role="alert">
+          <Icon name="warn" /> <span>{notice}</span>
+          <button className="btn sm" onClick={() => game.dismissNotice()}>Entendido</button>
+        </p>
+      )}
       <div className="mainbtns">
-        <button className="mbtn main" onClick={() => game.newExpedition()}>
+        {saved && (
+          <button className="mbtn main" onClick={() => game.continueExpedition()}>
+            <Icon name="flag" />
+            <b>Continuar</b>
+            <span>
+              {saved.floor ? `Piso ${saved.floor}` : 'Entrada'} · {saved.gold} de oro
+            </span>
+          </button>
+        )}
+        <button className={`mbtn ${saved ? '' : 'main'}`} onClick={newRun}>
           <Icon name="map" />
           <b>Expedición</b>
-          <span>Cruza las Islas de la Sombra</span>
+          <span>{saved ? 'Empezar una nueva' : 'Cruza las Islas de la Sombra'}</span>
         </button>
         {SOON.map((s) => (
           <button key={s.name} className="mbtn" disabled aria-disabled="true">

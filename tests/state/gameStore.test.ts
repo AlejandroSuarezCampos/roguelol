@@ -252,7 +252,7 @@ describe('comerciante y eventos', () => {
     expect(e.deck).toHaveLength(21);
     g.leaveShop();
     expect(g.getState().screen).toBe('map');
-    expect(e.shop).not.toBeNull();
+    expect(e.shop).toBeNull();
   });
 
   it('comprar sin oro deja un aviso', () => {
@@ -286,5 +286,63 @@ describe('comerciante y eventos', () => {
     g.chooseEventOption(i);
     expect(g.getState().eventOutcome).toBeNull();
     expect(g.getState().hint).toMatch(/oro/i);
+  });
+});
+
+import { createSaveManager, SAVE_KEY, type StorageLike } from '../../src/save/saveManager';
+
+describe('guardado automático', () => {
+  const mem = (): StorageLike & { data: Map<string, string> } => {
+    const data = new Map<string, string>();
+    return { data, getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+  };
+
+  it('guarda al llegar al mapa y la expedición se puede retomar', () => {
+    const store = mem();
+    const g = createGameStore({ save: createSaveManager(store) });
+    g.newExpedition(5);
+    expect(store.data.has(SAVE_KEY)).toBe(false); // la preparación no se guarda
+    g.startExpedition();
+    expect(store.data.has(SAVE_KEY)).toBe(true);
+    expect(g.getState().saved).toMatchObject({ floor: 0, gold: 0 });
+    g.getState().expedition!.run.gold = 42;
+    g.selectPotion(null); // cualquier emisión en el mapa vuelve a guardar
+    const g2 = createGameStore({ save: createSaveManager(store) });
+    expect(g2.getState().saved).toMatchObject({ gold: 42 });
+    g2.continueExpedition();
+    expect(g2.getState().screen).toBe('map');
+    expect(g2.getState().expedition!.run.gold).toBe(42);
+  });
+
+  it('no guarda en pleno combate y al terminar la expedición borra el guardado', () => {
+    const store = mem();
+    const g = createGameStore({ save: createSaveManager(store) });
+    g.newExpedition(5);
+    g.getState().expedition!.run.gold = 10;
+    g.startExpedition();
+    g.chooseNode(availableNodes(g.getState().expedition!)[0].id);
+    g.getState().expedition!.run.gold = 999;
+    g.endTurn();
+    expect(JSON.parse(store.data.get(SAVE_KEY)!).expedition.run.gold).toBe(10);
+    g.retreat();
+    expect(store.data.has(SAVE_KEY)).toBe(false);
+    expect(g.getState().saved).toBeNull();
+  });
+
+  it('un guardado dañado se descarta con un aviso y no rompe nada', () => {
+    const store = mem();
+    store.setItem(SAVE_KEY, 'basura');
+    const g = createGameStore({ save: createSaveManager(store) });
+    g.continueExpedition();
+    expect(g.getState().screen).toBe('menu');
+    expect(g.getState().notice).toMatch(/dañado/);
+    g.dismissNotice();
+    expect(g.getState().notice).toBeNull();
+  });
+
+  it('sin guardado, continuar no hace nada', () => {
+    const g = createGameStore({ save: createSaveManager(mem()) });
+    g.continueExpedition();
+    expect(g.getState().screen).toBe('menu');
   });
 });

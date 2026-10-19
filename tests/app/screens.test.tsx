@@ -288,3 +288,21 @@ describe('evento', () => {
     expect(game.getState().eventOutcome).toBeNull();
   });
 });
+
+describe('menú con guardado', () => {
+  it('muestra «Continuar» con el piso y el oro, y pide confirmar antes de empezar otra', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(3);
+      game.startExpedition(); // autoguarda en localStorage
+      game.toMenu();
+    });
+    render(<App />);
+    expect(screen.getByRole('button', { name: /Continuar/ })).toHaveTextContent(/Entrada · 0 de oro/);
+    (window.confirm as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
+    await user.click(screen.getByRole('button', { name: /Empezar una nueva/ }));
+    expect(screen.queryByText('Orden de combate')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Continuar/ }));
+    expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
+  });
+});

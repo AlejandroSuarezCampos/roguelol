@@ -13,6 +13,7 @@ import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions'
 import { reorder } from '../engine/run';
 import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, openShop, removeCard as engineRemoveCard, treatWoundAtShop } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
+import { browserStorage, createSaveManager, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
 
 export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'result';
@@ -33,6 +34,10 @@ export interface GameState {
   rewards: ExpeditionRewards | null;
   cardClaimed: boolean;
   potionClaimed: boolean;
+  /** Resumen de la expedición guardada (null = no hay). */
+  saved: SaveSummary | null;
+  /** Aviso para el menú (p. ej. un guardado dañado que se descartó). */
+  notice: string | null;
   event: EventDef | null;
   /** Resultado de la opción elegida (null = aún sin elegir). */
   eventOutcome: EventOutcome | null;
@@ -50,18 +55,29 @@ export interface GameState {
 type Snap = Map<string, { hp: number; block: number; stress: number }>;
 const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { hp: u.hp, block: u.block, stress: u.stress }]));
 
-const initial = (): GameState => ({
+const initial = (saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
   screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false,
-  event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], version: 0,
+  saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], version: 0,
 });
 
-export function createGameStore() {
-  let state = initial();
+export function createGameStore(opts: { save?: SaveManager } = {}) {
+  const save = opts.save;
+  let state = initial(save?.summary() ?? null);
   let fxKey = 0;
   const listeners = new Set<() => void>();
 
   const emit = (patch: Partial<GameState> = {}) => {
     state = { ...state, ...patch, version: state.version + 1 };
+    // Autoguardado en los puntos seguros: al volver al mapa. Al terminar la expedición se borra.
+    if (save && state.expedition) {
+      if (state.screen === 'map' && state.expedition.status === 'active') {
+        save.save(state.expedition);
+        state = { ...state, saved: save.summary() };
+      } else if (state.screen === 'result') {
+        save.clear();
+        state = { ...state, saved: null };
+      }
+    }
     listeners.forEach((l) => l());
   };
 
@@ -117,8 +133,22 @@ export function createGameStore() {
 
     // ——— flujo general ———
     newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1) {
-      state = initial();
+      state = initial(state.saved);
       emit({ screen: 'prep', expedition: createExpedition(seed) });
+    },
+    /** Retoma la expedición guardada en el mapa. Un guardado dañado se descarta con un aviso. */
+    continueExpedition() {
+      if (!save) return;
+      const r = save.load();
+      if (r.status === 'ok') {
+        state = initial(state.saved);
+        emit({ screen: 'map', expedition: r.expedition });
+      } else if (r.status === 'corrupt') {
+        emit({ saved: null, notice: `El guardado estaba dañado (${r.reason}) y se ha descartado. Se conserva una copia.` });
+      } else emit({ saved: null });
+    },
+    dismissNotice() {
+      emit({ notice: null });
     },
     reorderTeam(id: ChampionId, to: Pos) {
       if (!state.expedition) return;
@@ -129,7 +159,7 @@ export function createGameStore() {
       if (state.expedition) emit({ screen: 'map', hint: null });
     },
     toMenu() {
-      state = initial();
+      state = initial(save?.summary() ?? null);
       emit();
     },
     retreat() {
@@ -283,6 +313,7 @@ export function createGameStore() {
       shopAction(() => engineRemoveCard(state.expedition!, deckIndex));
     },
     leaveShop() {
+      if (state.expedition) state.expedition.shop = null;
       emit({ screen: 'map', hint: null });
     },
 
@@ -311,7 +342,7 @@ export function createGameStore() {
 
 export type GameStore = ReturnType<typeof createGameStore>;
 
-export const game = createGameStore();
+export const game = createGameStore({ save: createSaveManager(browserStorage()) });
 
 export function useGame(store: GameStore = game): GameState {
   return useSyncExternalStore(store.subscribe, store.getState);
