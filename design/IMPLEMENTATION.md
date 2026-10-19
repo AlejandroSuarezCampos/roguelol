@@ -13,7 +13,8 @@ Prototipo navegable: `design/index.html` (servir con `python -m http.server --di
 | Jefe: Viego, el Rey Arruinado (lore de las Islas de la Sombra) | Data Dragon `loading/Viego_0.jpg` | EnemyPanel, Archivo |
 | Fondo del menú | Imagen raster original `assets/menu-bg.jpg` (1920×1080), pintada por código con `tools/paint_menu_bg.py` (ruido fractal, niebla, reflejos, pase de pincel); regenerable con `python tools/paint_menu_bg.py` | Libre para el proyecto |
 | Fondos de región (Freljord, Shurima, El Vacío, Noxus, Monte Targon) | Imágenes raster originales `assets/regions/*.jpg` (1600×900) pintadas con `tools/paint_regions.py` (+ `tools/paintlib.py`; `python tools/paint_regions.py [región…]`). Inspiradas en el arte oficial de cada facción de LoL Universe (Hielo Verdadero, Disco Solar, vórtice del Vacío, Bastión Inmortal, acantilados tallados de Targon), que solo se usó como referencia y no se incluye. Islas de la Sombra reutiliza `menu-bg.jpg` | Tarjetas de región en Preparación (`.opt.reg`) |
-| Reliquias, fondo de combate y mapa; respaldo SVG de enemigos | SVG original generado (`art.js`) | Libre para el proyecto |
+| Pergamino del mapa | Imagen raster original `assets/map-shadow-isles.jpg` (1000×2160): papel envejecido, manchas, costas a tinta y bordes quemados, pintada con `tools/paint_map.py` | Mapa de expedición y leyenda |
+| Reliquias y fondo de combate; respaldo SVG de enemigos | SVG original generado (`art.js`) | Libre para el proyecto |
 | Iconos de UI (stats, estados, nodos) | Sprite SVG original (`index.html`) | Libre para el proyecto |
 
 Arte de Riot: © Riot Games, uso fan no comercial según su política «Legal Jibber Jabber»; hotlinkeado, no redistribuido. Si el proyecto se publica o monetiza, sustituirlo. Si una imagen no carga, el retrato cae a un monograma con el color del campeón.
@@ -38,6 +39,12 @@ Regla: ningún estado depende solo del color (icono + etiqueta/forma).
 - Objetivos: válido = halo verde en el suelo + etiqueta; ilegal = sprite apagado, halo rojo y motivo. Derribado = sprite gris inclinado + etiqueta.
 - Zona inferior (`--bot`): mazo (izq.), orbe de energía teal, mano en abanico (rotación ±4°/carta, sube al pasar/seleccionar), botón «Terminar turno» y descarte (der.). Pista centrada sobre la mano.
 - Carta (158×228, no tocar): orbe de coste, estandarte con nombre (color = rareza), arte rectangular con el splash completo, fondo por tipo (Ataque rojo, Defensa azul, Habilidad verde, Apoyo ámbar, Control morado), etiqueta de tipo, caja de texto con alcance, pie con propietario y rareza; tamaños en `cqw`.
+
+## Mapa de expedición (estilo Slay the Spire)
+- Pergamino vertical desplazable: inicio abajo, jefe arriba (retrato circular de Viego). Al abrirlo se desplaza hasta la posición actual y conserva el desplazamiento al seleccionar nodos.
+- Nodos sin cajas: iconos a tinta sobre el papel (élite en rojo óxido, descanso en ocre, santuario en verde). Estados sin depender solo del color: **visitado** = rodeado con un círculo de tinta trazado a mano; **actual** = círculo rojo + «Estás aquí»; **disponible** = late y muestra su nombre; **no alcanzable** = atenuado.
+- Caminos punteados a tinta; los recorridos en rojo y los siguientes más marcados. Coordenadas con un desplazamiento fijo por nodo para un aspecto dibujado a mano.
+- Barra superior: región y piso, los 4 campeones con vida y estrés, oro, reliquias, volver. A la derecha, leyenda en pergamino con los 8 tipos, los estados y el detalle del nodo seleccionado con «Entrar».
 
 ## Componentes (nombre → archivo sugerido)
 `ChampionPanel`, `EnemyPanel`+`EnemyIntent`, `Card`/`CardHand`, `EnergyCounter`, `StatusIcon`, `GearSlot`/`GearComparison`, `RelicSlot`, `ExpeditionNode`/`ExpeditionMap`, `RewardChoice`, `ConfirmationModal`, `StressMeter`/`WoundBadge`. En el prototipo: personajes `unitA/unitE` (`.ftr`), `intentFor` (`.intent`), `card` dentro de `.hand .slot`, orbe `.orb`, mazos `.pile`, estados `.st` (combate) / `chip` (resto), `gearSlot` y tira `.gearbar`, `relicSlot` y barra `.relbar`, nodo del mapa (`.nd`), `.opt` / `.opt.reg`, `confirmM`, `stressM`, `woundBadge`.

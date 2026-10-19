@@ -37,7 +37,7 @@ git clone https://github.com/AlejandroSuarezCampos/roguelol.git
 python -m pip install -r roguelol/design/tools/requirements.txt
 ```
 
-Regenerar fondos (desde `design/`): `python tools/paint_menu_bg.py` y `python tools/paint_regions.py [freljord shurima void noxus targon]`.
+Regenerar fondos (desde `design/`): `python tools/paint_menu_bg.py`, `python tools/paint_map.py` y `python tools/paint_regions.py [freljord shurima void noxus targon]`.
 
 ## Entorno de Claude Code usado
 

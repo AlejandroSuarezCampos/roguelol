@@ -68,8 +68,6 @@ const RART={
 };
 
 /* Fondos */
-const BG_MAP=`<svg class="lines" viewBox="0 0 1000 560" preserveAspectRatio="none" style="opacity:.55"><defs>${mist('mp',4,.3,.6,.55)}</defs><rect width="1000" height="560" filter="url(#mp)"/>
-<g fill="#16261f" stroke="#2f4a3c" stroke-width="2"><path d="M40 260q40-80 120-40t80 100-120 60-80-120z"/><path d="M300 60q80-30 140 20t-20 120-130-20-10-120z"/><path d="M330 380q70-40 140 10t-10 120-140-10z"/><path d="M560 230q90-50 160 10t-20 150-150-20z"/><path d="M620 60q70-20 110 30t-50 80-80-40z"/><path d="M850 210q80-20 120 50t-40 120-110-50z"/></g></svg>`;
 
 /* Escena de combate: Islas de la Sombra (antorcha cálida a la izquierda, niebla fría a la derecha) */
 const BG_BATTLE=`<svg class="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>

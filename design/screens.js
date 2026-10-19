@@ -81,21 +81,50 @@ SCR.prep=()=>{const n=PR.diff=='night';return `<div class="screen">${head('Prepa
 ACT.diff=d=>{PR.diff=d.id;render()};
 ACT.start=()=>PR.diff=='night'?confirmM({title:'Comenzar en Pesadilla',body:'<p>Regla de muerte permanente: un campeón <b>derribado al terminar el combate muere</b>. Menos descansos, menos recursos, enemigos más duros.</p>',irr:'La muerte permanente no puede revertirse.',ok:'Entiendo, comenzar',cb:()=>go('map')}):go('map');
 
-/* ---- Mapa ---- */
+/* ---- Mapa (vertical en pergamino, estilo Slay the Spire) ---- */
+// [id, piso (x antiguo 100–920), carril (y antiguo 90–480), tipo] → coordenadas en un lienzo 600×1300, del inicio (abajo) al jefe (arriba)
 const ND=[['a',100,280,'combat'],['b1',240,160,'event'],['b2',240,400,'combat'],['c1',380,90,'chest'],['c2',380,250,'combat'],['c3',380,430,'shop'],['d1',520,170,'elite'],['d2',520,340,'shrine'],['d3',520,480,'rest'],['e1',660,110,'shop'],['e2',660,280,'combat'],['e3',660,440,'event'],['f1',790,200,'rest'],['f2',790,380,'elite'],['g',920,290,'boss']];
 const ED=[['a','b1'],['a','b2'],['b1','c1'],['b1','c2'],['b2','c3'],['b2','c2'],['c1','d1'],['c2','d1'],['c2','d2'],['c3','d3'],['c3','d2'],['d1','e1'],['d1','e2'],['d2','e2'],['d2','e3'],['d3','e3'],['e1','f1'],['e2','f1'],['e2','f2'],['e3','f2'],['f1','g'],['f2','g']];
 const NT={combat:['ad','Combate','Enemigos normales. Desgasta al equipo.'],elite:['elite','Élite','Combate difícil con mejor botín.'],boss:['boss','Jefe','Viego, el Rey Arruinado. Fin de la región.'],rest:['rest','Descanso','Recupera vida, estrés o trata heridas.'],shop:['shop','Comerciante','Compra cartas, gear y servicios.'],event:['event','Evento','Decisión narrativa con riesgo/recompensa.'],chest:['chest','Tesoro','Botín sin combate.'],shrine:['shrine','Santuario','Ofrenda con consecuencias.']};
 const NV=['a','b1'],NC='b1',NA=['c1','c2'];let MS=null;
 const nst=id=>id==NC?'cur':NV.includes(id)?'vis':NA.includes(id)?'avail':'lock';
-SCR.map=()=>{const sel=MS&&ND.find(n=>n[0]==MS);
- return `<div class="screen">${head('Islas de la Sombra','Piso 2 de 7 · avanza hasta el Viego, el Rey Arruinado','prep')}
- <div class="row"><div class="grow"><div class="hpbar" style="background:#1d1a0c;border-color:var(--gold2)"><i style="width:28%;background:var(--gold2)"></i><span>${ic('flag')} Avance hacia el jefe: 28%</span></div></div><span class="tag">${ic('gold')} 214</span><span class="tag">${ic('relic')} 4/6</span></div>
- <div class="mapwrap">${BG_MAP}<svg class="lines" viewBox="0 0 1000 560" preserveAspectRatio="none">${ED.map(([a,b])=>{const A=ND.find(n=>n[0]==a),B=ND.find(n=>n[0]==b);const on=NV.includes(a)&&(NV.includes(b)||NA.includes(b));return `<line x1="${A[1]}" y1="${A[2]}" x2="${B[1]}" y2="${B[2]}" stroke="${on?'#d6b25e':'#4b5366'}" stroke-width="${on?4:2.500}" ${on?'':'stroke-dasharray="6 6"'}/>`}).join('')}</svg>
- ${ND.map(n=>{const s=nst(n[0]),t=NT[n[3]];return `<button class="nd ${n[3]=='elite'?'elite':''} ${n[3]=='boss'?'boss':''} ${s} ${MS==n[0]?'sel':''}" style="left:${n[1]/10}%;top:${n[2]/5.6}%" data-act="node" data-id="${n[0]}" aria-label="${t[1]} — ${{cur:'actual',vis:'visitado',avail:'disponible',lock:'bloqueado'}[s]}">${ic(t[0])}${s!='avail'?`<span class="st">${ic({cur:'flag',vis:'check',lock:'lock'}[s])}</span>`:''}</button><span class="nlab" style="left:${n[1]/10}%;top:${n[2]/5.6}%">${t[1]}</span>`}).join('')}</div>
- <div class="row" style="flex-wrap:wrap;gap:8px"><span class="tag">${ic('flag')} Actual</span><span class="tag gold">${ic('check')} Visitado</span><span class="tag warn" style="color:var(--sel);border-color:var(--sel)">Disponible (brillo)</span><span class="tag">${ic('lock')} Bloqueado (discontinuo)</span><span class="small">Forma: círculo = normal · rombo = élite · cuadrado grande = jefe</span></div>
- ${sel&&nst(sel[0])=='avail'?`<div class="panel gold row">${ic(NT[sel[3]][0])}<div class="grow"><b class="fd">${NT[sel[3]][1]}</b><div class="small">${NT[sel[3]][2]}</div></div><button class="btn pri" data-act="enter" data-id="${sel[3]}">Entrar</button></div>`:'<div class="small">Selecciona un nodo disponible para ver su detalle.</div>'}</div>`};
+const jit=(id,k)=>((id.charCodeAt(0)*31+(id.charCodeAt(1)||7)*17+k*13)%37)-18; // desplazamiento fijo por nodo: aspecto dibujado a mano
+const NP=Object.fromEntries(ND.map(([id,f,l])=>[id,id=='g'?[300,150]:[70+(l-90)/390*460+jit(id,1),1180-(f-100)/820*1000+jit(id,2)*.6]]));
+// círculo de tinta trazado a mano (nodos visitados / seleccionados)
+const RING='<svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><path d="M52 7c25 1 42 18 41 42S73 93 48 93 6 74 7 49 27 5 56 9"/></svg>';
+SCR.map=()=>{const sel=MS&&ND.find(n=>n[0]==MS),selOk=sel&&nst(sel[0])=='avail';
+ const paths=ED.map(([a,b])=>{const [x1,y1]=NP[a],[x2,y2]=NP[b],d=Math.hypot(x2-x1,y2-y1),ox=(x2-x1)/d,oy=(y2-y1)/d,s=b=='g'?80:30;
+  const done=NV.includes(a)&&NV.includes(b),next=a==NC&&NA.includes(b);
+  return `<line class="${done?'done':next?'next':''}" x1="${x1+ox*30}" y1="${y1+oy*30}" x2="${x2-ox*s}" y2="${y2-oy*s}"/>`}).join('');
+ const nodes=ND.filter(n=>n[0]!='g').map(n=>{const s=nst(n[0]),t=NT[n[3]],[x,y]=NP[n[0]];
+  return `<button class="mn ${n[3]} ${s} ${MS==n[0]?'sel':''}" style="left:${x/6}%;top:${y/13}%" data-act="node" data-id="${n[0]}" aria-label="${t[1]}, ${{cur:'posición actual',vis:'visitado',avail:'disponible',lock:'no alcanzable'}[s]}" title="${t[1]}">
+   ${s=='vis'||s=='cur'||MS==n[0]?RING:''}${ic(t[0])}${s=='cur'?'<span class="here">Estás aquí</span>':''}${s=='avail'||MS==n[0]?`<span class="mlab">${t[1]}</span>`:''}</button>`}).join('');
+ const T=ORD.map(k=>{const c=CH[k];return `<span class="tm" title="${c.n}: ${c.hp}/${c.stats.hp} vida, estrés ${c.stress}"><img src="${loading(c.n)}" alt=""><b>${c.hp}/${c.stats.hp}</b><i class="s${sLv(c.stress)}">${ic('stress')}${c.stress}</i></span>`}).join('');
+ return `<div class="mapscr">
+ <header class="hud"><div class="crest">${ic('map')}</div><div class="where"><b class="fd">Islas de la Sombra</b><small>Piso 2 de 7 · Normal</small></div>
+  <div class="team">${T}</div>
+  <div class="hudr"><span class="goldc">${ic('gold')} 214</span><span class="tag">${ic('relic')} 4/6</span><button class="btn" data-go="prep">← Volver</button></div></header>
+ <div class="mapbody">
+  <div class="mscroll" id="mscroll"><div class="smap">
+   <svg class="paths" viewBox="0 0 600 1300" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>
+   <button class="mboss ${MS=='g'?'sel':''}" style="left:50%;top:${150/13}%" data-act="node" data-id="g" aria-label="Jefe: Viego, el Rey Arruinado (no alcanzable todavía)">
+    <span class="bface"><img src="${EIMG.bo}" alt=""></span><b class="fd">Viego</b><small>El Rey Arruinado</small></button>
+   ${nodes}
+   <span class="mstart" style="left:${NP.a[0]/6}%;top:${(NP.a[1]+70)/13}%">Inicio</span>
+  </div></div>
+  <aside class="legend">
+   <h3 class="fd">Leyenda</h3>
+   <ul>${['combat','elite','rest','shop','event','chest','shrine','boss'].map(k=>`<li>${ic(NT[k][0])}<span>${NT[k][1]}</span></li>`).join('')}</ul>
+   <div class="lstates"><span>${RING}<i>Visitado</i></span><span class="lpulse">${ic('ad')}<i>Disponible</i></span><span class="lfade">${ic('ad')}<i>No alcanzable</i></span></div>
+   <div class="ldetail">${sel?`<b class="fd">${ic(NT[sel[3]][0])} ${NT[sel[3]][1]}</b><p>${NT[sel[3]][2]}</p>${selOk?`<button class="btn pri" data-act="enter" data-id="${sel[3]}">Entrar</button>`:`<p class="lnote">${{cur:'Ya estás aquí.',vis:'Ya visitado.',lock:'No alcanzable desde tu posición.'}[nst(sel[0])]||''}</p>`}`:'<p>Elige uno de los nodos que laten para avanzar.</p>'}</div>
+  </aside>
+ </div></div>`};
 ACT.node=d=>{MS=d.id;render()};
 ACT.enter=d=>{({combat:()=>{newCombat();go('combat')},elite:()=>{newCombat();go('combat')},boss:()=>{newCombat();go('combat')},rest:()=>go('rest'),shop:()=>go('shop'),event:()=>go('event'),shrine:()=>go('event'),chest:()=>go('reward')})[d.id]()};
+// al abrir el mapa, desplaza hasta la posición actual (el inicio está abajo, como en Slay the Spire)
+let MSY=null;
+window.after=()=>{if(CUR!='map'){MSY=null;return}const s=$('#mscroll'),c=document.querySelector('.mn.cur');if(!s||!c)return;
+ s.scrollTop=MSY??c.getBoundingClientRect().top-s.getBoundingClientRect().top+s.scrollTop-s.clientHeight*.62;s.onscroll=()=>{MSY=s.scrollTop}};
 
 /* ---- Recompensas ---- */
 let RW={card:null,opt:{}};
