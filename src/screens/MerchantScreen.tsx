@@ -46,7 +46,7 @@ export function MerchantScreen() {
           <div className="wares">
             {shop.cards.map((c, i) => (
               <div key={i} className={`ware ${c.sold ? 'sold' : ''}`}>
-                <Card card={CARDS[c.defId]} cost={CARDS[c.defId].cost} size="reward" />
+                <Card card={CARDS[c.defId]} cost={CARDS[c.defId].cost} size="big" />
                 <Price price={c.price} gold={gold} sold={c.sold} label={CARDS[c.defId].name} onBuy={() => game.buyCard(i)} />
               </div>
             ))}

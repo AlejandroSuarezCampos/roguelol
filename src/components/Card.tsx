@@ -21,7 +21,7 @@ interface Props {
   bonus?: boolean;
   hotkey?: number;
   onClick?: () => void;
-  size?: 'hand' | 'reward';
+  size?: 'hand' | 'big';
 }
 
 /** Carta: orbe de coste, estandarte con nombre (color = rareza), arte, caja de texto y pie con dueño y rareza. */

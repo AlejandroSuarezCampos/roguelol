@@ -121,7 +121,7 @@
 .card.sel{box-shadow:inset 0 0 0 2cqw rgba(0,0,0,.3),inset 0 0 0 2.6cqw var(--sel),var(--sh-glow)}
 .card.dis{filter:grayscale(.85) brightness(.65)}
 .card.dis::after{content:attr(data-why);position:absolute;left:6%;right:6%;top:40%;z-index:5;background:#000e;border:1px solid var(--bad);color:#ffc2c2;font:700 7cqw/1.15 var(--fb);padding:2cqw;border-radius:3cqw}
-.card.reward{--cw:clamp(180px,16vw,240px)}
+.card.big{--cw:clamp(180px,16vw,240px)}
 /* ventanas */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(1,10,19,.9);display:flex;align-items:center;justify-content:center;padding:24px}
 .modal .panel{min-width:min(420px,90vw);max-width:min(640px,94vw);max-height:84vh;overflow:auto;display:flex;flex-direction:column;gap:14px;align-items:flex-start}

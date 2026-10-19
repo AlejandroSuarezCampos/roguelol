@@ -14,7 +14,7 @@ let fights = 0;
 
 for (let step = 0; step < max; step++) {
   await page.waitForTimeout(60);
-  if (await page.locator('.result').count()) { await once('90-result'); break; }
+  if (await page.locator('.screen.result').count()) { await once('90-result'); break; }
   if (await page.locator('.modal.over').count()) {
     await once('50-over');
     await page.locator('.modal.over .btn.pri').click();
@@ -46,7 +46,7 @@ for (let step = 0; step < max; step++) {
     fights++;
     continue;
   }
-  if (await page.locator('.reward').count()) {
+  if (await page.locator('.screen.reward').count()) {
     await once('60-reward');
     if (await page.getByRole('button', { name: 'Elegir carta' }).count()) {
       await page.getByRole('button', { name: 'Elegir carta' }).click();
@@ -58,7 +58,21 @@ for (let step = 0; step < max; step++) {
     await page.getByRole('button', { name: /Continuar|Ver resultado/ }).click();
     continue;
   }
-  if (await page.locator('.rest').count()) {
+  if (await page.locator('.screen.shop').count()) {
+    await once('80-shop');
+    await page.getByRole('button', { name: 'Salir de la tienda' }).click();
+    continue;
+  }
+  if (await page.locator('.screen.event').count()) {
+    await once('85-event');
+    if (await page.getByRole('button', { name: 'Continuar' }).count()) { await page.getByRole('button', { name: 'Continuar' }).click(); continue; }
+    const opts = page.locator('.evopt:not([disabled])');
+    await opts.last().click();
+    if (await page.getByRole('button', { name: 'Elegir', exact: true }).count()) await page.getByRole('button', { name: 'Elegir', exact: true }).click();
+    await once('86-event-result');
+    continue;
+  }
+  if (await page.locator('.screen.rest').count()) {
     await once('70-rest');
     const heal = page.getByRole('button', { name: /Descansar/ });
     if (await heal.isEnabled()) await heal.click();
@@ -68,5 +82,5 @@ for (let step = 0; step < max; step++) {
 }
 await shot('99-final');
 console.log('nodos recorridos:', fights, '| errores de consola:', s.errors());
-console.log('pantalla final:', await page.locator('.result').count() ? 'resultado' : 'sin terminar');
+console.log('pantalla final:', await page.locator('.screen.result').count() ? 'resultado' : 'sin terminar');
 await s.close();

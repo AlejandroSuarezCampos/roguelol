@@ -17,7 +17,7 @@ Arte de campeones, objetos y monstruos © Riot Games (Data Dragon / CommunityDra
 
 ## App React (fase 1)
 
-Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → Combate → Botín → Descanso → Resultado. Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
+Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Combate, Élite, Jefe → Botín, Descanso, Comerciante, Evento} → Resultado. Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
 
     npm install
     npm run dev        # http://localhost:5173
@@ -26,7 +26,9 @@ Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → Combat
 
 Estructura: `src/app` (raíz), `src/screens` (una por pantalla), `src/components` (carta, unidad, intención, barras…), `src/state` (store y selectores), `src/data` (cartas, enemigos, campeones, glosario), `src/styles` (tokens y CSS), `tests/` (motor, datos, estado, pantallas, equilibrio y `e2e/` con capturas en Chromium real).
 
-Fuera de esta fase (botones deshabilitados): Equipo, Mejoras, Archivo, Comerciante, Eventos, reliquias con efecto, gear, guardado y metaprogresión.
+Comerciante y eventos: [`specs/2026-10-19-comerciante-eventos-design.md`](docs/superpowers/specs/2026-10-19-comerciante-eventos-design.md).
+
+Fuera de esta fase (botones deshabilitados): Equipo, Mejoras, Archivo, Tesoro, Santuario, reliquias con efecto, gear, guardado y metaprogresión.
 
 ## Motor de reglas (TypeScript)
 

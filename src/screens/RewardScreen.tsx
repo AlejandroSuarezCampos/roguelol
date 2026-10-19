@@ -76,7 +76,7 @@ export function RewardScreen() {
             <h2 className="fd">Elige una carta</h2>
             <div className="choices">
               {r.cards.map((id) => (
-                <Card key={id} card={CARDS[id]} cost={CARDS[id].cost} selected={picked === id} size="reward" onClick={() => setPicked(id === picked ? null : id)} />
+                <Card key={id} card={CARDS[id]} cost={CARDS[id].cost} selected={picked === id} size="big" onClick={() => setPicked(id === picked ? null : id)} />
               ))}
             </div>
             <div className="row">
