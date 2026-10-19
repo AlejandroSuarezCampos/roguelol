@@ -1,0 +1,27 @@
+/** Valores de balance provisionales (§18 + spec de reglas núcleo). Un único sitio: no los dupliques. */
+export const CONFIG = {
+  energyPerTurn: 3,
+  handSize: 5,
+  cardsPerChampion: 3,
+  swapCost: 1,
+  critMultiplier: 1.5,
+  stress: { max: 100, critHit: 5, allyDowned: 10, enemyDefeated: -3, virtueChance: 0.25, virtueResetTo: 50 },
+  crisis: { rageDamage: 3, rageStressOthers: 5, despairHealFactor: 0.5, despairSelfStress: 3 },
+  virtue: { blockPerTurn: 4 },
+  omen: { lamentStress: 6, weightCost: 1, bleedDamage: 4 },
+  mist: {
+    node: 8,
+    elite: 15,
+    stoke: -15,
+    tiers: { mist: 30, dense: 60, ruin: 90 },
+    intentStressBonus: 3,
+    shadowMarkStress: 2,
+    ruinHpMultiplier: 1.2,
+    goldBonus: 0.15,
+    baseCardOptions: 3,
+    denseCardOptions: 4,
+    ruinNormalRelicChance: 0.1,
+    bossExtraIntentAt: 60,
+  },
+  potions: { beltSize: 3, health: 20, refillable: 8, iron: 15, sorceryMarks: 2 },
+} as const;
