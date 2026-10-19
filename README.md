@@ -17,7 +17,7 @@ Arte de campeones, objetos y monstruos © Riot Games (Data Dragon / CommunityDra
 
 ## App React (fase 1)
 
-Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Combate, Élite, Jefe → Botín, Descanso, Comerciante, Evento} → Resultado, con pantalla de Equipo (gear y mazo) desde el mapa y guardado automático de la expedición (`localStorage`, versionado y con recuperación de datos dañados). Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
+Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Combate, Élite, Jefe → Botín, Descanso, Comerciante, Evento} → Resultado, con pantalla de Equipo (gear y mazo) desde el mapa, forja de cartas en el descanso y guardado automático de la expedición (`localStorage`, versionado y con recuperación de datos dañados). Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
 
     npm install
     npm run dev        # http://localhost:5173

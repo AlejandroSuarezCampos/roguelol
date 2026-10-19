@@ -5,7 +5,7 @@ import { Card } from '../components/Card';
 import { Fighter, type TargetMode } from '../components/Fighter';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
-import { CARDS } from '../data/cards';
+import { deckCardDef, isUpgradedId } from '../data/cards';
 import { CHAMPIONS } from '../data/champions';
 import { bonusActive, cardOf, forcedTarget } from '../engine/cards';
 import { CONFIG } from '../engine/config';
@@ -277,16 +277,16 @@ export function BattleScreen() {
 function PileList({ cards }: { cards: CardInstance[] }) {
   const rows = useMemo(() => {
     const m = new Map<string, number>();
-    for (const c of cards) m.set(c.defId, (m.get(c.defId) ?? 0) + 1);
-    return [...m.entries()].map(([id, n]) => ({ def: CARDS[id], n })).sort((a, b) => a.def.owner.localeCompare(b.def.owner) || a.def.name.localeCompare(b.def.name));
+    for (const c of cards) m.set(c.upgraded ? `${c.defId}+` : c.defId, (m.get(c.upgraded ? `${c.defId}+` : c.defId) ?? 0) + 1);
+    return [...m.entries()].map(([id, n]) => ({ id, def: deckCardDef(id), up: isUpgradedId(id), n })).sort((a, b) => a.def.owner.localeCompare(b.def.owner) || a.def.name.localeCompare(b.def.name));
   }, [cards]);
   if (!rows.length) return <p className="sub">Vacío.</p>;
   return (
     <ul className="pilelist">
-      {rows.map(({ def, n }) => (
-        <li key={def.id}>
+      {rows.map(({ id, def, up, n }) => (
+        <li key={id}>
           <span className="dot" style={{ background: CHAMPIONS[def.owner].color }} aria-hidden />
-          <b>{def.name}</b> <small>{CHAMPIONS[def.owner].name} · coste {def.cost}</small> <span className="n">×{n}</span>
+          <b>{def.name}{up ? ' +' : ''}</b> <small>{CHAMPIONS[def.owner].name} · coste {def.cost}</small> <span className="n">×{n}</span>
         </li>
       ))}
     </ul>

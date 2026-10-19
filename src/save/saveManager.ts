@@ -1,4 +1,4 @@
-import { CARDS } from '../data/cards';
+import { CARDS, baseCardId } from '../data/cards';
 import { CHAMPION_IDS } from '../data/champions';
 import { DIFFICULTIES } from '../data/difficulty';
 import { GEAR } from '../data/gear';
@@ -57,7 +57,7 @@ function problem(x: any): string | null {
   for (const c of champs) {
     if (![c.hp, c.maxHp, c.stress].every(isNum) || c.maxHp <= 0 || c.hp < 0 || c.hp > c.maxHp || c.stress < 0 || c.stress > 100 || typeof c.downed !== 'boolean') return 'vida o estrés';
   }
-  if (!Array.isArray(x.deck) || !x.deck.every((id: unknown) => typeof id === 'string' && id in CARDS)) return 'mazo';
+  if (!Array.isArray(x.deck) || !x.deck.every((id: unknown) => typeof id === 'string' && baseCardId(id) in CARDS)) return 'mazo';
   if (x.deck.length < CONFIG.shop.minDeck) return 'mazo demasiado pequeño';
   const nodes = x.map.nodes;
   if (!Array.isArray(nodes) || !nodes.length) return 'mapa';

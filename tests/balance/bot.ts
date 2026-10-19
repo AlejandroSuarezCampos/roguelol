@@ -125,7 +125,14 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
     } else if (node.type === 'rest') {
       const hurt = e.run.champions.some((c) => c.hp < c.maxHp * 0.7 || c.downed);
       const wounded = Object.values(e.wounds).some((w) => w > 0);
-      rest(e, hurt ? 'heal' : e.run.champions.some((c) => c.stress >= 40) ? 'calm' : wounded ? 'treat' : 'heal');
+      if (hurt) rest(e, 'heal');
+      else if (e.run.champions.some((c) => c.stress >= 40)) rest(e, 'calm');
+      else if (wounded) rest(e, 'treat');
+      else {
+        const options = e.deck.map((id, i) => ({ id, i })).filter((x) => !x.id.endsWith('+'));
+        if (options.length) rest(e, 'upgrade', rng.pick(options).i);
+        else rest(e, 'heal');
+      }
     }
   }
   report.status = e.status;

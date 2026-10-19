@@ -1,4 +1,4 @@
-import { CARDS } from '../data/cards';
+import { deckCardDef } from '../data/cards';
 import { DIFFICULTIES } from '../data/difficulty';
 import { GEAR, GEAR_LIST } from '../data/gear';
 import { CONFIG } from './config';
@@ -102,7 +102,7 @@ export const removalPrice = (e: Expedition): number => priced(e, CONFIG.shop.rem
 /** Quita la carta en la posición `deckIndex` del mazo. */
 export function removeCard(e: Expedition, deckIndex: number): void {
   stock(e);
-  if (!CARDS[e.deck[deckIndex]]) throw new Error('Esa carta no está en el mazo');
+  if (!e.deck[deckIndex] || !deckCardDef(e.deck[deckIndex])) throw new Error('Esa carta no está en el mazo');
   if (e.deck.length <= CONFIG.shop.minDeck) throw new Error(`El mazo no puede tener menos de ${CONFIG.shop.minDeck} cartas`);
   pay(e, removalPrice(e));
   e.deck.splice(deckIndex, 1);

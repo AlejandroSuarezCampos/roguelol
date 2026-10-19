@@ -52,6 +52,16 @@ describe('guardar y cargar', () => {
     expect(b.units.map((u) => u.id + u.pos)).toEqual(a.units.map((u) => u.id + u.pos));
   });
 
+  it('las cartas mejoradas («+») se guardan y se cargan', () => {
+    const m = createSaveManager(memory());
+    const e = played();
+    e.deck[0] = `${e.deck[0]}+`;
+    m.save(e);
+    const r = m.load();
+    if (r.status !== 'ok') throw new Error(r.status);
+    expect(r.expedition.deck[0].endsWith('+')).toBe(true);
+  });
+
   it('el resumen da piso, oro y fecha para el menú', () => {
     const m = createSaveManager(memory());
     m.save(played());
@@ -96,6 +106,7 @@ describe('datos corruptos', () => {
   });
 
   it.each([
+    ['una carta mejorada que no existe', (r: any) => (r.expedition.deck[0] = 'nope+')],
     ['una carta que no existe', (r: any) => (r.expedition.deck[0] = 'nope')],
     ['un campeón repetido', (r: any) => (r.expedition.run.champions[1].id = 'leona')],
     ['posiciones repetidas', (r: any) => (r.expedition.run.champions[1].pos = r.expedition.run.champions[0].pos)],

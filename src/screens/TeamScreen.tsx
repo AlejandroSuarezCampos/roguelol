@@ -5,7 +5,7 @@ import { Hud } from '../components/Hud';
 import { RelicList } from '../components/RelicBar';
 import { Icon } from '../components/Icon';
 import { HpBar, StressMeter } from '../components/Meters';
-import { CARDS } from '../data/cards';
+import { applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { CHAMPIONS, CRISIS } from '../data/champions';
 import { SLOT_LABEL, type GearSlot } from '../data/gear';
 import { CRISIS_INFO } from '../data/glossary';
@@ -24,7 +24,7 @@ export function TeamScreen() {
     if (!e) return [];
     const m = new Map<string, number>();
     for (const id of e.deck) m.set(id, (m.get(id) ?? 0) + 1);
-    return [...m.entries()].map(([id, n]) => ({ def: CARDS[id], n }));
+    return [...m.entries()].map(([id, n]) => ({ id, def: isUpgradedId(id) ? applyUpgrade(deckCardDef(id)) : deckCardDef(id), up: isUpgradedId(id), n }));
   }, [e, e?.deck.length]);
   if (!e) return null;
   // si el seleccionado ha muerto, se muestra el primero que siga vivo
@@ -150,9 +150,9 @@ export function TeamScreen() {
           <Icon name="card" /> Mazo de {def.name} ({ownCount} de {e.deck.length})
         </h3>
         <ul className="pilelist cols">
-          {own.map(({ def: d, n }) => (
-            <li key={d.id}>
-              <b>{d.name}</b> <small>coste {d.cost} · {d.text}</small> <span className="n">×{n}</span>
+          {own.map(({ id, def: d, up, n }) => (
+            <li key={id}>
+              <b>{d.name}{up ? ' +' : ''}</b> <small>coste {d.cost} · {d.text}</small> <span className="n">×{n}</span>
             </li>
           ))}
         </ul>

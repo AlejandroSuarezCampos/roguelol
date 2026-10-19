@@ -4,7 +4,7 @@ import { GearItem } from '../components/GearItem';
 import { GEAR } from '../data/gear';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
-import { CARDS } from '../data/cards';
+import { CARDS, applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { CONFIG } from '../engine/config';
 import { POTIONS } from '../engine/potions';
 import { removalPrice } from '../engine/shop';
@@ -31,7 +31,7 @@ export function MerchantScreen() {
     if (!e) return [];
     const m = new Map<string, { first: number; n: number }>();
     e.deck.forEach((id, i) => m.set(id, { first: m.get(id)?.first ?? i, n: (m.get(id)?.n ?? 0) + 1 }));
-    return [...m.entries()].map(([id, v]) => ({ def: CARDS[id], ...v })).sort((a, b) => a.def.owner.localeCompare(b.def.owner) || a.def.name.localeCompare(b.def.name));
+    return [...m.entries()].map(([id, v]) => ({ id, def: isUpgradedId(id) ? applyUpgrade(deckCardDef(id)) : deckCardDef(id), up: isUpgradedId(id), ...v })).sort((a, b) => a.def.owner.localeCompare(b.def.owner) || a.def.name.localeCompare(b.def.name));
   }, [e, e?.deck.length]);
   if (!e || !e.shop) return null;
   const shop = e.shop;
@@ -133,10 +133,10 @@ export function MerchantScreen() {
           <div className="panel">
             <h3><Icon name="x" /> Eliminar una carta ({price} de oro)</h3>
             <ul className="pilelist">
-              {deckRows.map(({ def, first, n }) => (
-                <li key={def.id}>
+              {deckRows.map(({ id, def, up, first, n }) => (
+                <li key={id}>
                   <button className="btn sm" onClick={() => { game.removeCard(first); setRemoving(false); }}>Eliminar</button>
-                  <b>{def.name}</b> <small>{def.owner} · coste {def.cost}</small> <span className="n">×{n}</span>
+                  <b>{def.name}{up ? ' +' : ''}</b> <small>{def.owner} · coste {def.cost}</small> <span className="n">×{n}</span>
                 </li>
               ))}
             </ul>

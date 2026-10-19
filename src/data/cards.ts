@@ -1,4 +1,4 @@
-import type { CardDef, Effect } from '../engine/types';
+import type { CardDef, CardUpgrade, Effect } from '../engine/types';
 
 /**
  * 32 cartas provisionales (8 por campeón). Solo usan los efectos que el motor ya resuelve.
@@ -15,7 +15,7 @@ const status = (st: 'mark' | 'stun' | 'charge' | 'vulnerable' | 'burn', stacks: 
   type: 'applyStatus', status: st, stacks, on,
 });
 
-export const CARD_LIST: CardDef[] = [
+const BASE_CARDS: CardDef[] = [
   // ——— Leona: tanque, brilla en 1–2 ———
   { id: 'l1', name: 'Escudo del amanecer', owner: 'leona', cost: 1, type: 'attack', target: 'enemy', rarity: 'common', keywords: [],
     text: 'Inflige 6 y aplica Aturdido. Desde 1–2: +3.', effects: [phys(6), status('stun', 1)], idealPositions: [1, 2], positionBonus: [phys(3, { scaling: undefined })] },
@@ -93,7 +93,61 @@ export const CARD_LIST: CardDef[] = [
     text: 'Reanima a un aliado derribado con 20 de vida.', effects: [{ type: 'revive', hp: 20 }] },
 ];
 
+const up = (text: string, extra: Partial<CardUpgrade> = {}): CardUpgrade => ({ text, ...extra });
+
+/** Mejora de cada carta: nunca peor que la base, con los mismos tipos de efecto (solo cambian números o coste). */
+const UPGRADES: Record<string, CardUpgrade> = {
+  l1: up('Inflige 9 y aplica Aturdido. Desde 1–2: +3.', { effects: [phys(9), status('stun', 1)] }),
+  l2: up('Otorga 11 de bloqueo.', { effects: [block(11)] }),
+  l3: up('Gana 16 de bloqueo y avanza a la posición 1.', { effects: [block(16), { type: 'move', to: 1 }] }),
+  l4: up('Inflige 13 y avanza a la posición 1.', { effects: [phys(13), { type: 'move', to: 1, on: 'self' }] }),
+  l5: up('Otorga 6 de bloqueo a todos los aliados.', { effects: [block(6)] }),
+  l6: up('Gana 10 de bloqueo. Desde 1–2: +3.', { effects: [block(10)] }),
+  l7: up('Inflige 16. Desde 1: +4.', { effects: [phys(16)] }),
+  l8: up('Inflige 8 y aplica Aturdido a todos los enemigos. Cuesta 2.', { cost: 2 }),
+  y1: up('Inflige 10 y gana 1 Carga. Desde 2–3: +3.', { effects: [phys(10), status('charge', 1, 'self')] }),
+  y2: up('Inflige 16. Puede ser crítico.', { effects: [phys(16, { canCrit: true })] }),
+  y3: up('Gana 10 de bloqueo.', { effects: [block(10)] }),
+  y4: up('Inflige 7 y empuja al objetivo una posición.', { effects: [phys(7), { type: 'move', by: 1 }] }),
+  y5: up('Inflige 7 dos veces.', { effects: [phys(7), phys(7)] }),
+  y6: up('Inflige 6 y gana 2 Cargas.', { effects: [phys(6), status('charge', 2, 'self')] }),
+  y7: up('Inflige 6 más 7 por cada Carga, que consume.', { effects: [phys(6, { consumeStatus: { status: 'charge', from: 'self', bonusPerStack: 7 } })] }),
+  y8: up('Gana 11 de bloqueo y 1 Carga.', { effects: [block(11), status('charge', 1, 'self')] }),
+  x1: up('Inflige 8 y aplica 1 Marca. Desde 3–4: +1 Marca.', { effects: [magic(8), status('mark', 1)] }),
+  x2: up('Inflige 8 a todos, +6 por cada Marca que consume.', { effects: [magic(8, { consumeStatus: { status: 'mark', from: 'target', bonusPerStack: 6 } })] }),
+  x3: up('Otorga 9 de bloqueo.', { effects: [block(9)] }),
+  x4: up('Inflige 6 a todos los enemigos.', { effects: [magic(6)] }),
+  x5: up('Inflige 11. Desde 3–4: +3.', { effects: [magic(11)] }),
+  x6: up('Aplica 2 Marcas a todos los enemigos.', { effects: [status('mark', 2)] }),
+  x7: up('Inflige 6 a todos, +6 por cada Marca que consume. Cuesta 2.', { cost: 2 }),
+  x8: up('Cura 8 y otorga 5 de bloqueo.', { effects: [{ type: 'heal', amount: 8 }, block(5)] }),
+  s1: up('Cura 14. Desde 3–4: +3.', { effects: [{ type: 'heal', amount: 14 }] }),
+  s2: up('Reduce 18 de estrés.', { effects: [{ type: 'reduceStress', amount: 18 }] }),
+  s3: up('Cura 9 a todos los aliados.', { effects: [{ type: 'heal', amount: 9 }] }),
+  s4: up('Inflige 9.', { effects: [magic(9)] }),
+  s5: up('Aplica 2 Vulnerable a todos los enemigos.', { effects: [status('vulnerable', 2)] }),
+  s6: up('Cura 9 y otorga 6 de bloqueo.', { effects: [{ type: 'heal', amount: 9 }, block(6)] }),
+  s7: up('Reduce 14 de estrés al objetivo. Soraka pierde 3 de vida.', { effects: [{ type: 'reduceStress', amount: 14 }, { type: 'damage', amount: 3, damageType: 'true', on: 'self' }] }),
+  s8: up('Reanima a un aliado derribado con 30 de vida.', { effects: [{ type: 'revive', hp: 30 }] }),
+};
+
+export const CARD_LIST: CardDef[] = BASE_CARDS.map((c) => ({ ...c, upgrade: UPGRADES[c.id] }));
+
 export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));
+
+/** Una carta mejorada se guarda en el mazo como su id con un `+` al final. */
+export const baseCardId = (id: string): string => (id.endsWith('+') ? id.slice(0, -1) : id);
+export const isUpgradedId = (id: string): boolean => id.endsWith('+');
+export const upgradedId = (id: string): string => `${baseCardId(id)}+`;
+/** La definición base de una entrada del mazo (con o sin `+`). */
+export const deckCardDef = (id: string): CardDef => CARDS[baseCardId(id)];
+
+/** La carta con su mejora aplicada (si no tiene mejora, igual). */
+export function applyUpgrade(def: CardDef): CardDef {
+  const u = def.upgrade;
+  if (!u) return def;
+  return { ...def, cost: u.cost ?? def.cost, effects: u.effects ?? def.effects, positionBonus: u.positionBonus ?? def.positionBonus, text: u.text };
+}
 
 /** Mazo inicial: 5 cartas por campeón (el equipo juega 5 de un mazo de 20). */
 export const STARTER_DECK: string[] = [

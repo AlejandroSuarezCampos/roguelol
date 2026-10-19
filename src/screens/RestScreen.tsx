@@ -1,6 +1,9 @@
+import { useState } from 'react';
+import { Card } from '../components/Card';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { TeamStrip } from '../components/TeamStrip';
+import { applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { DIFFICULTIES } from '../data/difficulty';
 import { CONFIG } from '../engine/config';
 import type { RestAction } from '../engine/expedition';
@@ -11,6 +14,8 @@ const R = CONFIG.expedition.rest;
 /** Una acción por parada (curar, calmar o tratar una herida); avivar la hoguera es aparte. */
 export function RestScreen() {
   const { expedition: e, hint } = useGame();
+  const [forging, setForging] = useState(false);
+  const [pick, setPick] = useState<number | null>(null);
   if (!e) return null;
   const woundsTotal = Object.values(e.wounds).reduce((a, b) => a + b, 0);
   const options: { id: RestAction; icon: string; name: string; text: string; disabled: boolean; extra?: boolean }[] = [
@@ -21,6 +26,7 @@ export function RestScreen() {
       text: woundsTotal ? 'Cura la herida del campeón más herido y recupera su vida máxima.' : 'Nadie tiene heridas.',
       disabled: e.restUsed || woundsTotal === 0,
     },
+    { id: 'upgrade', icon: 'up', name: 'Forjar', text: 'Mejora una carta del mazo para el resto de la expedición.', disabled: e.restUsed },
     { id: 'stoke', icon: 'burn', name: 'Avivar la hoguera', text: `Baja ${-CONFIG.mist.stoke} de Niebla. No gasta tu descanso.`, disabled: e.stoked, extra: true },
   ];
   return (
@@ -33,7 +39,7 @@ export function RestScreen() {
           </h3>
           <div className="opts">
             {options.map((o) => (
-              <button key={o.id} className={`opt ${o.extra ? 'extra' : ''}`} disabled={o.disabled} onClick={() => game.restAction(o.id)}>
+              <button key={o.id} className={`opt ${o.extra ? 'extra' : ''}`} disabled={o.disabled} onClick={() => (o.id === 'upgrade' ? (setPick(null), setForging(true)) : game.restAction(o.id))}>
                 <Icon name={o.icon} />
                 <b>{o.name}</b>
                 <span>{o.text}</span>
@@ -55,6 +61,55 @@ export function RestScreen() {
           <TeamStrip e={e} />
         </section>
       </div>
+      {forging && (
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Forjar una carta">
+          <div className="choose">
+            <h2 className="fd">Forjar una carta</h2>
+            {pick !== null && (
+              <div className="forgecmp" aria-live="polite">
+                <Card card={deckCardDef(e.deck[pick])} cost={deckCardDef(e.deck[pick]).cost} size="big" />
+                <span className="arrow" aria-hidden>→</span>
+                <Card card={applyUpgrade(deckCardDef(e.deck[pick]))} cost={applyUpgrade(deckCardDef(e.deck[pick])).cost} upgraded size="big" />
+              </div>
+            )}
+            <div className="forgegrid">
+              {firstOfEach(e.deck).map((i) => {
+                const def = deckCardDef(e.deck[i]);
+                return (
+                  <Card key={i} card={def} cost={def.cost} selected={pick === i} onClick={() => setPick(pick === i ? null : i)} />
+                );
+              })}
+            </div>
+            <div className="row">
+              <button className="btn" onClick={() => setForging(false)}>
+                Cancelar
+              </button>
+              <button
+                className="btn pri"
+                disabled={pick === null}
+                onClick={() => {
+                  game.restAction('upgrade', pick!);
+                  setForging(false);
+                }}
+              >
+                Mejorar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/** Índice de la primera copia sin mejorar de cada carta distinta (mejorar una copia no obliga a elegir cuál). */
+function firstOfEach(deck: string[]): number[] {
+  const seen = new Set<string>();
+  const out: number[] = [];
+  deck.forEach((id, i) => {
+    if (isUpgradedId(id) || seen.has(id)) return;
+    seen.add(id);
+    out.push(i);
+  });
+  return out;
 }

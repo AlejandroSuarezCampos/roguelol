@@ -334,11 +334,11 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
     },
 
     // ——— descanso ———
-    restAction(action: RestAction) {
+    restAction(action: RestAction, deckIndex?: number) {
       const e = state.expedition;
       if (!e) return;
       try {
-        engineRest(e, action);
+        engineRest(e, action, deckIndex);
         emit({ hint: null });
       } catch (err) {
         fail((err as Error).message);

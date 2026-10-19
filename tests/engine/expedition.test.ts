@@ -4,7 +4,7 @@ import { CHAMPIONS } from '../../src/data/champions';
 import { CONFIG } from '../../src/engine/config';
 import {
   availableNodes, claimCard, claimPotion, claimRewards, combatFromExpedition, createExpedition, enterNode, finishCombat,
-  generateMap, rest, retreat, type Expedition,
+  generateMap, rest, retreat, upgradeCard, type Expedition,
 } from '../../src/engine/expedition';
 import { Rng } from '../../src/engine/rng';
 
@@ -298,5 +298,32 @@ describe('descanso y retirada', () => {
     retreat(e);
     expect(e.status).toBe('retreat');
     expect(e.run.gold).toBe(50);
+  });
+});
+
+describe('mejora de cartas', () => {
+  it('upgradeCard marca la carta con «+» y no se puede mejorar dos veces', () => {
+    const e = createExpedition(1);
+    const first = e.deck[0];
+    upgradeCard(e, 0);
+    expect(e.deck[0]).toBe(`${first}+`);
+    expect(() => upgradeCard(e, 0)).toThrow(/ya está mejorada/);
+    expect(() => upgradeCard(e, 99)).toThrow();
+  });
+
+  it('en el descanso, mejorar es una de las acciones (comparte el «una vez por parada»)', () => {
+    const e = createExpedition(1);
+    expect(() => rest(e, 'upgrade')).toThrow(/Elige/);
+    rest(e, 'upgrade', 2);
+    expect(e.deck[2].endsWith('+')).toBe(true);
+    expect(() => rest(e, 'heal')).toThrow(/descansaste/);
+  });
+
+  it('el combate recibe las cartas mejoradas como tales', () => {
+    const e = createExpedition(1);
+    e.deck = e.deck.map((id) => `${id}+`);
+    const s = combatFromExpedition(e, 'combat');
+    expect(s.hand.every((c) => c.upgraded === true)).toBe(true);
+    expect(s.hand.every((c) => c.defId in CARDS)).toBe(true);
   });
 });

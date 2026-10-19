@@ -1,4 +1,4 @@
-import { CARD_LIST, CARDS, STARTER_DECK } from '../data/cards';
+import { CARD_LIST, CARDS, STARTER_DECK, baseCardId, deckCardDef, isUpgradedId, upgradedId } from '../data/cards';
 import { GEAR, GEAR_LIST } from '../data/gear';
 import { DIFFICULTIES, type DifficultyId } from '../data/difficulty';
 import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
@@ -76,7 +76,7 @@ export interface ExpeditionRewards extends Rewards {
   potion?: PotionId;
 }
 
-export type RestAction = 'heal' | 'calm' | 'treat' | 'stoke';
+export type RestAction = 'heal' | 'calm' | 'treat' | 'upgrade' | 'stoke';
 
 const F = CONFIG.expedition;
 
@@ -233,7 +233,7 @@ function killChampion(e: Expedition, c: RunChampion): void {
     if (g) e.inventory.push(g);
     e.gear[c.id][slot] = null;
   }
-  e.deck = e.deck.filter((id) => CARDS[id].owner !== c.id);
+  e.deck = e.deck.filter((id) => deckCardDef(id).owner !== c.id);
 }
 
 /**
@@ -321,7 +321,16 @@ export function claimCard(e: Expedition, defId: string | null): void {
 }
 
 /** Una acción de descanso por parada (curar, calmar o tratar una herida) y, aparte, avivar la hoguera. */
-export function rest(e: Expedition, action: RestAction): void {
+/** Mejora la carta en la posición `deckIndex` del mazo (la marca con «+»). */
+export function upgradeCard(e: Expedition, deckIndex: number): void {
+  const id = e.deck[deckIndex];
+  if (!id || !CARDS[baseCardId(id)]) throw new Error('Esa carta no está en el mazo');
+  if (isUpgradedId(id)) throw new Error('Esa carta ya está mejorada');
+  if (!CARDS[id].upgrade) throw new Error('Esa carta no tiene mejora');
+  e.deck[deckIndex] = upgradedId(id);
+}
+
+export function rest(e: Expedition, action: RestAction, deckIndex?: number): void {
   if (action === 'stoke') {
     if (e.stoked) throw new Error('La hoguera ya está avivada');
     stokeFire(e.run);
@@ -332,6 +341,9 @@ export function rest(e: Expedition, action: RestAction): void {
   if (action === 'heal') {
     for (const c of e.run.champions)
       if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + Math.floor(c.maxHp * DIFFICULTIES[e.difficulty].restHeal));
+  } else if (action === 'upgrade') {
+    if (deckIndex === undefined) throw new Error('Elige una carta');
+    upgradeCard(e, deckIndex);
   } else if (action === 'calm') {
     for (const c of e.run.champions) c.stress = Math.max(0, c.stress - F.rest.stressRelief);
   } else {

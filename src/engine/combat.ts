@@ -62,7 +62,8 @@ export function startCombat(cfg: CombatSetup): CombatState {
     cards: cfg.cards,
     enemyDefs: cfg.enemyDefs,
     enemyOf: Object.fromEntries(cfg.enemies.map((e) => [e.uid, e.defId])),
-    drawPile: rng.shuffle(cfg.deck.map((defId, i) => ({ uid: `c${i}`, defId }))),
+    // Una entrada del mazo terminada en «+» es la carta mejorada.
+    drawPile: rng.shuffle(cfg.deck.map((id, i) => ({ uid: `c${i}`, defId: id.replace(/\+$/, ''), upgraded: id.endsWith('+') || undefined }))),
     hand: [],
     discard: [],
     energy: 0,

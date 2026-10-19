@@ -487,3 +487,44 @@ describe('Pesadilla en pantalla', () => {
     expect(screen.getByText('Muerto para siempre')).toBeInTheDocument();
   });
 });
+
+describe('forja en el descanso', () => {
+  function atRest() {
+    go(() => {
+      game.newExpedition(2);
+      game.startExpedition();
+      const e = game.getState().expedition!;
+      e.currentId = 'n5-0';
+      const rest = e.map.nodes.find((n) => n.floor === 6)!;
+      e.map.nodes.find((n) => n.id === 'n5-0')!.next = [rest.id];
+      game.chooseNode(rest.id);
+    });
+  }
+
+  it('Forjar permite elegir una carta, ver el antes y el después y mejorarla', async () => {
+    const user = userEvent.setup();
+    atRest();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Forjar/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Forjar una carta' });
+    expect(within(dialog).getByRole('button', { name: 'Mejorar' })).toBeDisabled();
+    const grid = dialog.querySelector('.forgegrid')!;
+    await user.click(within(grid as HTMLElement).getAllByRole('button')[0]);
+    expect(dialog.querySelector('.forgecmp')).not.toBeNull();
+    await user.click(within(dialog).getByRole('button', { name: 'Mejorar' }));
+    expect(game.getState().expedition!.deck.filter((id) => id.endsWith('+'))).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /Descansar/ })).toBeDisabled();
+  });
+
+  it('una carta mejorada llega mejorada al combate', () => {
+    go(() => {
+      game.newExpedition(2);
+      game.startExpedition();
+      const e = game.getState().expedition!;
+      e.deck = e.deck.map((id) => `${id}+`);
+      game.chooseNode(availableNodes(e)[0].id);
+    });
+    render(<App />);
+    expect(screen.getAllByText('Mejorada').length).toBeGreaterThan(0);
+  });
+});
