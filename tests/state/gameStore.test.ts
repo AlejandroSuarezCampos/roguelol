@@ -399,3 +399,32 @@ describe('gear y equipo', () => {
     expect(e.gear.leona.armor).toBeNull();
   });
 });
+
+describe('reliquias en la interfaz', () => {
+  it('las reliquias activadas en una acción quedan marcadas en el estado', () => {
+    const g = createGameStore();
+    g.newExpedition(3);
+    g.getState().expedition!.run.relics.push('stone', 'bowl');
+    g.getState().expedition!.run.champions[2].stress = 90;
+    g.startExpedition();
+    g.chooseNode(availableNodes(g.getState().expedition!)[0].id);
+    // al empezar el combate se activan solo las del primer turno; tras terminar el turno, el Cuenco (estrés ≥ 75) pulsa de nuevo
+    g.endTurn();
+    expect(g.getState().activeRelics).toContain('bowl');
+    expect(g.getState().activeRelics).not.toContain('stone');
+  });
+
+  it('el botín añade las reliquias nuevas a la expedición al concluir el combate', () => {
+    const g = createGameStore();
+    g.newExpedition(3);
+    g.startExpedition();
+    g.chooseNode(availableNodes(g.getState().expedition!)[0].id);
+    const s = g.getState().combat!;
+    for (const u of s.units) if (u.side === 'enemy') { u.hp = 0; u.downed = true; }
+    s.outcome = 'won';
+    g.getState().expedition!.run.mist = 95; // Ruina: más posibilidades de reliquia
+    g.concludeCombat();
+    const r = g.getState().rewards!;
+    for (const id of r.relicIds ?? []) expect(g.getState().expedition!.run.relics).toContain(id);
+  });
+});

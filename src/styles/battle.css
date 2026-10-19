@@ -133,3 +133,19 @@
 .pilelist .dot{width:10px;height:10px;border-radius:50%;flex:none}
 .pilelist small{color:var(--ink2)}.pilelist .n{margin-left:auto;font-weight:700;color:var(--gold)}
 @media (max-width:900px){.hand{overflow-x:auto;max-width:100%}.endbtn,.playbtn{right:16px}.orb{left:96px}}
+/* reliquias */
+.relbar{position:relative;display:flex;align-items:center;gap:8px;z-index:9}
+.relbar.empty{font-size:12px}
+.rel{width:40px;height:40px;border-radius:50%;padding:0;border:2px solid var(--gold2);background:#000;color:var(--gold);box-shadow:0 2px 8px #000;display:inline-flex;align-items:center;justify-content:center;transition:transform .15s,border-color .15s}
+.rel .ic{width:22px;height:22px}
+.rel.rare{border-color:var(--r-rare);color:#9cc8ff}.rel.legendary{border-color:#ffd77a;color:#ffd77a}
+.rel:hover,.rel.open{border-color:var(--gold-hi);transform:scale(1.1)}
+.rel.active{border-color:var(--sel);box-shadow:0 0 0 3px rgba(245,211,110,.35),0 0 18px var(--sel);animation:relp .6s 3}
+@keyframes relp{50%{transform:scale(1.25)}}
+.relpop{position:absolute;top:50px;left:0;width:300px;padding:10px 12px;background:rgba(1,10,19,.97);border:1px solid var(--gold2);font-size:13px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh);z-index:30}
+.relpop b{color:var(--gold-hi)}.relpop small{color:var(--ink3);font-size:11px}
+.rellist{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
+.rellist li{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink2)}
+.rellist li .ic{width:24px;height:24px;color:var(--gold);margin-top:2px}
+.rellist li.rare .ic{color:#9cc8ff}.rellist li.legendary .ic{color:#ffd77a}
+.rellist b{color:var(--gold-hi)}.rellist small{color:var(--ink3)}

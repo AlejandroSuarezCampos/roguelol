@@ -364,3 +364,63 @@ describe('gear y pantalla de equipo', () => {
     expect(game.getState().expedition!.inventory).toEqual([item.gearId]);
   });
 });
+
+describe('reliquias en pantalla', () => {
+  it('el combate muestra los orbes de las reliquias con su texto accesible y la activa pulsa', () => {
+    go(() => {
+      game.newExpedition(3);
+      game.getState().expedition!.run.relics.push('stone', 'clock');
+      game.startExpedition();
+      game.chooseNode(availableNodes(game.getState().expedition!)[0].id);
+    });
+    render(<App />);
+    const bar = screen.getByRole('group', { name: 'Reliquias' });
+    expect(within(bar).getAllByRole('button')).toHaveLength(2);
+    expect(within(bar).getByRole('button', { name: /Talismán de piedra.*5 de bloqueo/ })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Energía 4 de 3/ })).toBeInTheDocument();
+  });
+
+  it('pulsar un orbe abre su descripción', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(3);
+      game.getState().expedition!.run.relics.push('heart');
+      game.startExpedition();
+      game.chooseNode(availableNodes(game.getState().expedition!)[0].id);
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Corazón incandescente/ }));
+    expect(screen.getByText(/recupera 6 de vida/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Corazón incandescente/ }));
+    expect(screen.queryByText(/recupera 6 de vida/)).not.toBeInTheDocument();
+  });
+
+  it('el mapa y Equipo listan las reliquias con su texto', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(3);
+      game.getState().expedition!.run.relics.push('lamp');
+      game.startExpedition();
+    });
+    render(<App />);
+    expect(screen.getByText(/Reliquias \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText(/la Niebla sube 3 menos/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Equipo/ }));
+    expect(screen.getByText(/Reliquias \(1\)/)).toBeInTheDocument();
+  });
+
+  it('el botín enseña las reliquias nuevas y lo que han hecho las de expedición', () => {
+    go(() => {
+      game.newExpedition(3);
+      game.getState().expedition!.run.relics.push('heart');
+      game.startExpedition();
+      game.chooseNode(availableNodes(game.getState().expedition!)[0].id);
+      const s = game.getState().combat!;
+      for (const u of s.units) if (u.side === 'enemy') { u.hp = 0; u.downed = true; }
+      s.outcome = 'won';
+      game.concludeCombat();
+    });
+    render(<App />);
+    expect(screen.getByText(/Corazón incandescente: \+6 de vida/)).toBeInTheDocument();
+  });
+});

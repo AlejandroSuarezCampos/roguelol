@@ -1,6 +1,7 @@
 import { CARDS } from '../data/cards';
 import { CHAMPION_IDS } from '../data/champions';
 import { GEAR } from '../data/gear';
+import { RELICS } from '../data/relics';
 import { CONFIG } from '../engine/config';
 import type { Expedition } from '../engine/expedition';
 import { Rng } from '../engine/rng';
@@ -40,7 +41,7 @@ function problem(x: any): string | null {
   if (!OMENS.includes(r.omen)) return 'presagio';
   if (!isNum(r.mist) || r.mist < 0 || r.mist > 100) return 'niebla';
   if (!isNum(r.gold) || r.gold < 0) return 'oro';
-  if (!Array.isArray(r.relics) || !r.relics.every((id: unknown) => typeof id === 'string')) return 'reliquias';
+  if (!Array.isArray(r.relics) || !r.relics.every((id: unknown) => typeof id === 'string' && id in RELICS) || new Set(r.relics).size !== r.relics.length) return 'reliquias';
   if (!Array.isArray(r.belt) || r.belt.length !== CONFIG.potions.beltSize) return 'cinturón';
   for (const p of r.belt) if (p !== null && !(isObj(p) && p.id in POTIONS && typeof p.spent === 'boolean')) return 'poción';
   const champs = r.champions;

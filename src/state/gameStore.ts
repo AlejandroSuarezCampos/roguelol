@@ -51,6 +51,8 @@ export interface GameState {
   /** Último aviso (motivo de una jugada ilegal, error de regla…). */
   hint: string | null;
   fx: FxEvent[];
+  /** Reliquias que se activaron en la última acción (para que su orbe pulse). */
+  activeRelics: string[];
   /** Solo para que React detecte cambios aunque el motor mute en sitio. */
   version: number;
 }
@@ -60,7 +62,7 @@ const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { h
 
 const initial = (saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
   screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false,
-  saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], version: 0,
+  saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [], version: 0,
 });
 
 export function createGameStore(opts: { save?: SaveManager } = {}) {
@@ -89,6 +91,7 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
     const s = state.combat;
     if (!s) return false;
     const before = snapshot(s);
+    const logBefore = s.relicLog.length;
     const expected = expectedHits?.(s);
     try {
       fn(s);
@@ -110,7 +113,8 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
       const hit = expected?.get(u.id) ?? 0;
       if (hit > 0 && b.hp - u.hp < hit && !u.downed) push('blocked', hit - (b.hp - u.hp));
     }
-    emit({ hint: null, fx, selectedUid: null, selectedPotion: null, ...extra });
+    const activeRelics = [...new Set(s.relicLog.slice(logBefore).map((l) => l.relic))];
+    emit({ hint: null, fx, activeRelics, selectedUid: null, selectedPotion: null, ...extra });
     return true;
   }
 

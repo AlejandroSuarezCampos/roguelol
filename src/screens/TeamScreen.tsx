@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ChampionPortrait } from '../components/ChampionPortrait';
 import { GearItem } from '../components/GearItem';
 import { Hud } from '../components/Hud';
+import { RelicList } from '../components/RelicBar';
 import { Icon } from '../components/Icon';
 import { HpBar, StressMeter } from '../components/Meters';
 import { CARDS } from '../data/cards';
@@ -127,6 +128,12 @@ export function TeamScreen() {
           {hint && <p className="hint-msg" role="status">{hint}</p>}
         </section>
       </div>
+      <section className="panel deckview">
+        <h3>
+          <Icon name="relic" /> Reliquias ({e.run.relics.length})
+        </h3>
+        <RelicList relics={e.run.relics} />
+      </section>
       <section className="panel deckview">
         <h3>
           <Icon name="card" /> Mazo de {def.name} ({ownCount} de {e.deck.length})

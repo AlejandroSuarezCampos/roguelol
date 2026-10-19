@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Belt } from '../components/Belt';
 import { Hud } from '../components/Hud';
+import { RelicList } from '../components/RelicBar';
 import { Icon } from '../components/Icon';
 import { TeamStrip } from '../components/TeamStrip';
 import { NODE_INFO } from '../data/glossary';
@@ -134,6 +135,12 @@ export function ExpeditionMapScreen() {
               <p className="sub">Elige uno de los nodos que laten en el mapa.</p>
             )}
             {hint && <p className="hint-msg" role="status">{hint}</p>}
+          </section>
+          <section className="panel">
+            <h3>
+              <Icon name="relic" /> Reliquias ({e.run.relics.length})
+            </h3>
+            <RelicList relics={e.run.relics} empty="Las élites sueltan reliquias." />
           </section>
           <section className="panel legend">
             <h3>

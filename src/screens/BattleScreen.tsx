@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Belt } from '../components/Belt';
+import { RelicBar } from '../components/RelicBar';
 import { Card } from '../components/Card';
 import { Fighter, type TargetMode } from '../components/Fighter';
 import { Hud } from '../components/Hud';
@@ -19,7 +20,7 @@ const KIND_TITLE = { combat: 'Combate', elite: 'Combate de élite', boss: 'Jefe'
 type Unitish = { mode: TargetMode; tag?: string };
 
 export function BattleScreen() {
-  const { combat: s, expedition: e, combatKind, selectedUid, selectedPotion, fx, hint } = useGame();
+  const { combat: s, expedition: e, combatKind, selectedUid, selectedPotion, fx, hint, activeRelics } = useGame();
   const [swapMode, setSwapMode] = useState(false);
   const [swapFrom, setSwapFrom] = useState<string | null>(null);
   const [pile, setPile] = useState<'draw' | 'discard' | null>(null);
@@ -145,6 +146,7 @@ export function BattleScreen() {
       </Hud>
 
       <div className="cbtop">
+        <RelicBar relics={s.relics} active={activeRelics} />
         <Belt belt={s.belt} selected={selectedPotion} onSelect={(i) => game.selectPotion(i)} />
         {potionDef && !potionNeedsTarget && (
           <button className="btn pri sm" onClick={() => game.usePotion(selectedPotion!)}>

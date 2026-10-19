@@ -3,6 +3,7 @@ import { Card } from '../components/Card';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { GearItem } from '../components/GearItem';
+import { RelicList } from '../components/RelicBar';
 import { CARDS } from '../data/cards';
 import { CHAMPION_IDS, CHAMPIONS } from '../data/champions';
 import { compareGear } from '../engine/gear';
@@ -38,6 +39,16 @@ export function RewardScreen() {
               <Icon name="card" /> <b>Una carta nueva</b> <small className="sub">elige 1 de {r.cardOptions} para el mazo (o salta)</small>
               {cardClaimed ? <span className="tag ok">Elegida</span> : <button className="btn" onClick={() => setChoosing(true)}>Elegir carta</button>}
             </li>
+            {(r.relicIds?.length || r.relicNotes?.length) ? (
+              <li className="done relics">
+                <Icon name="relic" />
+                <div className="grow">
+                  {r.relicIds?.length ? (<><b>{r.relicIds.length > 1 ? 'Reliquias nuevas' : 'Reliquia nueva'}</b><RelicList relics={r.relicIds} /></>) : null}
+                  {r.relicNotes?.map((n, i) => <p key={i} className="sub">{n}</p>)}
+                </div>
+                <span className="tag ok">Recogida</span>
+              </li>
+            ) : null}
             {r.gear && (
               <li className={gearClaimed ? 'done' : ''}>
                 <Icon name="relic" /> <b>Un objeto</b> <small className="sub">elige 1 de {r.gear.length}; compáralo y equípalo (o salta)</small>

@@ -16,6 +16,7 @@ const played = (seed = 4) => {
   e.wounds.lux = 2;
   e.deck.push('x2');
   e.run.belt[0] = { id: 'health', spent: false };
+  e.run.relics.push('stone');
   e.inventory.push('infinity', 'warmog');
   equip(e, 'yasuo', 'infinity');
   return e;
@@ -41,6 +42,7 @@ describe('guardar y cargar', () => {
     expect(r.expedition.deck).toEqual(e.deck);
     expect(r.expedition.gear.yasuo.weapon).toBe('infinity');
     expect(r.expedition.inventory).toEqual(['warmog']);
+    expect(r.expedition.run.relics).toEqual(['stone']);
     expect(r.expedition.inCombat).toBe(false);
     expect(r.expedition.visited).toEqual(e.visited);
     // el RNG se restaura con su estado: el siguiente combate sale igual que sin guardar
@@ -105,6 +107,8 @@ describe('datos corruptos', () => {
     ['un RNG que no es número', (r: any) => (r.expedition.run.rng.state = 'x')],
     ['un objeto de inventario inexistente', (r: any) => r.expedition.inventory.push('nope')],
     ['un arma en el slot de armadura', (r: any) => (r.expedition.gear.lux.armor = 'rabadon')],
+    ['una reliquia inexistente', (r: any) => r.expedition.run.relics.push('nope')],
+    ['una reliquia repetida', (r: any) => r.expedition.run.relics.push('heart', 'heart')],
     ['una expedición ya terminada', (r: any) => (r.expedition.status = 'defeat')],
   ])('rechaza %s', (_name, tamper) => {
     const store = memory();
