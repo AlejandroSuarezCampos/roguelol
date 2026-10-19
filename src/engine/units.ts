@@ -22,6 +22,7 @@ export function applyDamage(s: CombatState, target: Unit, amount: number, opts: 
   if (target.hp === 0) {
     target.downed = true;
     target.block = 0;
+    if (target.side === 'ally') s.relicQueue.push({ type: 'championDowned', unit: target.id });
     const delta = target.side === 'ally' ? CONFIG.stress.allyDowned : CONFIG.stress.enemyDefeated;
     for (const a of living(s, 'ally')) addStress(s, a, delta);
   }

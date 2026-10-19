@@ -1,9 +1,10 @@
 import { CONFIG } from './config';
 import { computeDamage } from './damage';
 import { byPos, living, moveUnit } from './formation';
+import { processRelics } from './relics';
 import { addStress } from './stress';
 import { applyDamage, gainBlock, heal, revive } from './units';
-import type { CardDef, CardInstance, CombatState, Effect, Unit } from './types';
+import type { CardDef, CardInstance, ChampionId, CombatState, Effect, Unit } from './types';
 
 /** Definición efectiva de una carta en mano: aplica su mejora si la instancia está mejorada. */
 export function cardOf(s: CombatState, inst: CardInstance): CardDef {
@@ -106,8 +107,10 @@ function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void 
         let additive = crisisOf(owner) === 'rage' ? CONFIG.crisis.rageDamage : 0;
         if (e.consumeStatus) {
           const holder = e.consumeStatus.from === 'self' ? owner : u;
-          additive += (holder.statuses[e.consumeStatus.status] ?? 0) * e.consumeStatus.bonusPerStack;
+          const stacks = holder.statuses[e.consumeStatus.status] ?? 0;
+          additive += stacks * e.consumeStatus.bonusPerStack;
           delete holder.statuses[e.consumeStatus.status];
+          if (stacks > 0) s.relicQueue.push({ type: 'statusConsumed', owner: owner.id as ChampionId, status: e.consumeStatus.status, stacks });
         }
         const hit = computeDamage(s, owner, u, {
           amount: e.amount, damageType: e.damageType, scaling: e.scaling, additive, crit: e.canCrit ? 'roll' : undefined,
@@ -171,4 +174,10 @@ export function playCard(s: CombatState, uid: string, targetId?: string): void {
     if (front) applyDamage(s, front, CONFIG.omen.bleedDamage);
   }
   s.discard.push(inst);
+
+  // Reliquias: contadores del turno y evento de carta jugada; después se vacía la cola.
+  if (card.type === 'attack') s.relicState.attacksThisTurn++;
+  if (!s.relicState.ownersThisTurn.includes(card.owner)) s.relicState.ownersThisTurn.push(card.owner);
+  s.relicQueue.push({ type: 'cardPlayed', owner: card.owner, cardType: card.type });
+  processRelics(s);
 }

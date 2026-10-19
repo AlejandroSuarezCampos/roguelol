@@ -120,6 +120,22 @@ export interface CombatMods {
   bossExtraIntent: boolean;
 }
 
+/** Evento de combate que pueden escuchar las reliquias. Son datos planos: el motor los empuja a la cola sin conocer las reliquias. */
+export type RelicEvent =
+  | { type: 'combatStart' }
+  | { type: 'turnStart' }
+  | { type: 'cardPlayed'; owner: ChampionId; cardType: CardType }
+  | { type: 'statusConsumed'; owner: ChampionId; status: StatusId; stacks: number }
+  | { type: 'championDowned'; unit: string };
+
+export interface RelicState {
+  attacksThisTurn: number;
+  ownersThisTurn: ChampionId[];
+  /** Cuántas veces se activó cada reliquia este turno / en este combate (para sus límites). */
+  turnUses: Record<string, number>;
+  combatUses: Record<string, number>;
+}
+
 export interface CombatState {
   units: Unit[];
   cards: Record<string, CardDef>;
@@ -140,6 +156,13 @@ export interface CombatState {
   scriptIndex: Record<string, number>;
   mods: CombatMods;
   belt: BeltSlot[];
+  /** Ids de las reliquias de la run, en orden de obtención. */
+  relics: string[];
+  relicState: RelicState;
+  /** Cola de eventos pendientes de las reliquias: la vacía `processRelics` al final de cada acción. */
+  relicQueue: RelicEvent[];
+  /** Activaciones, en orden, para el feedback de la UI. */
+  relicLog: { relic: string; turn: number }[];
   /** Marcas que aplicará la siguiente carta de AP de este turno (Elixir de brujería). */
   pendingApMark: number;
   rng: Rng;

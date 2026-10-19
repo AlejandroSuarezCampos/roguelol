@@ -7,6 +7,8 @@ import { CONFIG } from './config';
 import { emptyGear, finalStatsFor, syncMaxHp, type ChampionGear } from './gear';
 import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
+import { RELIC_LIST } from '../data/relics';
+import { runRelicNotes } from './relics';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
@@ -60,6 +62,10 @@ export interface ExpeditionRewards extends Rewards {
   cards: string[];
   /** Ids de gear ofrecido (elige 1 o ninguno), si el combate suelta. */
   gear?: string[];
+  /** Reliquias nuevas (no repetidas) que ha soltado el combate; `claimRewards` las añade a la run. */
+  relicIds?: string[];
+  /** Lo que han hecho las reliquias de expedición al terminar el combate. */
+  relicNotes?: string[];
   /** Poción que suelta el combate, si hay (ver `CONFIG.potions.drop`). */
   potion?: PotionId;
 }
@@ -156,6 +162,7 @@ export function enterNode(e: Expedition, id: string): MapNode {
   const n = availableNodes(e).find((x) => x.id === id);
   if (!n) throw new Error('Nodo no accesible');
   runEnterNode(e.run, n.type);
+  runRelicNotes(e, 'nodeEntered', true);
   e.currentId = n.id;
   e.visited.push(n.id);
   e.restUsed = false;
@@ -184,6 +191,7 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
     omen: run.omen,
     mods: combatMods(run.mist, kind === 'boss'),
     belt: run.belt,
+    relics: run.relics,
   });
 }
 
@@ -211,6 +219,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
     e.status = 'defeat';
     return null;
   }
+  const relicNotes = runRelicNotes(e, 'combatEnd', true); // antes de las heridas: los derribados no se curan
   for (const c of e.run.champions) if (c.downed) applyWound(e, c);
   e.stats.combats++;
   if (kind === 'elite') e.stats.elites++;
@@ -219,7 +228,9 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   const pool = e.run.rng.shuffle(CARD_LIST.map((c) => c.id));
   const potion = e.run.rng.next() < CONFIG.potions.drop[kind] ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
   const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
-  return { ...base, cards: pool.slice(0, base.cardOptions), potion, gear };
+  const fresh = e.run.rng.shuffle(RELIC_LIST.map((r) => r.id).filter((id) => !e.run.relics.includes(id)));
+  const relicIds = fresh.slice(0, base.relics);
+  return { ...base, cards: pool.slice(0, base.cardOptions), potion, gear, relicIds, relicNotes };
 }
 
 /** `count` objetos distintos con probabilidad ponderada por rareza (sin reposición). */
@@ -250,8 +261,9 @@ export function claimPotion(e: Expedition, id: PotionId, slot?: number | 'new'):
   return slot === 'new' ? 'discarded' : 'replaced';
 }
 
-export function claimRewards(e: Expedition, r: Rewards): void {
+export function claimRewards(e: Expedition, r: Rewards & { relicIds?: string[] }): void {
   e.run.gold += r.gold;
+  for (const id of r.relicIds ?? []) if (!e.run.relics.includes(id)) e.run.relics.push(id);
 }
 
 /** Elige una carta del botín (`null` = omitir). */

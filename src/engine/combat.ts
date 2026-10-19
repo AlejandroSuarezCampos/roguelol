@@ -2,6 +2,7 @@ import { CONFIG } from './config';
 import { byPos, living, moveUnit, unitAt } from './formation';
 import { computeDamage } from './damage';
 import { refreshBelt } from './potions';
+import { newRelicState, processRelics } from './relics';
 import { Rng } from './rng';
 import { getFinalStats } from './stats';
 import { addStress } from './stress';
@@ -37,6 +38,8 @@ export interface CombatSetup {
   omen: Omen;
   mods: CombatMods;
   belt: BeltSlot[];
+  /** Ids de las reliquias de la run. */
+  relics?: string[];
 }
 
 export function startCombat(cfg: CombatSetup): CombatState {
@@ -72,6 +75,10 @@ export function startCombat(cfg: CombatSetup): CombatState {
     scriptIndex: {},
     mods: cfg.mods,
     belt: cfg.belt,
+    relics: [...(cfg.relics ?? [])],
+    relicState: newRelicState(),
+    relicQueue: [{ type: 'combatStart' }],
+    relicLog: [],
     pendingApMark: 0,
     rng,
     outcome: 'ongoing',
@@ -100,6 +107,9 @@ function draw(s: CombatState, n: number): void {
 /** Inicio del turno del equipo: bloqueo aliado a 0, energía, nueva mano de 5 y efectos de crisis/virtud. */
 export function startTeamTurn(s: CombatState): void {
   s.turn++;
+  s.relicState.attacksThisTurn = 0;
+  s.relicState.ownersThisTurn = [];
+  s.relicState.turnUses = {};
   s.energy = CONFIG.energyPerTurn;
   s.swapUsed = false;
   s.playedByOwner = {};
@@ -119,6 +129,9 @@ export function startTeamTurn(s: CombatState): void {
       for (const o of living(s, 'ally')) if (o !== a) addStress(s, o, CONFIG.crisis.rageStressOthers);
     if (a.crisisActive && a.crisis === 'panic') moveUnit(s, a, a.pos + 1);
   }
+  // Reliquias: los eventos pendientes (p. ej. caídas durante el turno enemigo) y el inicio de turno se resuelven ya con el bloqueo reiniciado.
+  s.relicQueue.push({ type: 'turnStart' });
+  processRelics(s);
 }
 
 /** Quemadura: al empezar el turno del afectado, daño verdadero igual a las acumulaciones y −1 acumulación. */

@@ -33,6 +33,7 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
     retreatGoldKept: 0.5,
   },
+  relics: { maxActivationsPerDrain: 30 },
   gear: {
     options: 3,
     dropChance: { combat: 0.2, elite: 1, boss: 1 },
