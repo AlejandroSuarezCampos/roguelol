@@ -15,6 +15,19 @@ Abre http://localhost:5188. La barra inferior «PROTOTIPO» salta entre pantalla
 
 Arte de campeones, objetos y monstruos © Riot Games (Data Dragon / CommunityDragon), enlazado, no incluido. Fondos e iconos: arte original.
 
+## App React (fase 1)
+
+Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → Combate → Botín → Descanso → Resultado. Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
+
+    npm install
+    npm run dev        # http://localhost:5173
+    npm run build      # typecheck + build de producción en dist/
+    npm run balance    # simula 300 expediciones con un bot y muestra tasas de victoria
+
+Estructura: `src/app` (raíz), `src/screens` (una por pantalla), `src/components` (carta, unidad, intención, barras…), `src/state` (store y selectores), `src/data` (cartas, enemigos, campeones, glosario), `src/styles` (tokens y CSS), `tests/` (motor, datos, estado, pantallas, equilibrio y `e2e/` con capturas en Chromium real).
+
+Fuera de esta fase (botones deshabilitados): Equipo, Mejoras, Archivo, Comerciante, Eventos, reliquias con efecto, gear, guardado y metaprogresión.
+
 ## Motor de reglas (TypeScript)
 
 Motor de combate y expedición sin interfaz en `src/engine/` (datos en `src/data/`, balance en `src/engine/config.ts`), con tests en `tests/engine/`. Implementa la spec [`docs/superpowers/specs/2026-10-19-reglas-nucleo-design.md`](docs/superpowers/specs/2026-10-19-reglas-nucleo-design.md).
@@ -35,7 +48,7 @@ Todo el azar usa un RNG con semilla guardado en el estado, así que cualquier co
 | numpy, Pillow | 2.5.4 / 12.3.0 | Regenerar los fondos (`design/tools/`) | Solo si regeneras imágenes |
 | Git | 2.54 | Clonar y subir el repositorio | Sí |
 | Node.js | ^22.12 o ^24 (se usa 24.19) | **Necesario para ejecutar los tests del motor** (`npm install`, `npm test`) y para la futura app React (Vite + React + TypeScript, según `CLAUDE_CODE_SPEC.md` del paquete de handoff, que no está en este repo) | Ya |
-| React / Vite / TypeScript | — | No se usan todavía: el prototipo es HTML/CSS/JS puro | Más adelante |
+| React 19 / Vite / TypeScript | ver `package.json` | La app de `src/` (`npm run dev`). El prototipo de `design/` sigue siendo HTML/CSS/JS puro | Ya |
 
 Instalación en otro PC:
 

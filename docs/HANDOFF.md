@@ -7,10 +7,10 @@
 | Pieza | Estado |
 |---|---|
 | Prototipo visual (`design/`) | HTML/CSS/JS sin build. Todas las pantallas unificadas (principal, mapa, combate, resto). Arte de Riot enlazado (hotlink). |
-| Motor de reglas (`src/engine`, `tests/engine`) | Núcleo fusionado en `main`: posiciones con bonus, intercambio por 1 de energía, estrés/crisis/virtud, Presagio de los caídos, Niebla Negra, botín, cinturón de pociones, bucle de turnos e intenciones. **81 tests en verde.** |
+| Motor de reglas (`src/engine`, `tests/engine`) | Núcleo fusionado en `main`: posiciones con bonus, intercambio por 1 de energía, estrés/crisis/virtud, Presagio de los caídos, Niebla Negra, botín, cinturón de pociones, bucle de turnos e intenciones.  |
 | Modelo de cartas §9 + daño §5.4 | **Hecho y fusionado en `main`** según [`plans/2026-10-19-modelo-cartas.md`](superpowers/plans/2026-10-19-modelo-cartas.md). **101 tests en verde.** |
-| React (fase 1) | Sin empezar. |
-| Git | `main` va por delante de `origin` y **no se ha subido**. No hacer `push` hasta que el usuario lo diga. |
+| React (fase 1) | **Hecha** según [`plans/2026-10-19-react-fase1.md`](superpowers/plans/2026-10-19-react-fase1.md): Vite + React 19 + TS; Menú → Preparación → Mapa → Combate → Botín → Descanso → Resultado con el motor real. Incluye `engine/expedition.ts` (mapa con semilla, pegamento run→combate, botín, heridas, descanso), 32 cartas y 6 enemigos provisionales, bot de equilibrio (`npm run balance`) y capturas e2e (`tests/e2e`). **180 tests en verde.** |
+| Git | El trabajo de la fase 1 está en la rama `claude/charming-allen-k5fbs9` (subida). `main` local sigue por delante de `origin`: no hacer `push` de `main` hasta que el usuario lo diga. |
 
 ## Documentos (orden de autoridad, de más a menos)
 
@@ -28,17 +28,21 @@
 
 ## Siguientes pasos
 
-1. ~~Confirmar la regla de Vulnerable~~ — **hecho**, el usuario confirmó la del plan.
-2. **Fase 1 — esqueleto React** (decidido por el usuario): Vite + React consumiendo el motor. Empieza con `superpowers:brainstorming` (alcance, estado de la app, cómo se migra el prototipo).
-3. Alinear el prototipo de `design/` con el motor (textos de cartas, intenciones con `intentValue`).
+1. **Revisar las decisiones de la fase 1** que tomó Claude por delegación (spec `react-fase1-design.md`, «[mi decisión]»): alcance, mapa de 8 pisos, botín, descanso, heridas graves, 32 cartas y números de enemigos.
+2. **Fase 3 (contenido):** gear y stats, reliquias con efectos y triggers con límites anti-loop, efectos de carta que faltan en el motor (robar, convertir recursos), mejoras de cartas (`CardDef.upgrade` ya existe en el motor).
+3. **Más nodos:** Comerciante, Evento, Santuario y Tesoro (el oro ya se acumula pero aún no se gasta).
+4. **Pantallas fuera de la rebanada:** Equipo, Mejoras, Archivo (botones deshabilitados en el menú).
+5. **Fase 5:** guardado (`Rng.state` ya es un número, así que se serializa) y metaprogresión.
+6. Alinear con el prototipo de `design/`: arte de fondo del combate (hoy es un degradado CSS), animaciones de ataque, escenas de comerciante/evento.
 
 ## Decisiones pendientes y temas aparcados
 
-- **Vulnerable por ronda (confirmado por el usuario):** la regla aprobada («−1 al final del turno del afectado») hacía que el vulnerable de un aliado caducase antes de que atacasen los enemigos. El plan usa: aliados pierden 1 al empezar su siguiente turno; enemigos, justo después de actuar.
-- `Rng` no es serializable todavía (guardar/cargar run lo necesitará).
-- No hay pegamento run → combate (crear el `CombatState` desde el estado de la run y devolver el resultado).
+- **Vulnerable por ronda (confirmado por el usuario el 2026-10-19):** la regla aprobada («−1 al final del turno del afectado») hacía que el vulnerable de un aliado caducase antes de que atacasen los enemigos. El plan usa: aliados pierden 1 al empezar su siguiente turno; enemigos, justo después de actuar.
+- Guardar/cargar: `Rng.state` es un número y `CombatState`/`RunState` son datos planos salvo `rng`; falta escribir el `saveManager`.
 - Deriva (Presagio) combinada con revivir: comportamiento sin especificar.
-- El `CLAUDE_CODE_SPEC.md` original pide listar sus reglas ambiguas antes de programar cada fase: hazlo con el usuario al empezar la fase 1.
+- El `CLAUDE_CODE_SPEC.md` original pide listar sus reglas ambiguas antes de programar cada fase: se hizo la fase 1 sin esa ronda de preguntas (el usuario delegó); hacerla antes de la fase 3.
+- Equilibrio: el bot gana ~25–30 % de las expediciones y un humano debería ganar más. Cotas anchas en `tests/balance/balance.test.ts`; afinar en `src/data/` con `npm run balance`.
+- **Skills de Claude Code:** `superpowers`, `ui-ux-pro-max` y las demás no están preinstaladas en las sesiones en la nube; hay que volver a subirlas o instalarlas desde sus repos (`obra/superpowers`, `nextlevelbuilder/ui-ux-pro-max-skill`, `DietrichGebert/ponytail`, `nutlope/hallmark`, `microsoft/playwright-cli`, `vercel-labs/agent-skills`).
 
 ## Cómo ejecutar
 
@@ -52,6 +56,10 @@ npm test
 
 ```bash
 npm run typecheck
+```
+
+```bash
+npm run dev
 ```
 
 ```bash

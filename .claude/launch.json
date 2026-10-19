@@ -1,1 +1,1 @@
-{"version":"0.0.1","configurations":[{"name":"design","runtimeExecutable":"python","runtimeArgs":["-m","http.server","5188","--directory","design"],"port":5188}]}
+{"version":"0.0.1","configurations":[{"name":"design","runtimeExecutable":"python","runtimeArgs":["-m","http.server","5188","--directory","design"],"port":5188},{"name":"app","runtimeExecutable":"npm","runtimeArgs":["run","dev","--","--port","5173"],"port":5173}]}
