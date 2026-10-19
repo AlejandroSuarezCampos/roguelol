@@ -125,11 +125,19 @@ describe('crisis al jugar cartas', () => {
 
   it('Desesperación: cura la mitad y suma +3 de estrés a sí misma', () => {
     const s = makeState();
-    Object.assign(u(s, 'soraka'), { crisisActive: true, stress: 100 });
+    Object.assign(u(s, 'soraka'), { crisisActive: true, stress: 90 });
     u(s, 'leona').hp = 20;
     const [id] = give(s, 'touch');
     playCard(s, id, 'leona');
     expect(u(s, 'leona').hp).toBe(25);
-    expect(u(s, 'soraka').stress).toBe(100);
+    expect(u(s, 'soraka').stress).toBe(93);
+  });
+
+  it('Virtud: las cartas de un dueño con virtud no le generan estrés', () => {
+    const s = makeState();
+    Object.assign(u(s, 'soraka'), { crisisActive: true, virtueActive: true, stress: 90 });
+    const [id] = give(s, 'touch');
+    playCard(s, id, 'leona');
+    expect(u(s, 'soraka').stress).toBe(90);
   });
 });
