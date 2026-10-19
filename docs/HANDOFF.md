@@ -8,7 +8,7 @@
 |---|---|
 | Prototipo visual (`design/`) | HTML/CSS/JS sin build. Todas las pantallas unificadas (principal, mapa, combate, resto). Arte de Riot enlazado (hotlink). |
 | Motor de reglas (`src/engine`, `tests/engine`) | Núcleo fusionado en `main`: posiciones con bonus, intercambio por 1 de energía, estrés/crisis/virtud, Presagio de los caídos, Niebla Negra, botín, cinturón de pociones, bucle de turnos e intenciones. **81 tests en verde.** |
-| Modelo de cartas §9 + daño §5.4 | Spec aprobada y **plan listo, sin ejecutar**: [`plans/2026-10-19-modelo-cartas.md`](superpowers/plans/2026-10-19-modelo-cartas.md). Código ya validado aparte (101 tests). |
+| Modelo de cartas §9 + daño §5.4 | **Hecho y fusionado en `main`** según [`plans/2026-10-19-modelo-cartas.md`](superpowers/plans/2026-10-19-modelo-cartas.md). **101 tests en verde.** |
 | React (fase 1) | Sin empezar. |
 | Git | `main` va por delante de `origin` y **no se ha subido**. No hacer `push` hasta que el usuario lo diga. |
 
@@ -28,10 +28,9 @@
 
 ## Siguientes pasos
 
-1. **Confirmar con el usuario la regla de Vulnerable** (ver «Decisiones pendientes»). Si la cambia, ajusta la spec, el plan (`vulnerableTick` en `combat.ts` y sus tests) antes de ejecutar.
-2. **Ejecutar el plan del modelo §9** con `superpowers:subagent-driven-development` (o `executing-plans`). Es una sola tarea porque el cambio de tipos no tiene punto intermedio que compile. Final esperado: `tsc` 0 y 101 tests.
-3. **Fase 1 — esqueleto React** (decidido por el usuario): Vite + React consumiendo el motor. Empieza con `superpowers:brainstorming` (alcance, estado de la app, cómo se migra el prototipo).
-4. Alinear el prototipo de `design/` con el motor (textos de cartas, intenciones con `intentValue`).
+1. **Confirmar con el usuario la regla de Vulnerable** (ver «Decisiones pendientes»). Si la cambia, ajusta la spec, `vulnerableTick` en `combat.ts` y sus tests.
+2. **Fase 1 — esqueleto React** (decidido por el usuario): Vite + React consumiendo el motor. Empieza con `superpowers:brainstorming` (alcance, estado de la app, cómo se migra el prototipo).
+3. Alinear el prototipo de `design/` con el motor (textos de cartas, intenciones con `intentValue`).
 
 ## Decisiones pendientes y temas aparcados
 
