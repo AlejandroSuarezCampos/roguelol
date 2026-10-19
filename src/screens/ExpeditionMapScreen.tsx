@@ -60,6 +60,9 @@ export function ExpeditionMapScreen() {
   return (
     <div className="screen mapscreen">
       <Hud icon="map" title="Mapa de expedición" subtitle={`Islas de la Sombra · ${floorLabel}`} e={e}>
+        <button className="btn" onClick={() => game.openTeam()}>
+          <Icon name="team" /> Equipo{e.inventory.length ? ` (${e.inventory.length} sin equipar)` : ''}
+        </button>
         <button className="btn dng" onClick={() => window.confirm('¿Retirarte? Conservas solo la mitad del oro y pierdes la expedición.') && game.retreat()}>
           <Icon name="flag" /> Retirada
         </button>

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../components/Card';
+import { GearItem } from '../components/GearItem';
+import { GEAR } from '../data/gear';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { CARDS } from '../data/cards';
@@ -48,6 +50,19 @@ export function MerchantScreen() {
               <div key={i} className={`ware ${c.sold ? 'sold' : ''}`}>
                 <Card card={CARDS[c.defId]} cost={CARDS[c.defId].cost} size="big" />
                 <Price price={c.price} gold={gold} sold={c.sold} label={CARDS[c.defId].name} onBuy={() => game.buyCard(i)} />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="sw">
+          <h3 className="fd">Objetos</h3>
+          <div className="wares">
+            {shop.gear.map((g, i) => (
+              <div key={i} className={`ware ${g.sold ? 'sold' : ''}`}>
+                <div className="wcons wide">
+                  <GearItem id={g.gearId} />
+                </div>
+                <Price price={g.price} gold={gold} sold={g.sold} label={GEAR[g.gearId].name} onBuy={() => game.buyGear(i)} />
               </div>
             ))}
           </div>

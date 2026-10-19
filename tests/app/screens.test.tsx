@@ -306,3 +306,61 @@ describe('menú con guardado', () => {
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
   });
 });
+
+describe('gear y pantalla de equipo', () => {
+  it('desde el mapa se abre Equipo, se equipa un objeto del inventario y se ven las estadísticas finales', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(1);
+      game.startExpedition();
+      game.getState().expedition!.inventory.push('infinity', 'warmog');
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Equipo \(2 sin equipar\)/ }));
+    expect(screen.getByRole('heading', { name: /Leona · Tanque/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
+    await user.click(screen.getAllByRole('button', { name: 'Equipar en Yasuo' })[0]);
+    expect(game.getState().expedition!.gear.yasuo.weapon).toBe('infinity');
+    expect(screen.getByText('Filo infinito')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Quitar' }));
+    expect(game.getState().expedition!.gear.yasuo.weapon).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Volver al mapa' }));
+    expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
+  });
+
+  it('el botín de gear permite comparar y equipar en un campeón', async () => {
+    const user = userEvent.setup();
+    toBattle();
+    go(() => {
+      const s = game.getState().combat!;
+      for (const u of s.units) if (u.side === 'enemy') { u.hp = 0; u.downed = true; }
+      s.outcome = 'won';
+      game.concludeCombat();
+      game.getState().rewards!.gear = ['rabadon', 'infinity', 'warmog'];
+      game.notify(null);
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Elegir objeto' }));
+    const dialog = screen.getByRole('dialog', { name: 'Elige un objeto' });
+    await user.click(within(dialog).getByRole('button', { name: /Sombrero mortal de Rabadon/ }));
+    expect(within(dialog).getAllByText(/AP \+45/).length).toBeGreaterThan(0);
+    await user.click(within(dialog).getByRole('button', { name: 'Lux' }));
+    expect(game.getState().expedition!.gear.lux.weapon).toBe('rabadon');
+    expect(screen.getByText('Elegido')).toBeInTheDocument();
+  });
+
+  it('el comerciante vende objetos', async () => {
+    const user = userEvent.setup();
+    goToNode('shop');
+    go(() => {
+      game.getState().expedition!.run.gold = 999;
+      game.notify(null);
+    });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Objetos' })).toBeInTheDocument();
+    const item = game.getState().expedition!.shop!.gear[0];
+    const { GEAR } = await import('../../src/data/gear');
+    await user.click(screen.getByRole('button', { name: new RegExp(`^Comprar ${GEAR[item.gearId].name} por`) }));
+    expect(game.getState().expedition!.inventory).toEqual([item.gearId]);
+  });
+});

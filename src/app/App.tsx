@@ -5,6 +5,7 @@ import { MainMenuScreen } from '../screens/MainMenuScreen';
 import { MerchantScreen } from '../screens/MerchantScreen';
 import { PartySetupScreen } from '../screens/PartySetupScreen';
 import { RewardScreen } from '../screens/RewardScreen';
+import { TeamScreen } from '../screens/TeamScreen';
 import { RestScreen } from '../screens/RestScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
 import { useGame } from '../state/gameStore';
@@ -22,6 +23,7 @@ export function App() {
       {screen === 'rest' && <RestScreen />}
       {screen === 'shop' && <MerchantScreen />}
       {screen === 'event' && <EventScreen />}
+      {screen === 'team' && <TeamScreen />}
     </div>
   );
 }

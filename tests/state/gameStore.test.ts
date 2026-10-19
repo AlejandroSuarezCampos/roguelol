@@ -346,3 +346,56 @@ describe('guardado automático', () => {
     expect(g.getState().screen).toBe('menu');
   });
 });
+
+describe('gear y equipo', () => {
+  it('el botín de gear se puede equipar al elegirlo y solo se elige una vez', () => {
+    const g = inBattle();
+    win(g);
+    g.concludeCombat();
+    const e = g.getState().expedition!;
+    g.getState().rewards!.gear = ['rabadon', 'infinity', 'warmog'];
+    g.claimGear('rabadon', 'lux');
+    expect(e.gear.lux.weapon).toBe('rabadon');
+    expect(g.getState().gearClaimed).toBe(true);
+    g.claimGear('infinity');
+    expect(g.getState().hint).toMatch(/Ya elegiste/);
+    expect(e.inventory).toEqual([]);
+  });
+
+  it('elegir un objeto que no está en el botín da un aviso', () => {
+    const g = inBattle();
+    win(g);
+    g.concludeCombat();
+    g.getState().rewards!.gear = ['rabadon'];
+    g.claimGear('infinity');
+    expect(g.getState().hint).toMatch(/no está/);
+    expect(g.getState().expedition!.inventory).toEqual([]);
+  });
+
+  it('la pantalla de equipo se abre desde el mapa, equipa y desequipa, y vuelve', () => {
+    const g = createGameStore();
+    g.newExpedition(1);
+    g.startExpedition();
+    const e = g.getState().expedition!;
+    e.inventory.push('warmog');
+    g.openTeam();
+    expect(g.getState().screen).toBe('team');
+    g.equipGear('leona', 'warmog');
+    expect(e.gear.leona.armor).toBe('warmog');
+    g.unequipGear('leona', 'armor');
+    expect(e.inventory).toEqual(['warmog']);
+    g.unequipGear('leona', 'armor');
+    expect(g.getState().hint).toMatch(/nada/i);
+    g.closeTeam();
+    expect(g.getState().screen).toBe('map');
+  });
+
+  it('no se puede equipar en combate', () => {
+    const g = inBattle();
+    const e = g.getState().expedition!;
+    e.inventory.push('warmog');
+    g.equipGear('leona', 'warmog');
+    expect(g.getState().hint).toMatch(/combate/);
+    expect(e.gear.leona.armor).toBeNull();
+  });
+});

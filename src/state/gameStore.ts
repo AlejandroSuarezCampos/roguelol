@@ -4,19 +4,21 @@ import type { EncounterKind } from '../data/enemies';
 import { cardOf, forcedTarget, playCard as enginePlayCard } from '../engine/cards';
 import { endTeamTurn } from '../engine/combat';
 import {
-  claimCard as engineClaimCard, claimPotion as engineClaimPotion, claimRewards, combatFromExpedition, createExpedition, encounterKind,
+  claimCard as engineClaimCard, claimGear as engineClaimGear, claimPotion as engineClaimPotion, claimRewards, combatFromExpedition, createExpedition, encounterKind,
   enterNode, finishCombat, rest as engineRest, retreat as engineRetreat, type Expedition, type ExpeditionRewards, type RestAction,
 } from '../engine/expedition';
+import { equip as engineEquip, unequip as engineUnequip } from '../engine/gear';
+import type { GearSlot } from '../data/gear';
 import { choiceBlocked, pickEvent, resolveChoice, type EventOutcome } from '../engine/events';
 import { swapAllies } from '../engine/formation';
 import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions';
 import { reorder } from '../engine/run';
-import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, openShop, removeCard as engineRemoveCard, treatWoundAtShop } from '../engine/shop';
+import { buyCard as engineBuyCard, buyGear as engineBuyGear, buyPotion as engineBuyPotion, openShop, removeCard as engineRemoveCard, treatWoundAtShop } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
 import { browserStorage, createSaveManager, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
 
-export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'result';
+export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'team' | 'result';
 
 /** Número flotante sobre una unidad tras una acción (daño, curación, bloqueo o estrés). */
 export interface FxEvent {
@@ -34,6 +36,7 @@ export interface GameState {
   rewards: ExpeditionRewards | null;
   cardClaimed: boolean;
   potionClaimed: boolean;
+  gearClaimed: boolean;
   /** Resumen de la expedición guardada (null = no hay). */
   saved: SaveSummary | null;
   /** Aviso para el menú (p. ej. un guardado dañado que se descartó). */
@@ -56,7 +59,7 @@ type Snap = Map<string, { hp: number; block: number; stress: number }>;
 const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { hp: u.hp, block: u.block, stress: u.stress }]));
 
 const initial = (saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
-  screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false,
+  screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false,
   saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], version: 0,
 });
 
@@ -260,7 +263,7 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
       const rewards = finishCombat(e, s, state.combatKind);
       if (!rewards) return emit({ screen: 'result', hint: null });
       claimRewards(e, rewards);
-      emit({ screen: 'reward', rewards, cardClaimed: false, potionClaimed: false, hint: null, fx: [] });
+      emit({ screen: 'reward', rewards, cardClaimed: false, potionClaimed: false, gearClaimed: false, hint: null, fx: [] });
     },
     claimCard(defId: string | null) {
       const e = state.expedition;
@@ -269,6 +272,20 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
       if (defId !== null && !state.rewards.cards.includes(defId)) return fail('Esa carta no está en el botín');
       engineClaimCard(e, defId);
       emit({ cardClaimed: true, hint: null });
+    },
+    /** Elige un objeto del botín (`null` = omitir). Con `equipOn`, lo equipa enseguida en ese campeón. */
+    claimGear(gearId: string | null, equipOn?: ChampionId) {
+      const e = state.expedition;
+      if (!e || !state.rewards?.gear) return;
+      if (state.gearClaimed) return fail('Ya elegiste un objeto');
+      if (gearId !== null && !state.rewards.gear.includes(gearId)) return fail('Ese objeto no está en el botín');
+      try {
+        engineClaimGear(e, gearId);
+        if (gearId !== null && equipOn) engineEquip(e, equipOn, gearId);
+        emit({ gearClaimed: true, hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
     },
     claimPotion(slot?: number | 'new') {
       const e = state.expedition;
@@ -282,6 +299,20 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
       const e = state.expedition;
       if (!e) return;
       emit({ screen: e.status === 'victory' ? 'result' : 'map', rewards: null, combat: null, combatKind: null, hint: null });
+    },
+
+    // ——— equipo (fuera de combate) ———
+    openTeam() {
+      if (state.expedition) emit({ screen: 'team', hint: null });
+    },
+    closeTeam() {
+      emit({ screen: 'map', hint: null });
+    },
+    equipGear(championId: ChampionId, gearId: string) {
+      shopAction(() => engineEquip(state.expedition!, championId, gearId));
+    },
+    unequipGear(championId: ChampionId, slot: GearSlot) {
+      shopAction(() => engineUnequip(state.expedition!, championId, slot));
     },
 
     // ——— descanso ———
@@ -305,6 +336,9 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
     },
     buyPotion(index: number, slot?: number) {
       shopAction(() => engineBuyPotion(state.expedition!, index, slot));
+    },
+    buyGear(index: number) {
+      shopAction(() => engineBuyGear(state.expedition!, index));
     },
     treatWound() {
       shopAction(() => treatWoundAtShop(state.expedition!));
