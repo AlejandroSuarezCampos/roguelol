@@ -48,6 +48,13 @@ describe('campeones y enemigos', () => {
     }
   });
 
+  it('el punto fuerte de cada campeón coincide con las posiciones ideales de sus cartas', () => {
+    for (const id of CHAMPION_IDS) {
+      const ideal = new Set(CARD_LIST.filter((c) => c.owner === id).flatMap((c) => c.idealPositions ?? []));
+      for (const p of CHAMPIONS[id].sweetSpot) expect(ideal.has(p), `${id} ${p}`).toBe(true);
+    }
+  });
+
   it('cada encuentro usa enemigos definidos, en posiciones válidas y sin repetir', () => {
     for (const [kind, list] of Object.entries(ENCOUNTERS)) {
       expect(list.length, kind).toBeGreaterThan(0);
