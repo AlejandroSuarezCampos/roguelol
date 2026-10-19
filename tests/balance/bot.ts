@@ -5,7 +5,10 @@ import { living } from '../../src/engine/formation';
 import { Rng } from '../../src/engine/rng';
 import type { CardDef, CombatState, Unit } from '../../src/engine/types';
 import type { Expedition } from '../../src/engine/expedition';
-import { availableNodes, claimCard, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+import { availableNodes, claimCard, claimPotion, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
+import { POTIONS, usePotion, usePotionOnMap, whyCannotUse } from '../../src/engine/potions';
+import { buyCard, buyPotion, openShop, treatWoundAtShop } from '../../src/engine/shop';
 
 interface Option {
   uid: string;
@@ -36,7 +39,20 @@ function score(s: CombatState, card: CardDef, t: Unit | undefined, rng: Rng): nu
   return v / Math.max(1, cost + 0.5);
 }
 
+/** Bebe una poción curativa si alguien está por debajo del 40 % y usa hierro en el más débil; la brujería se usa al empezar. */
+function usePotions(s: CombatState): void {
+  s.belt.forEach((p, slot) => {
+    if (!p || p.spent) return;
+    const hurt = living(s, 'ally').filter((a) => a.hp < a.maxHp * 0.4).sort((a, b) => a.hp - b.hp)[0];
+    const info = POTIONS[p.id];
+    if (info.healing && hurt && whyCannotUse(s.belt, slot, hurt) === null) usePotion(s, slot, hurt.id);
+    else if (p.id === 'iron' && hurt && whyCannotUse(s.belt, slot, hurt) === null) usePotion(s, slot, hurt.id);
+    else if (p.id === 'sorcery' && s.turn === 1) usePotion(s, slot);
+  });
+}
+
 export function playTurn(s: CombatState, rng: Rng): void {
+  usePotions(s);
   for (let guard = 0; guard < 20 && s.outcome === 'ongoing'; guard++) {
     const options: Option[] = [];
     for (const inst of s.hand) {
@@ -82,6 +98,7 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
     enterNode(e, node.id);
     report.floorReached = node.floor;
     const kind = encounterKind(node.type);
+    drinkOnMap(e);
     if (kind) {
       const s = combatFromExpedition(e, kind);
       const r = fight(s, rng);
@@ -90,7 +107,14 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
       if (rewards) {
         claimRewards(e, rewards);
         claimCard(e, rng.next() < 0.7 ? rng.pick(rewards.cards) : null);
+        if (rewards.potion) claimPotion(e, rewards.potion);
       }
+    } else if (node.type === 'shop') {
+      visitShop(e, rng);
+    } else if (node.type === 'event') {
+      const ev = pickEvent(e);
+      const ok = ev.choices.map((c, i) => ({ c, i })).filter(({ c }) => !choiceBlocked(e, c));
+      resolveChoice(e, ev, rng.pick(ok).i);
     } else if (node.type === 'rest') {
       const hurt = e.run.champions.some((c) => c.hp < c.maxHp * 0.7 || c.downed);
       const wounded = Object.values(e.wounds).some((w) => w > 0);
@@ -99,6 +123,30 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
   }
   report.status = e.status;
   return report;
+}
+
+/** Antes de cada nodo bebe pociones curativas si alguien está por debajo del 50 %. */
+function drinkOnMap(e: Expedition): void {
+  e.run.belt.forEach((p, slot) => {
+    if (!p || p.spent || !POTIONS[p.id].healing) return;
+    const hurt = e.run.champions.filter((c) => !c.downed && c.hp < c.maxHp * 0.5).sort((a, b) => a.hp - b.hp)[0];
+    if (hurt) usePotionOnMap(e.run.belt, slot, hurt);
+  });
+}
+
+/** Compra heridas tratadas, una poción curativa y, con lo que sobre, cartas (nunca deja el oro por debajo de 0). */
+function visitShop(e: Expedition, rng: Rng): void {
+  const shop = openShop(e);
+  const tryBuy = (fn: () => void) => {
+    try {
+      fn();
+    } catch {
+      /* sin oro o sin hueco: el bot simplemente no compra */
+    }
+  };
+  if (Object.values(e.wounds).some((w) => w > 0)) tryBuy(() => treatWoundAtShop(e));
+  shop.potions.forEach((p, i) => POTIONS[p.id].healing && !p.sold && tryBuy(() => buyPotion(e, i)));
+  rng.shuffle(shop.cards.map((_, i) => i)).forEach((i) => rng.next() < 0.7 && tryBuy(() => buyCard(e, i)));
 }
 
 export const cardName = (id: string) => CARDS[id].name;
