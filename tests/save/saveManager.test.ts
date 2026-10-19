@@ -123,6 +123,8 @@ describe('datos corruptos', () => {
     ['una dificultad inventada', (r: any) => (r.expedition.difficulty = 'facil')],
     ['un muerto en Normal', (r: any) => { r.expedition.dead = ['lux']; r.expedition.run.champions.splice(2, 1); }],
     ['un campeón vivo y muerto a la vez', (r: any) => { r.expedition.difficulty = 'nightmare'; r.expedition.dead = ['leona']; }],
+    ['unas mejoras inventadas', (r: any) => (r.expedition.perks = { hp: 'mucho' })],
+    ['un bestiario roto', (r: any) => (r.expedition.encounters = { wolf: { seen: -1, defeated: 0 } })],
     ['una expedición ya terminada', (r: any) => (r.expedition.status = 'defeat')],
   ])('rechaza %s', (_name, tamper) => {
     const store = memory();

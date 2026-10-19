@@ -10,6 +10,7 @@ import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { RELIC_LIST } from '../data/relics';
 import { runRelicNotes } from './relics';
+import { NO_PERKS, type Perks } from './meta';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
@@ -32,6 +33,12 @@ export interface ExpeditionMap {
 export type ExpeditionStatus = 'active' | 'victory' | 'defeat' | 'retreat';
 
 export interface Expedition {
+  /** Ventajas de las mejoras permanentes aplicadas al empezar. */
+  perks: Perks;
+  /** Ya se sumó al progreso permanente (las Esquirlas se ganan una sola vez). */
+  recorded: boolean;
+  /** Enemigos vistos y derrotados en esta expedición (alimenta el bestiario). */
+  encounters: Record<string, { seen: number; defeated: number }>;
   /** Semilla con la que se creó (para recrear la preparación al cambiar de dificultad). */
   seed: number;
   difficulty: DifficultyId;
@@ -139,15 +146,21 @@ function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: num
   return 'combat';
 }
 
-export function createExpedition(seed: number, difficulty: DifficultyId = 'normal'): Expedition {
+export function createExpedition(seed: number, difficulty: DifficultyId = 'normal', perks: Perks = NO_PERKS): Expedition {
   const champions: RunChampion[] = CHAMPION_IDS.map((id) => ({
-    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp, maxHp: CHAMPIONS[id].maxHp, stress: 0, downed: false,
+    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp + perks.hp, maxHp: CHAMPIONS[id].maxHp + perks.hp, stress: 0, downed: false,
   }));
   const run = createRun(seed, champions);
+  run.gold = perks.gold;
+  for (let i = 0; i < perks.potions; i++) addPotion(run.belt, 'health');
+  const deck = [...STARTER_DECK];
+  // Maestría: cartas del mazo inicial ya mejoradas, elegidas con una semilla aparte para no tocar el RNG de la run.
+  const picks = new Rng(seed ^ 0x5bd1e995).shuffle(deck.map((_, i) => i)).slice(0, perks.upgradedCards);
+  for (const i of picks) deck[i] = upgradedId(deck[i]);
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
   const map = generateMap(new Rng(seed ^ 0x9e3779b9), DIFFICULTIES[difficulty].restWeight);
   return {
-    seed, difficulty, dead: [], run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
+    perks, recorded: false, encounters: {}, seed, difficulty, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
     gear: emptyGear(), inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
@@ -200,6 +213,7 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
   const encounter = run.rng.pick(ENCOUNTERS[kind]);
   const diff = DIFFICULTIES[e.difficulty];
   const mods = combatMods(run.mist, kind === 'boss');
+  for (const en of encounter) (e.encounters[en.defId] ??= { seen: 0, defeated: 0 }).seen++;
   return startCombat({
     seed: 1 + run.rng.int(2 ** 31 - 1),
     allies: run.champions.map((c) => ({
@@ -265,6 +279,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
     e.status = 'defeat';
     return null;
   }
+  for (const defId of Object.values(s.enemyOf)) (e.encounters[defId] ??= { seen: 0, defeated: 0 }).defeated++;
   e.stats.combats++;
   if (kind === 'elite') e.stats.elites++;
   if (kind === 'boss') e.status = 'victory';

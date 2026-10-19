@@ -33,6 +33,8 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
   },
   relics: { maxActivationsPerDrain: 30 },
+  /** Metaprogresión (spec §14): Esquirlas por expedición. */
+  meta: { perFloor: 3, perCombat: 2, perElite: 5, victoryBonus: 40, nightmareMultiplier: 1.5, minShards: 5 },
   gear: {
     options: 3,
     dropChance: { combat: 0.2, elite: 1, boss: 1 },

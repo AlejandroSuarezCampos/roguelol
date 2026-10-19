@@ -10,7 +10,7 @@ import { OMENS } from '../engine/run';
 import { POTIONS } from '../engine/potions';
 
 /** Versión del formato. Súbela (y añade una migración) si cambia la forma de lo que se guarda. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const SAVE_KEY = 'shattered-runeterra:run';
 export const CORRUPT_KEY = 'shattered-runeterra:run.corrupt';
 
@@ -79,6 +79,9 @@ function problem(x: any): string | null {
   if (!Array.isArray(x.visited) || !x.visited.every((id: unknown) => typeof id === 'string' && ids.has(id))) return 'visitados';
   if (x.status !== 'active') return 'estado';
   if (!isObj(x.wounds) || !CHAMPION_IDS.every((id) => isNum(x.wounds[id]) && x.wounds[id] >= 0 && x.wounds[id] <= CONFIG.expedition.wound.cap)) return 'heridas';
+  if (!isObj(x.perks) || !['hp', 'gold', 'potions', 'upgradedCards'].every((k) => isNum(x.perks[k]) && x.perks[k] >= 0)) return 'mejoras';
+  if (typeof x.recorded !== 'boolean') return 'registro';
+  if (!isObj(x.encounters) || !Object.values(x.encounters).every((c: any) => isObj(c) && isNum(c.seen) && isNum(c.defeated) && c.seen >= 0 && c.defeated >= 0)) return 'bestiario';
   if (!isNum(x.removals) || x.removals < 0 || !Array.isArray(x.seenEvents) || !isObj(x.stats) || !isNum(x.stats.combats) || !isNum(x.stats.elites)) return 'contadores';
   return null;
 }
