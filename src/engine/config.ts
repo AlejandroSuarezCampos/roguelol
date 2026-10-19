@@ -26,5 +26,12 @@ export const CONFIG = {
     ruinNormalRelicChance: 0.1,
     bossExtraIntentAt: 60,
   },
+  expedition: {
+    floors: 8,
+    rest: { healFraction: 0.3, stressRelief: 20 },
+    /** Normal (§12): un campeón derribado sobrevive a la victoria con una herida grave. */
+    wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
+    retreatGoldKept: 0.5,
+  },
   potions: { beltSize: 3, health: 20, refillable: 8, iron: 15, sorceryMarks: 2 },
 } as const;
