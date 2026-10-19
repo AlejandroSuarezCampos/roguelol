@@ -24,6 +24,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   await page.getByRole('button', { name: /Comenzar/ }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${out}/03-map.png` });
+  await page.locator('.nd.available').first().click();
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${out}/04-battle.png` });
   console.log('errores:', s.errors());
   await s.close();
 }

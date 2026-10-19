@@ -139,6 +139,9 @@ const allyAt = (s: CombatState, p: Pos): Unit | undefined => {
   return u && !u.downed ? u : byPos(living(s, 'ally'))[0];
 };
 
+/** A quién golpeará de verdad una intención dirigida a la posición `p`: si está vacía o derribada, al aliado vivo más adelantado. */
+export const intentTarget = allyAt;
+
 /**
  * Valor que muestra la UI y que se aplica al resolver. Ataques: daño final contra su objetivo actual
  * (bonus de posición, crítico telegrafiado, defensa y vulnerable). Estrés: con el extra de niebla.

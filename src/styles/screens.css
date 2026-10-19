@@ -91,3 +91,29 @@
 .pot:disabled:not(.empty){opacity:.45}
 .legend ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:8px}
 .hint-msg{margin-top:8px;color:var(--danger);font-weight:600}
+/* botín y descanso */
+.scene-bg{background:linear-gradient(180deg,rgba(1,10,19,.75),rgba(1,10,19,.92)),var(--menu-bg) center/cover fixed}
+.rest.scene-bg{background:linear-gradient(180deg,rgba(1,10,19,.55),rgba(1,10,19,.9)),var(--camp-bg) center/cover fixed}
+.reward,.rest,.setup{padding:0;gap:0}
+.reward-body,.rest-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:18px;padding:22px 32px;align-items:start}
+@media (max-width:1000px){.reward-body,.rest-body{grid-template-columns:1fr}}
+.rewardlist ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.rewardlist li{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line2);background:rgba(1,10,19,.55);flex-wrap:wrap}
+.rewardlist li.done{opacity:.75}
+.rewardlist li .btn,.rewardlist li .tag{margin-left:auto}
+.belt-swap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto}
+.choose{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.choose h2{font-size:30px;text-transform:uppercase;color:var(--gold-hi)}
+.choices{display:flex;gap:22px;flex-wrap:wrap;justify-content:center}
+.choices .card{transition:transform .15s}
+.choices .card:hover{transform:translateY(-8px) scale(1.03)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:6px}
+@media (max-width:700px){.opts{grid-template-columns:1fr}}
+.opt{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:16px;border:1px solid var(--line2);background:linear-gradient(180deg,rgba(14,26,44,.85),rgba(1,10,19,.92));transition:.15s}
+.opt .ic{width:30px;height:30px;color:var(--gold)}
+.opt b{font:700 17px var(--fd);text-transform:uppercase;letter-spacing:.08em;color:var(--gold-hi)}
+.opt span{color:var(--ink2);font-size:13px}
+.opt em{font-style:normal;font-size:12px;color:var(--danger);font-weight:700}
+.opt:hover:not(:disabled){border-color:var(--gold);transform:translateY(-3px);box-shadow:inset 0 0 22px rgba(10,200,185,.16)}
+.opt:disabled{opacity:.5}
+.opt.extra{border-style:dashed}

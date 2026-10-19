@@ -132,6 +132,10 @@ export function createGameStore() {
     },
 
     // ——— combate ———
+    /** Muestra un aviso (p. ej. el motivo por el que una carta no se puede jugar). */
+    notify(message: string | null) {
+      emit({ hint: message });
+    },
     selectCard(uid: string | null) {
       emit({ selectedUid: uid === state.selectedUid ? null : uid, selectedPotion: null, hint: null });
     },
