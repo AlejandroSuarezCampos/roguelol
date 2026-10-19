@@ -10,6 +10,7 @@ import {
 } from '../engine/expedition';
 import { equip as engineEquip, unequip as engineUnequip } from '../engine/gear';
 import type { GearSlot } from '../data/gear';
+import { openChest, takeChestOffer as engineTakeChestOffer } from '../engine/chest';
 import { choiceBlocked, pickEvent, resolveChoice, type EventOutcome } from '../engine/events';
 import { swapAllies } from '../engine/formation';
 import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions';
@@ -22,7 +23,7 @@ import { createMetaManager, type MetaManager } from '../save/metaManager';
 import { browserStorage, cloneExpedition, createSaveManager, type JournalEntry, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
 
-export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'team' | 'result' | 'upgrades' | 'archive' | 'roster';
+export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'chest' | 'team' | 'result' | 'upgrades' | 'archive' | 'roster';
 
 /** Número flotante sobre una unidad tras una acción (daño, curación, bloqueo o estrés). */
 export interface FxEvent {
@@ -297,8 +298,11 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         if (node.type === 'shop') {
           openShop(e);
           emit({ screen: 'shop', hint: null });
-        } else if (node.type === 'event') emit({ screen: 'event', event: pickEvent(e), eventOutcome: null, hint: null });
-        else if (kind) {
+        } else if (node.type === 'event' || node.type === 'shrine') emit({ screen: 'event', event: pickEvent(e, node.type), eventOutcome: null, hint: null });
+        else if (node.type === 'chest') {
+          openChest(e);
+          emit({ screen: 'chest', hint: null });
+        } else if (kind) {
           const combat = combatFromExpedition(e, kind);
           const activeRelics = [...new Set(combat.relicLog.map((l) => l.relic))]; // las del primer turno pulsan al empezar
           emit({ screen: 'battle', combat, combatKind: kind, hint: null, fx: [], activeRelics, selectedUid: null, selectedPotion: null });
@@ -486,6 +490,23 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     },
     leaveShop() {
       if (state.expedition) state.expedition.shop = null;
+      emit({ screen: 'map', hint: null });
+    },
+
+    // ——— tesoro ———
+    takeChestOffer(index: number) {
+      const e = state.expedition;
+      if (!e) return;
+      try {
+        engineTakeChestOffer(e, index);
+        emit({ hint: null });
+        record('takeChestOffer', index);
+      } catch (err) {
+        fail((err as Error).message);
+      }
+    },
+    leaveChest() {
+      if (state.expedition) state.expedition.chest = null;
       emit({ screen: 'map', hint: null });
     },
 

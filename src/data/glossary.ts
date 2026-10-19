@@ -44,7 +44,7 @@ export const NODE_INFO: Record<string, { name: string; icon: string; text: strin
   rest: { name: 'Descanso', icon: 'rest', text: 'Cura a todos, calma el estrés o trata una herida.' },
   shop: { name: 'Comerciante', icon: 'shop', text: 'Compra cartas y pociones, trata heridas o elimina cartas del mazo con oro.' },
   event: { name: 'Evento', icon: 'event', text: 'Una decisión con ganancia y coste. Algunas opciones no se pueden deshacer.' },
-  chest: { name: 'Tesoro', icon: 'chest', text: 'Próximamente.' },
-  shrine: { name: 'Santuario', icon: 'shrine', text: 'Próximamente.' },
+  chest: { name: 'Tesoro', icon: 'chest', text: 'Un cofre con tres ofertas a la vista: eliges una y se cierra.' },
+  shrine: { name: 'Santuario', icon: 'shrine', text: 'Un efecto poderoso con un coste claro. Siempre puedes marcharte.' },
 };
 

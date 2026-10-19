@@ -9,7 +9,11 @@ export type EventEffect =
   | { type: 'mist'; amount: number }
   | { type: 'addCard'; rarity?: Rarity }
   | { type: 'addPotion' }
-  | { type: 'wound' };
+  | { type: 'wound' }
+  /** Una reliquia no repetida al azar (si ya se tienen todas, 60 de oro). */
+  | { type: 'relic' }
+  /** Vida máxima permanente para todos los campeones en pie (y esa misma cantidad de vida actual). */
+  | { type: 'maxHpAll'; amount: number };
 
 export interface EventChoice {
   label: string;
@@ -79,6 +83,37 @@ export const EVENTS: EventDef[] = [
       { label: 'Registrar las tiendas', gain: 'Una poción y 25 de oro', cost: '+10 de niebla', tone: 'warn', effects: [{ type: 'addPotion' }, { type: 'gold', amount: 25 }, { type: 'mist', amount: 10 }], result: 'Encontráis algo útil. Tenéis la sensación de que os miran.' },
       { label: 'Dormir junto a las brasas', gain: 'Cura el 20% y −10 de estrés a todos', cost: '+15 de niebla', tone: 'warn', effects: [{ type: 'healAll', fraction: 0.2 }, { type: 'stressAll', amount: -10 }, { type: 'mist', amount: 15 }], result: 'Dormís mejor de lo que deberíais. La niebla entra con el sueño.' },
       { label: 'Seguir camino', gain: 'Nada', cost: 'Nada', tone: '', effects: [], result: 'Dejáis el campamento tal y como estaba.' },
+    ],
+  },
+];
+
+/** Santuarios: más poder y más coste que un evento. Usan la misma pantalla y el mismo formato de opciones. */
+export const SHRINES: EventDef[] = [
+  {
+    id: 'shrine_light', title: 'Santuario de la Luz Rota', art: 'void',
+    text: ['Un pedestal de cristal agrietado guarda un resplandor dorado. La niebla se aparta de él como de una llama.', 'Una voz sin boca ofrece un trato: poder a cambio de algo.'],
+    choices: [
+      { label: 'Rezar ante la luz', gain: 'Una reliquia al azar', cost: '+20 de estrés a todos', tone: 'warn', effects: [{ type: 'relic' }, { type: 'stressAll', amount: 20 }], result: 'La luz se posa en vuestras manos. Os cuesta respirar.' },
+      { label: 'Dejar una ofrenda', gain: '+4 de vida máxima permanente a todos', cost: '50 de oro', tone: 'ok', requiresGold: 50, effects: [{ type: 'gold', amount: -50 }, { type: 'maxHpAll', amount: 4 }], result: 'El oro se deshace en polvo brillante. Os sentís más firmes.' },
+      { label: 'Marcharse', gain: 'Nada', cost: 'Nada', tone: '', effects: [], result: 'El resplandor se apaga a vuestras espaldas.' },
+    ],
+  },
+  {
+    id: 'shrine_hunter', title: 'Santuario del Cazador', art: 'camp',
+    text: ['Entre raíces negras, una fuente mana agua clara. Sobre una roca descansa un colmillo enorme, todavía caliente.', 'Algo os observa desde la espesura, paciente.'],
+    choices: [
+      { label: 'Beber de la fuente', gain: 'Cura completa a todos', cost: '+25 de niebla', tone: 'warn', effects: [{ type: 'healAll', fraction: 1 }, { type: 'mist', amount: 25 }], result: 'El agua sabe a hierro y a invierno. Las heridas se cierran; la niebla se espesa.' },
+      { label: 'Tomar el colmillo', gain: 'Una carta rara al azar', cost: 'Una herida grave a un campeón', tone: 'warn', effects: [{ type: 'addCard', rarity: 'rare' }, { type: 'wound' }], result: 'El colmillo os enseña un golpe nuevo. Alguien pagará su precio.' },
+      { label: 'Marcharse', gain: 'Nada', cost: 'Nada', tone: '', effects: [], result: 'La presencia de la espesura os deja ir.' },
+    ],
+  },
+  {
+    id: 'shrine_silence', title: 'Santuario del Silencio', art: 'void',
+    text: ['Un círculo de piedras sin sonido. Dentro, ni el viento ni vuestros pasos suenan.', 'Es el sitio más tranquilo de las Islas… y eso, aquí, da miedo.'],
+    choices: [
+      { label: 'Guardar silencio', gain: '−30 de estrés a todos', cost: '−6 de vida a todos', tone: 'warn', effects: [{ type: 'stressAll', amount: -30 }, { type: 'damageAll', amount: 6 }], result: 'Dejáis de oír vuestros pensamientos. Algo os ha cobrado el silencio.' },
+      { label: 'Romper el silencio gritando', gain: '+4 de vida máxima permanente a todos', cost: '+30 de estrés a todos', tone: 'warn', effects: [{ type: 'maxHpAll', amount: 4 }, { type: 'stressAll', amount: 30 }], result: 'El grito os devuelve algo que no sabíais que habíais perdido.' },
+      { label: 'Marcharse', gain: 'Nada', cost: 'Nada', tone: '', effects: [], result: 'Salís del círculo. El mundo vuelve a hacer ruido.' },
     ],
   },
 ];

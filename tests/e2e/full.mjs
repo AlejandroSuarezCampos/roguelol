@@ -65,6 +65,15 @@ for (let step = 0; step < max; step++) {
     await page.getByRole('button', { name: /Continuar|Ver resultado/ }).click();
     continue;
   }
+  if (await page.locator('.screen.chestscreen').count()) {
+    await once('87-chest');
+    if (await page.getByRole('button', { name: 'Llevármelo' }).count()) {
+      await page.getByRole('button', { name: 'Llevármelo' }).first().click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Llevármelo' }).click();
+    }
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    continue;
+  }
   if (await page.locator('.screen.shop').count()) {
     await once('80-shop');
     await page.getByRole('button', { name: 'Salir de la tienda' }).click();

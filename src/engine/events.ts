@@ -1,17 +1,19 @@
 import { CARDS } from '../data/cards';
-import { EVENTS, type EventChoice, type EventDef, type EventEffect } from '../data/events';
+import { EVENTS, SHRINES, type EventChoice, type EventDef, type EventEffect } from '../data/events';
+import { RELIC_LIST } from '../data/relics';
 import { CONFIG } from './config';
 import { cardPool, claimPotion, type Expedition } from './expedition';
 import { syncMaxHp } from './gear';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
-/** Evento del nodo: al azar con la semilla de la run, sin repetir hasta haberlos visto todos. */
-export function pickEvent(e: Expedition): EventDef {
-  let pool = EVENTS.filter((x) => !e.seenEvents.includes(x.id));
+/** Evento (o santuario) del nodo: al azar con la semilla de la run, sin repetir hasta haberlos visto todos los de su tipo. */
+export function pickEvent(e: Expedition, kind: 'event' | 'shrine' = 'event'): EventDef {
+  const all = kind === 'shrine' ? SHRINES : EVENTS;
+  let pool = all.filter((x) => !e.seenEvents.includes(x.id));
   if (!pool.length) {
-    e.seenEvents = [];
-    pool = EVENTS;
+    e.seenEvents = e.seenEvents.filter((id) => !all.some((x) => x.id === id));
+    pool = all;
   }
   const picked = e.run.rng.pick(pool);
   e.seenEvents.push(picked.id);
@@ -66,6 +68,27 @@ function apply(e: Expedition, fx: EventEffect, lines: string[]): void {
     case 'addPotion': {
       const id = run.rng.pick(Object.keys(POTIONS) as PotionId[]);
       lines.push(claimPotion(e, id) === 'added' ? `Nueva poción: ${POTIONS[id].name}` : `Cinturón lleno: pierdes ${POTIONS[id].name}`);
+      break;
+    }
+    case 'relic': {
+      const fresh = RELIC_LIST.filter((r) => !run.relics.includes(r.id));
+      if (!fresh.length) {
+        run.gold += 60;
+        lines.push('Ya tienes todas las reliquias: +60 de oro');
+        break;
+      }
+      const r = run.rng.pick(fresh);
+      run.relics.push(r.id);
+      lines.push(`Nueva reliquia: ${r.name}`);
+      break;
+    }
+    case 'maxHpAll': {
+      e.perks.hp += fx.amount;
+      for (const c of run.champions) {
+        c.maxHp += fx.amount;
+        if (!c.downed) c.hp += fx.amount;
+      }
+      lines.push(`+${fx.amount} de vida máxima permanente a todos`);
       break;
     }
     case 'wound': {

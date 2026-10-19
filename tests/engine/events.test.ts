@@ -142,3 +142,69 @@ describe('efectos', () => {
     expect(JSON.stringify([e.run.gold, e.run.mist, e.deck, e.run.champions])).toBe(before);
   });
 });
+
+import { SHRINES } from '../../src/data/events';
+import { NO_PERKS } from '../../src/engine/meta';
+import { RELIC_LIST } from '../../src/data/relics';
+import { maxHpFor } from '../../src/engine/gear';
+
+describe('santuarios', () => {
+  it('hay 3, con 3 opciones y una salida sin coste, y todas se pueden resolver', () => {
+    expect(SHRINES).toHaveLength(3);
+    for (const x of SHRINES) {
+      expect(x.choices).toHaveLength(3);
+      expect(x.choices.some((c) => c.effects.length === 0)).toBe(true);
+      x.choices.forEach((_, i) => {
+        const e = createExpedition(5);
+        e.run.gold = 500;
+        expect(() => resolveChoice(e, x, i), `${x.id}/${i}`).not.toThrow();
+      });
+    }
+  });
+
+  it('pickEvent distingue eventos y santuarios y no repite hasta agotar los de su tipo', () => {
+    const e = createExpedition(9);
+    const ids = SHRINES.map(() => pickEvent(e, 'shrine').id);
+    expect(new Set(ids).size).toBe(SHRINES.length);
+    expect(ids.every((id) => SHRINES.some((x) => x.id === id))).toBe(true);
+    expect(pickEvent(e).id).not.toMatch(/^shrine_/);
+    expect(SHRINES.map((x) => x.id)).toContain(pickEvent(e, 'shrine').id); // agotados: vuelve a empezar
+  });
+
+  it('el efecto «relic» da una reliquia no repetida y, si ya están todas, oro', () => {
+    const e = createExpedition(5);
+    const x = SHRINES[0];
+    const out = resolveChoice(e, x, 0);
+    expect(e.run.relics).toHaveLength(1);
+    expect(out.lines.join(' ')).toMatch(/Nueva reliquia/);
+    const f = createExpedition(5);
+    f.run.relics = RELIC_LIST.map((r) => r.id);
+    const gold = f.run.gold;
+    expect(resolveChoice(f, x, 0).lines.join(' ')).toMatch(/todas las reliquias/);
+    expect(f.run.gold).toBe(gold + 60);
+    expect(f.run.relics).toHaveLength(RELIC_LIST.length);
+  });
+
+  it('«maxHpAll» sube la vida máxima y actual de los que están en pie, y sobrevive a heridas y gear', () => {
+    const e = createExpedition(5);
+    e.run.gold = 100;
+    e.run.champions[1].downed = true;
+    e.run.champions[1].hp = 0;
+    const max = e.run.champions.map((c) => c.maxHp);
+    resolveChoice(e, SHRINES[0], 1);
+    expect(e.run.champions[0].maxHp).toBe(max[0] + 4);
+    expect(e.run.champions[0].hp).toBe(max[0] + 4);
+    expect(e.run.champions[1].hp).toBe(0); // el derribado no se cura
+    e.wounds.leona = 1;
+    expect(maxHpFor(e, 'leona')).toBe(Math.round(70 * 0.9) + 4);
+  });
+
+  it('las ventajas de una expedición no comparten objeto con la constante de «sin mejoras»', () => {
+    const e = createExpedition(5);
+    e.run.gold = 100;
+    resolveChoice(e, SHRINES[0], 1);
+    expect(e.perks.hp).toBe(4);
+    expect(NO_PERKS.hp).toBe(0);
+    expect(createExpedition(6).perks.hp).toBe(0);
+  });
+});

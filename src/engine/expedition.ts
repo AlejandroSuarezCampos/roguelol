@@ -14,6 +14,7 @@ import { NO_PERKS, type Perks } from './meta';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
+import type { ChestState } from './chest';
 import type { ShopState } from './shop';
 import type { ChampionId, CombatState, EnemyDef, PotionId } from './types';
 
@@ -63,6 +64,8 @@ export interface Expedition {
   stoked: boolean;
   /** Stock del comerciante del nodo actual (null fuera de una tienda). */
   shop: ShopState | null;
+  /** Ofertas del tesoro del nodo actual (null fuera de un tesoro). */
+  chest: ChestState | null;
   /** Cartas eliminadas en tiendas: cada una encarece la siguiente. */
   removals: number;
   /** Lo que costó retirarse (para mostrarlo en el resultado). */
@@ -96,11 +99,13 @@ const F = CONFIG.expedition;
 export function generateMap(rng: Rng, restWeight = 1): ExpeditionMap {
   const nodes: MapNode[] = [];
   const byFloor: MapNode[][] = [];
+  const used = new Set<NodeType>(); // tesoro y santuario: como mucho uno de cada
   for (let f = 0; f < F.floors; f++) {
     const count = f === F.floors - 1 ? 1 : 2 + rng.int(2);
     const row: MapNode[] = [];
     for (let i = 0; i < count; i++) {
-      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight);
+      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight, used);
+      used.add(type);
       row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
     }
     byFloor.push(row);
@@ -134,7 +139,7 @@ function ensureType(nodes: MapNode[], rng: Rng, type: NodeType, from: number, to
   if (candidates.length) rng.pick(candidates).type = type;
 }
 
-function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number): NodeType {
+function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number, used: Set<NodeType>): NodeType {
   if (floor === F.floors - 1) return 'boss';
   if (floor === F.floors - 2) return 'rest';
   if (floor === 0) return 'combat';
@@ -143,6 +148,10 @@ function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: num
   if (floor >= 2 && floor <= F.floors - 4 && r < 0.14 + 0.18 * restWeight) return 'rest';
   if (floor >= 2 && floor <= F.floors - 3 && !shopInFloor && r < 0.44) return 'shop';
   if (floor <= F.floors - 3 && r < 0.6) return 'event';
+  // Tesoro (pisos 3–5) y santuario (2–4): raros, como mucho uno de cada por mapa. Solo se tira si el nodo iba a ser un combate.
+  const r2 = rng.next();
+  if (floor >= 3 && floor <= 5 && !used.has('chest') && r2 < 0.1) return 'chest';
+  if (floor >= 2 && floor <= 4 && !used.has('shrine') && r2 >= 0.1 && r2 < 0.18) return 'shrine';
   return 'combat';
 }
 
@@ -160,9 +169,9 @@ export function createExpedition(seed: number, difficulty: DifficultyId = 'norma
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
   const map = generateMap(new Rng(seed ^ 0x9e3779b9), DIFFICULTIES[difficulty].restWeight);
   return {
-    perks, recorded: false, encounters: {}, seed, difficulty, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
+    perks: { ...perks }, recorded: false, encounters: {}, seed, difficulty, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
     gear: emptyGear(), inventory: [], inCombat: false,
-    wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
+    wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
 }
 
@@ -188,6 +197,7 @@ export function enterNode(e: Expedition, id: string): MapNode {
   e.restUsed = false;
   e.stoked = false;
   e.shop = null;
+  e.chest = null;
   return n;
 }
 

@@ -17,7 +17,7 @@ Arte de campeones, objetos y monstruos © Riot Games (Data Dragon / CommunityDra
 
 ## App React (fase 1)
 
-Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Combate, Élite, Jefe → Botín, Descanso, Comerciante, Evento} → Resultado, con pantalla de Equipo (gear y mazo) desde el mapa, forja de cartas en el descanso y guardado automático de la expedición (`localStorage`, versionado y con recuperación de datos dañados). Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
+Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Combate, Élite, Jefe → Botín, Descanso, Comerciante, Evento, Tesoro, Santuario} → Resultado, con pantalla de Equipo (gear y mazo) desde el mapa, forja de cartas en el descanso y guardado automático de la expedición (`localStorage`, versionado y con recuperación de datos dañados). Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
 
     npm install
     npm run dev        # http://localhost:5173
@@ -25,6 +25,8 @@ Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Comba
     npm run balance    # simula 300 expediciones con un bot (Normal y Pesadilla) y muestra tasas de victoria
 
 Estructura: `src/app` (raíz), `src/screens` (una por pantalla), `src/components` (carta, unidad, intención, barras…), `src/state` (store y selectores), `src/save` (guardado), `src/data` (cartas, enemigos, campeones, glosario), `src/styles` (tokens y CSS), `tests/` (motor, datos, estado, pantallas, equilibrio y `e2e/` con capturas en Chromium real).
+
+Tesoro y Santuario: [`specs/2026-10-19-tesoro-santuario-design.md`](docs/superpowers/specs/2026-10-19-tesoro-santuario-design.md).
 
 Comerciante y eventos: [`specs/2026-10-19-comerciante-eventos-design.md`](docs/superpowers/specs/2026-10-19-comerciante-eventos-design.md).
 
@@ -36,7 +38,7 @@ Metaprogresión (Esquirlas, Mejoras, Archivo y Equipo del menú): [`specs/2026-1
 
 Dificultad Pesadilla (muerte permanente): [`specs/2026-10-19-pesadilla-design.md`](docs/superpowers/specs/2026-10-19-pesadilla-design.md). Todos los modificadores están en `src/data/difficulty.ts`.
 
-Fuera de esta fase: Tesoro, Santuario, pasivas de gear y campeones nuevos.
+Fuera de esta fase: pasivas de gear y campeones nuevos.
 
 ## Motor de reglas (TypeScript)
 

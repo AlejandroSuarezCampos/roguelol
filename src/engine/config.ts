@@ -33,6 +33,8 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
   },
   relics: { maxActivationsPerDrain: 30 },
+  /** Tesoro: oro de la oferta de oro y de la de reserva si ya se tienen todas las reliquias. */
+  chest: { gold: 90, fallbackGold: 150 },
   /** Metaprogresión (spec §14): Esquirlas por expedición. */
   meta: { perFloor: 3, perCombat: 2, perElite: 5, victoryBonus: 40, nightmareMultiplier: 1.5, minShards: 5 },
   gear: {

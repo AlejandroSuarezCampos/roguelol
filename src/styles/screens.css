@@ -236,3 +236,13 @@
 .roster .forgegrid{max-height:none;width:auto}
 .shards{margin-top:12px}
 @media (max-width:1000px){.roster-body{grid-template-columns:1fr}}
+/* tesoro */
+.chestscreen{padding:0;gap:0}
+.chest-body{padding:22px 32px;display:flex;flex-direction:column;gap:16px}
+.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.offer{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.offer>.ic{width:34px;height:34px;color:var(--gold)}
+.offer b{font:700 18px var(--fd);color:var(--gold-hi)}
+.offer.taken{border-color:var(--ok);box-shadow:0 0 18px rgba(125,220,146,.35)}
+.offer.gone{opacity:.4;filter:grayscale(.7)}
+.chestscreen.scene-bg{background:linear-gradient(180deg,rgba(1,10,19,.6),rgba(1,10,19,.92)),var(--camp-bg) center/cover fixed}

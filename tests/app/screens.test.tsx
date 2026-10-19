@@ -742,3 +742,44 @@ describe('posiciones tras una muerte', () => {
     expect(game.getState().combat!.energy).toBe(2);
   });
 });
+
+describe('pantalla del tesoro', () => {
+  function enterChest() {
+    go(() => {
+      game.newExpedition(2);
+      game.startExpedition();
+      const e = game.getState().expedition!;
+      const first = availableNodes(e)[0];
+      e.map.nodes.find((n) => n.id === first.id)!.type = 'chest';
+      game.chooseNode(first.id);
+    });
+  }
+
+  it('muestra las 3 ofertas, pide confirmar y cierra el cofre', async () => {
+    const user = userEvent.setup();
+    enterChest();
+    render(<App />);
+    expect(screen.getAllByRole('button', { name: 'Llevármelo' })).toHaveLength(3);
+    await user.click(screen.getAllByRole('button', { name: 'Llevármelo' })[0]);
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toHaveTextContent(/perderás las otras dos/);
+    await user.click(within(dialog).getByRole('button', { name: 'Volver' }));
+    expect(game.getState().expedition!.chest!.taken).toBeNull();
+    await user.click(screen.getAllByRole('button', { name: 'Llevármelo' })[0]);
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Llevármelo' }));
+    expect(game.getState().expedition!.run.gold).toBe(90);
+    expect(screen.getByText('El cofre se ha cerrado.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Llevármelo' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
+  });
+
+  it('se puede dejar el cofre sin elegir', async () => {
+    const user = userEvent.setup();
+    enterChest();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Dejar el cofre' }));
+    expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
+    expect(game.getState().expedition!.run.gold).toBe(0);
+  });
+});

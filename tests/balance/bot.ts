@@ -6,6 +6,7 @@ import { Rng } from '../../src/engine/rng';
 import type { CardDef, CombatState, Unit } from '../../src/engine/types';
 import type { Expedition } from '../../src/engine/expedition';
 import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, livingWounds, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+import { openChest, takeChestOffer } from '../../src/engine/chest';
 import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
 import { compareGear, equip } from '../../src/engine/gear';
 import type { ChampionId } from '../../src/engine/types';
@@ -118,8 +119,14 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
       }
     } else if (node.type === 'shop') {
       visitShop(e, rng);
-    } else if (node.type === 'event') {
-      const ev = pickEvent(e);
+    } else if (node.type === 'chest') {
+      const chest = openChest(e);
+      const gear = chest.offers.findIndex((o) => o.kind === 'gear' && aliveIds(e).some((c) => gearScore(e, c, o.id) > 0));
+      const relic = chest.offers.findIndex((o) => o.kind === 'relic');
+      takeChestOffer(e, gear >= 0 ? gear : relic >= 0 ? relic : chest.offers.findIndex((o) => o.kind === 'gold'));
+      equipBest(e);
+    } else if (node.type === 'event' || node.type === 'shrine') {
+      const ev = pickEvent(e, node.type);
       const ok = ev.choices.map((c, i) => ({ c, i })).filter(({ c }) => !choiceBlocked(e, c));
       resolveChoice(e, ev, rng.pick(ok).i);
     } else if (node.type === 'rest') {

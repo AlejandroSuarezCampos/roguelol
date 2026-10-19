@@ -34,7 +34,7 @@ export interface JournalEntry {
 }
 export const JOURNAL_ACTIONS = [
   'chooseNode', 'playCard', 'swap', 'usePotion', 'endTurn', 'concludeCombat', 'claimCard', 'claimGear', 'claimPotion',
-  'restAction', 'buyCard', 'buyPotion', 'buyGear', 'treatWound', 'removeCard', 'chooseEventOption',
+  'restAction', 'buyCard', 'buyPotion', 'buyGear', 'treatWound', 'removeCard', 'chooseEventOption', 'takeChestOffer',
 ] as const;
 const MAX_JOURNAL = 20000;
 
@@ -127,7 +127,7 @@ export function cloneExpedition(e: Expedition): Expedition {
 
 /** El RNG se guarda como un número (`state`) y se reconstruye al cargar; lo demás son datos planos. */
 function revive(x: any): Expedition {
-  return { ...x, run: { ...x.run, rng: new Rng(x.run.rng.state) }, shop: null, inCombat: false };
+  return { ...x, run: { ...x.run, rng: new Rng(x.run.rng.state) }, shop: null, chest: null, inCombat: false };
 }
 
 /**
@@ -166,7 +166,7 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
     save(e: Expedition, journal: JournalEntry[] = []): SaveSummary | null {
       if (e.status !== 'active') return null;
       const savedAt = now();
-      const payload = { version: SAVE_VERSION, savedAt, expedition: { ...e, shop: null }, journal };
+      const payload = { version: SAVE_VERSION, savedAt, expedition: { ...e, shop: null, chest: null }, journal };
       const ok = safe((s) => (s.setItem(SAVE_KEY, JSON.stringify(payload)), true), false);
       if (!ok) return null;
       return summaryOf(e, savedAt);

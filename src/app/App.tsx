@@ -1,5 +1,6 @@
 import { ArchiveScreen } from '../screens/ArchiveScreen';
 import { BattleScreen } from '../screens/BattleScreen';
+import { ChestScreen } from '../screens/ChestScreen';
 import { EventScreen } from '../screens/EventScreen';
 import { ExpeditionMapScreen } from '../screens/ExpeditionMapScreen';
 import { MainMenuScreen } from '../screens/MainMenuScreen';
@@ -26,6 +27,7 @@ export function App() {
       {screen === 'rest' && <RestScreen />}
       {screen === 'shop' && <MerchantScreen />}
       {screen === 'event' && <EventScreen />}
+      {screen === 'chest' && <ChestScreen />}
       {screen === 'team' && <TeamScreen />}
       {screen === 'upgrades' && <UpgradesScreen />}
       {screen === 'archive' && <ArchiveScreen />}
