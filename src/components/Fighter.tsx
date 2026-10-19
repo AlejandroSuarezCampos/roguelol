@@ -22,7 +22,7 @@ interface Props {
 }
 
 const FX_TEXT: Record<FxEvent['kind'], (n: number) => string> = {
-  damage: (n) => `−${n}`, heal: (n) => `+${n}`, block: (n) => `+${n}`, stress: (n) => `+${n}`, calm: (n) => `−${n}`,
+  damage: (n) => `−${n}`, blocked: (n) => `Bloqueado ${n}`, heal: (n) => `+${n}`, block: (n) => `+${n}`, stress: (n) => `+${n}`, calm: (n) => `−${n}`,
 };
 
 export function Fighter({ unit, s, mode = 'none', tag, fx = [], onClick }: Props) {

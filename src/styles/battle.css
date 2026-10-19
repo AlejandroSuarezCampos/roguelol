@@ -68,7 +68,7 @@
 .fxs{position:absolute;left:50%;top:18%;width:0;z-index:6;pointer-events:none}
 .fx{position:absolute;left:0;top:0;transform:translateX(-50%);font:900 28px var(--fd);white-space:nowrap;text-shadow:0 0 4px #000,0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000;animation:floatup 1.3s ease-out forwards}
 .fx:nth-child(2){margin-left:34px;animation-delay:.1s}.fx:nth-child(3){margin-left:-34px;animation-delay:.2s}.fx:nth-child(n+4){margin-left:60px;animation-delay:.3s}
-.fx.damage{color:#ff6a5c}.fx.heal{color:var(--ok)}.fx.block{color:var(--block);font-size:22px}.fx.stress{color:var(--stress);font-size:20px}.fx.calm{color:#d8c4ff;font-size:20px}
+.fx.blocked{color:#cfe4ff;font-size:17px}.fx.damage{color:#ff6a5c}.fx.heal{color:var(--ok)}.fx.block{color:var(--block);font-size:22px}.fx.stress{color:var(--stress);font-size:20px}.fx.calm{color:#d8c4ff;font-size:20px}
 @keyframes floatup{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-52px) scale(1)}}
 /* zona inferior: energía, mazos, mano en abanico */
 .cbb{grid-row:4;position:relative;z-index:8;background:linear-gradient(0deg,rgba(1,10,19,.92) 25%,rgba(1,10,19,.55) 70%,transparent)}

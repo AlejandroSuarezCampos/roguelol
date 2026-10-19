@@ -10,6 +10,7 @@ import { swapAllies } from '../engine/formation';
 import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions';
 import { reorder } from '../engine/run';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
+import { intentView } from './selectors';
 
 export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'result';
 
@@ -17,7 +18,7 @@ export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'r
 export interface FxEvent {
   key: number;
   unitId: string;
-  kind: 'damage' | 'heal' | 'block' | 'stress' | 'calm';
+  kind: 'damage' | 'heal' | 'block' | 'stress' | 'calm' | 'blocked';
   amount: number;
 }
 
@@ -59,10 +60,11 @@ export function createGameStore() {
   };
 
   /** Ejecuta una acción del motor, traduce sus errores a un aviso y calcula los efectos flotantes. */
-  function act(fn: (s: CombatState) => void, extra: Partial<GameState> = {}): boolean {
+  function act(fn: (s: CombatState) => void, extra: Partial<GameState> = {}, expectedHits?: (s: CombatState) => Map<string, number>): boolean {
     const s = state.combat;
     if (!s) return false;
     const before = snapshot(s);
+    const expected = expectedHits?.(s);
     try {
       fn(s);
     } catch (e) {
@@ -79,6 +81,9 @@ export function createGameStore() {
       push('block', u.block - b.block);
       push('stress', u.stress - b.stress);
       push('calm', b.stress - u.stress);
+      // Golpe anunciado que el bloqueo absorbió (total o parcialmente): se enseña para que el bloqueo no sea invisible.
+      const hit = expected?.get(u.id) ?? 0;
+      if (hit > 0 && b.hp - u.hp < hit && !u.downed) push('blocked', hit - (b.hp - u.hp));
     }
     emit({ hint: null, fx, selectedUid: null, selectedPotion: null, ...extra });
     return true;
@@ -183,7 +188,16 @@ export function createGameStore() {
       }
     },
     endTurn() {
-      act((s) => endTeamTurn(s));
+      act(
+        (s) => endTeamTurn(s),
+        {},
+        (s) => {
+          const hits = new Map<string, number>();
+          for (const e of s.units) if (e.side === 'enemy' && !e.downed && !e.statuses.stun)
+            for (const v of intentView(s, e)) if (v.intent.kind === 'attack' && v.target) hits.set(v.target.id, (hits.get(v.target.id) ?? 0) + v.value);
+          return hits;
+        },
+      );
     },
 
     // ——— botín ———

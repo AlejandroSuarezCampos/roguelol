@@ -212,3 +212,17 @@ describe('pociones en el mapa', () => {
     expect(g.getState().hint).toMatch(/curativas/i);
   });
 });
+
+describe('efectos flotantes del turno enemigo', () => {
+  it('un golpe absorbido por el bloqueo se anuncia como «bloqueado»', () => {
+    const g = inBattle();
+    const s = g.getState().combat!;
+    for (const a of s.units) if (a.side === 'ally') a.block = 0;
+    // El bloqueo de los aliados se reinicia al empezar su turno, así que el golpe llega antes: lo medimos sobre el turno enemigo.
+    const front = s.units.filter((x) => x.side === 'ally').sort((a, b) => a.pos - b.pos)[0];
+    front.block = 999;
+    g.endTurn();
+    expect(g.getState().fx.some((f) => f.kind === 'blocked')).toBe(true);
+    expect(g.getState().fx.some((f) => f.kind === 'damage' && f.unitId === front.id)).toBe(false);
+  });
+});
