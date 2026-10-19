@@ -37,6 +37,8 @@ export function Fighter({ unit, s, mode = 'none', tag, fx = [], onClick }: Props
   ].filter(Boolean).join(', ');
   const label = `${unit.name}, posición ${unit.pos}, vida ${unit.hp} de ${unit.maxHp}${unit.block ? `, bloqueo ${unit.block}` : ''}${ally ? `, estrés ${unit.stress}` : ''}${stateLabel ? `, ${stateLabel}` : ''}`;
   const hurt = !unit.downed && unit.hp <= unit.maxHp * 0.3;
+  // Al recibir daño la figura se sacude; la paridad de la última cifra alterna entre dos animaciones para que se repita en cada golpe.
+  const lastHit = [...fx].reverse().find((f) => f.kind === 'damage');
   const clickable = mode !== 'none' && mode !== 'affected';
   return (
     <div
@@ -50,7 +52,7 @@ export function Fighter({ unit, s, mode = 'none', tag, fx = [], onClick }: Props
     >
       {!ally && !unit.downed && <EnemyIntent unit={unit} s={s} />}
       <div className="spr-wrap">
-        <div className={`spr ${ally ? '' : 'mon'}`}>
+        <div className={`spr ${ally ? '' : 'mon'} ${lastHit ? (lastHit.key % 2 ? 'hit-a' : 'hit-b') : ''}`}>
           {ally ? (
             <Portrait src={loadingArt(champ!.ddragon)} mono={unit.name[0]} color={champ!.color} bg={champ!.bg} alt="" />
           ) : (

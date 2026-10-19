@@ -70,6 +70,11 @@
 .downlbl{position:absolute;top:36%;left:50%;transform:translateX(-50%);z-index:4;background:#000d;color:#fff;border-block:2px solid var(--bad);font:800 11.5px var(--fb);padding:3px 10px;letter-spacing:.08em;white-space:nowrap}
 .ftr.hurt .hpbar{animation:pulse 1.6s infinite}
 @keyframes pulse{50%{box-shadow:0 0 10px var(--bad)}}
+/* golpe recibido: sacudida y destello (dos animaciones idénticas que se alternan para repetirse) */
+.ftr .spr.hit-a{animation:hitA .38s}
+.ftr .spr.hit-b{animation:hitB .38s}
+@keyframes hitA{25%{transform:translateX(-9px);filter:brightness(1.9) saturate(2) hue-rotate(-25deg)}60%{transform:translateX(5px)}}
+@keyframes hitB{25%{transform:translateX(-9px);filter:brightness(1.9) saturate(2) hue-rotate(-25deg)}60%{transform:translateX(5px)}}
 /* números flotantes */
 .fxs{position:absolute;left:50%;top:18%;width:0;z-index:6;pointer-events:none}
 .fx{position:absolute;left:0;top:0;transform:translateX(-50%);font:900 28px var(--fd);white-space:nowrap;text-shadow:0 0 4px #000,0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000;animation:floatup 1.3s ease-out forwards}
