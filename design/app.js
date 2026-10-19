@@ -110,7 +110,6 @@ function confirmM({title,body,irr,ok='Confirmar',cb}){
 function go(n){CUR=n;location.hash=n;render()}
 function render(){const f=SCR[CUR];if(!f)return;$('#app').innerHTML=f();$('#app').scrollTop=0;
  document.querySelectorAll('#proto button').forEach(b=>b.classList.toggle('on',b.dataset.go==CUR));if(window.after)after()}
-const head=(t,s,back='menu')=>`<div class="ttl"><div><h1 class="fd">${t}</h1><div class="sub">${s||''}</div></div><button class="btn" data-go="${back}">← Volver</button></div>`;
 
 /* ---------- COMBATE ---------- */
 let G,SELC='leona';

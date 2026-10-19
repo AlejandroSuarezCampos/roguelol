@@ -13,6 +13,7 @@ Prototipo navegable: `design/index.html` (servir con `python -m http.server --di
 | Jefe: Viego, el Rey Arruinado (lore de las Islas de la Sombra) | Data Dragon `loading/Viego_0.jpg` | EnemyPanel, Archivo |
 | Fondo del menú | Imagen raster original `assets/menu-bg.jpg` (1920×1080), pintada por código con `tools/paint_menu_bg.py` (ruido fractal, niebla, reflejos, pase de pincel); regenerable con `python tools/paint_menu_bg.py` | Libre para el proyecto |
 | Fondos de región (Freljord, Shurima, El Vacío, Noxus, Monte Targon) | Imágenes raster originales `assets/regions/*.jpg` (1600×900) pintadas con `tools/paint_regions.py` (+ `tools/paintlib.py`; `python tools/paint_regions.py [región…]`). Inspiradas en el arte oficial de cada facción de LoL Universe (Hielo Verdadero, Disco Solar, vórtice del Vacío, Bastión Inmortal, acantilados tallados de Targon), que solo se usó como referencia y no se incluye. Islas de la Sombra reutiliza `menu-bg.jpg` | Tarjetas de región en Preparación (`.opt.reg`) |
+| Escenas de Descanso y Comerciante | Imágenes raster originales `assets/scenes/camp.jpg` (hoguera nocturna) y `assets/scenes/shop.jpg` (tienda con linternas y alfombra), pintadas con `tools/paint_scenes.py` | Fondo de Descanso y Comerciante |
 | Pergamino del mapa | Imagen raster original `assets/map-shadow-isles.jpg` (1000×2160): papel envejecido, manchas, costas a tinta y bordes quemados, pintada con `tools/paint_map.py` | Mapa de expedición y leyenda |
 | Reliquias y fondo de combate; respaldo SVG de enemigos | SVG original generado (`art.js`) | Libre para el proyecto |
 | Iconos de UI (stats, estados, nodos) | Sprite SVG original (`index.html`) | Libre para el proyecto |
@@ -45,6 +46,18 @@ Regla: ningún estado depende solo del color (icono + etiqueta/forma).
 - Nodos sin cajas: iconos a tinta sobre el papel (élite en rojo óxido, descanso en ocre, santuario en verde). Estados sin depender solo del color: **visitado** = rodeado con un círculo de tinta trazado a mano; **actual** = círculo rojo + «Estás aquí»; **disponible** = late y muestra su nombre; **no alcanzable** = atenuado.
 - Caminos punteados a tinta; los recorridos en rojo y los siguientes más marcados. Coordenadas con un desplazamiento fijo por nodo para un aspecto dibujado a mano.
 - Barra superior: región y piso, los 4 campeones con vida y estrés, oro, reliquias, volver. A la derecha, leyenda en pergamino con los 8 tipos, los estados y el detalle del nodo seleccionado con «Entrar».
+
+## Resto de pantallas (mismo lenguaje que combate, mapa y menú)
+- **Marco común `scene()`**: fondo pintado a pantalla completa (atenuado, desenfocado, con deriva lenta y viñeta) + el mismo HUD de 52px que mapa y combate (emblema, título/subtítulo, oro o recurso, «Volver»). Los paneles dentro son de vidrio hextech semitransparente. Los campeones aparecen siempre como sprites de pie (`hero()`), igual que en combate.
+- **Equipo**: lista de campeones a la izquierda (retrato redondo, estrés, herida), el campeón seleccionado de cuerpo entero en el centro con rasgos, estrés y heridas, y estadísticas y gear a la derecha. Debajo, el mazo completo.
+- **Mejoras**: estilo fragua; cada mejora muestra la carta antes → después, con el coste en Esquirlas.
+- **Archivo**: pestañas subrayadas; campeones como sprites, enemigos y jefes en medallones redondos, lo bloqueado con pista.
+- **Preparación**: regiones con su ilustración a la izquierda, el equipo de pie en orden de posición (4→1) con vida, estrés, gear y heridas en el centro, y la dificultad a la derecha con «Comenzar».
+- **Botín**: lista de recompensas en un único panel, como en Slay the Spire (carta, oro, poción, reliquia, gear con comparación siempre visible), resumen de lo que se gana y se pierde y «Continuar». La carta abre una superposición «Elige una carta» con 3 cartas grandes y «Omitir».
+- **Descanso**: hoguera pintada; las 5 opciones son medallones con coste, alcance y consecuencia; los 4 campeones junto al fuego con su vida y estrés.
+- **Comerciante**: interior de tienda pintado; toda la mercancía expuesta a la vez sobre la alfombra (cartas, gear con el objeto que reemplaza, consumibles, servicios), con etiquetas de precio, precio en rojo si no alcanza y «Vendido».
+- **Evento**: ilustración enmarcada a la izquierda y texto narrativo con opciones `[Acción] ganancia · coste` a la derecha (ganancia en verde, coste en rojo).
+- **Resultado**: gran estandarte de Victoria, Derrota o Retirada (la derrota tiñe el fondo de rojo), el equipo de pie con su estado (derribado o muerto en gris) y paneles de cambios y estadísticas.
 
 ## Componentes (nombre → archivo sugerido)
 `ChampionPanel`, `EnemyPanel`+`EnemyIntent`, `Card`/`CardHand`, `EnergyCounter`, `StatusIcon`, `GearSlot`/`GearComparison`, `RelicSlot`, `ExpeditionNode`/`ExpeditionMap`, `RewardChoice`, `ConfirmationModal`, `StressMeter`/`WoundBadge`. En el prototipo: personajes `unitA/unitE` (`.ftr`), `intentFor` (`.intent`), `card` dentro de `.hand .slot`, orbe `.orb`, mazos `.pile`, estados `.st` (combate) / `chip` (resto), `gearSlot` y tira `.gearbar`, `relicSlot` y barra `.relbar`, nodo del mapa (`.nd`), `.opt` / `.opt.reg`, `confirmM`, `stressM`, `woundBadge`.
