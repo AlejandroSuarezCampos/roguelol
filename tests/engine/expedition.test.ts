@@ -3,7 +3,7 @@ import { CARDS } from '../../src/data/cards';
 import { CHAMPIONS } from '../../src/data/champions';
 import { CONFIG } from '../../src/engine/config';
 import {
-  availableNodes, claimCard, claimRewards, combatFromExpedition, createExpedition, enterNode, finishCombat,
+  availableNodes, claimCard, claimPotion, claimRewards, combatFromExpedition, createExpedition, enterNode, finishCombat,
   generateMap, rest, retreat, type Expedition,
 } from '../../src/engine/expedition';
 import { Rng } from '../../src/engine/rng';
@@ -204,6 +204,34 @@ describe('fin de combate', () => {
     const rewards = finishCombat(e, won(e), 'combat')!;
     expect(new Set(rewards.cards).size).toBe(rewards.cardOptions);
     for (const id of rewards.cards) expect(CARDS[id]).toBeDefined();
+  });
+});
+
+describe('pociones del botín', () => {
+  it('las élites siempre sueltan una poción y los jefes nunca', () => {
+    for (let i = 0; i < 10; i++) {
+      const e = createExpedition(i);
+      const s = combatFromExpedition(e, 'elite');
+      s.outcome = 'won';
+      expect(finishCombat(e, s, 'elite')!.potion).toBeDefined();
+      const b = createExpedition(i);
+      const sb = combatFromExpedition(b, 'boss');
+      sb.outcome = 'won';
+      expect(finishCombat(b, sb, 'boss')!.potion).toBeUndefined();
+    }
+  });
+
+  it('se guarda en el primer hueco; con el cinturón lleno pide hueco y permite descartar', () => {
+    const e = createExpedition(1);
+    expect(claimPotion(e, 'health')).toBe('added');
+    expect(e.run.belt[0]).toEqual({ id: 'health', spent: false });
+    claimPotion(e, 'iron');
+    claimPotion(e, 'iron');
+    expect(claimPotion(e, 'sorcery')).toBe('full');
+    expect(claimPotion(e, 'sorcery', 'new')).toBe('discarded');
+    expect(e.run.belt[0]!.id).toBe('health');
+    expect(claimPotion(e, 'sorcery', 0)).toBe('replaced');
+    expect(e.run.belt[0]!.id).toBe('sorcery');
   });
 });
 

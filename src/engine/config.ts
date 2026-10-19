@@ -33,5 +33,5 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
     retreatGoldKept: 0.5,
   },
-  potions: { beltSize: 3, health: 20, refillable: 8, iron: 15, sorceryMarks: 2 },
+  potions: { drop: { combat: 0.35, elite: 1, boss: 0 }, beltSize: 3, health: 20, refillable: 8, iron: 15, sorceryMarks: 2 },
 } as const;

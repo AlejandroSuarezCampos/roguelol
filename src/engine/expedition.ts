@@ -7,7 +7,8 @@ import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
-import type { ChampionId, CombatState } from './types';
+import { addPotion, POTIONS, resolveFullBelt } from './potions';
+import type { ChampionId, CombatState, PotionId } from './types';
 
 export interface MapNode {
   id: string;
@@ -43,6 +44,8 @@ export interface Expedition {
 export interface ExpeditionRewards extends Rewards {
   /** Ids de las cartas ofrecidas (`cardOptions` distintas). */
   cards: string[];
+  /** Poción que suelta el combate, si hay (ver `CONFIG.potions.drop`). */
+  potion?: PotionId;
 }
 
 export type RestAction = 'heal' | 'calm' | 'treat' | 'stoke';
@@ -180,7 +183,16 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   if (kind === 'boss') e.status = 'victory';
   const base = rollRewards(e.run, kind, BASE_GOLD[kind]);
   const pool = e.run.rng.shuffle(CARD_LIST.map((c) => c.id));
-  return { ...base, cards: pool.slice(0, base.cardOptions) };
+  const potion = e.run.rng.next() < CONFIG.potions.drop[kind] ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
+  return { ...base, cards: pool.slice(0, base.cardOptions), potion };
+}
+
+/** Recoge la poción del botín. Con el cinturón lleno hay que decir qué hueco sustituir (o `'new'` para descartarla). */
+export function claimPotion(e: Expedition, id: PotionId, slot?: number | 'new'): 'added' | 'replaced' | 'discarded' | 'full' {
+  if (addPotion(e.run.belt, id)) return 'added';
+  if (slot === undefined) return 'full';
+  resolveFullBelt(e.run.belt, id, slot);
+  return slot === 'new' ? 'discarded' : 'replaced';
 }
 
 export function claimRewards(e: Expedition, r: Rewards): void {
