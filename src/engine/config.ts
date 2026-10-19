@@ -33,7 +33,17 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
     retreatGoldKept: 0.5,
   },
+  gear: {
+    options: 3,
+    dropChance: { combat: 0.2, elite: 1, boss: 1 },
+    rarityWeights: {
+      combat: { common: 0.7, rare: 0.3, legendary: 0 },
+      elite: { common: 0.2, rare: 0.6, legendary: 0.2 },
+      boss: { common: 0, rare: 0.6, legendary: 0.4 },
+    },
+  },
   shop: {
+    gearPrice: { common: 60, rare: 110, legendary: 160 },
     cardPrice: { common: 50, rare: 80, epic: 120 },
     potionPrice: { health: 35, refillable: 40, iron: 50, sorcery: 45 },
     treatWound: 25,

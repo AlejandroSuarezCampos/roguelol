@@ -1,8 +1,8 @@
 import { CARD_LIST, CARDS } from '../data/cards';
-import { CHAMPIONS } from '../data/champions';
 import { EVENTS, type EventChoice, type EventDef, type EventEffect } from '../data/events';
 import { CONFIG } from './config';
 import { claimPotion, type Expedition } from './expedition';
+import { syncMaxHp } from './gear';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
@@ -69,8 +69,7 @@ function apply(e: Expedition, fx: EventEffect, lines: string[]): void {
       }
       const c = run.rng.pick(candidates);
       e.wounds[c.id]++;
-      c.maxHp = Math.round(CHAMPIONS[c.id].maxHp * (1 - CONFIG.expedition.wound.maxHpLoss * e.wounds[c.id]));
-      c.hp = Math.min(c.hp, c.maxHp);
+      syncMaxHp(e, c);
       lines.push(`${c.name} sufre una herida grave (vida máxima ${c.maxHp})`);
       break;
     }

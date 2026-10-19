@@ -1,8 +1,10 @@
 import { CARD_LIST, CARDS, STARTER_DECK } from '../data/cards';
+import { GEAR, GEAR_LIST } from '../data/gear';
 import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
 import { BASE_GOLD, ENCOUNTERS, ENEMIES, type EncounterKind } from '../data/enemies';
 import { alliesAfter, startCombat } from './combat';
 import { CONFIG } from './config';
+import { emptyGear, finalStatsFor, syncMaxHp, type ChampionGear } from './gear';
 import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
@@ -35,6 +37,11 @@ export interface Expedition {
   currentId: string | null;
   visited: string[];
   status: ExpeditionStatus;
+  /** Gear equipado por campeón y objetos sin equipar (sin límite). */
+  gear: Record<ChampionId, ChampionGear>;
+  inventory: string[];
+  /** Hay un combate en curso: no se puede cambiar el equipo. */
+  inCombat: boolean;
   /** Heridas graves por campeón (Normal, §12). */
   wounds: Record<ChampionId, number>;
   restUsed: boolean;
@@ -51,6 +58,8 @@ export interface Expedition {
 export interface ExpeditionRewards extends Rewards {
   /** Ids de las cartas ofrecidas (`cardOptions` distintas). */
   cards: string[];
+  /** Ids de gear ofrecido (elige 1 o ninguno), si el combate suelta. */
+  gear?: string[];
   /** Poción que suelta el combate, si hay (ver `CONFIG.potions.drop`). */
   potion?: PotionId;
 }
@@ -125,6 +134,7 @@ export function createExpedition(seed: number): Expedition {
   const map = generateMap(new Rng(seed ^ 0x9e3779b9));
   return {
     run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
+    gear: emptyGear(), inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
 }
@@ -160,11 +170,12 @@ export const encounterKind = (type: NodeType): EncounterKind | null =>
 /** Crea el combate con el equipo, el mazo, la niebla, el Presagio y el cinturón de la run. */
 export function combatFromExpedition(e: Expedition, kind: EncounterKind): CombatState {
   const { run } = e;
+  e.inCombat = true;
   const encounter = run.rng.pick(ENCOUNTERS[kind]);
   return startCombat({
     seed: 1 + run.rng.int(2 ** 31 - 1),
     allies: run.champions.map((c) => ({
-      id: c.id, name: c.name, pos: c.pos, hp: c.hp, maxHp: c.maxHp, stress: c.stress, crisis: CRISIS[c.id], stats: CHAMPIONS[c.id].stats,
+      id: c.id, name: c.name, pos: c.pos, hp: c.hp, maxHp: c.maxHp, stress: c.stress, crisis: CRISIS[c.id], stats: finalStatsFor(e, c.id),
     })),
     enemies: encounter.map((en, i) => ({ uid: `e${i + 1}`, defId: en.defId, pos: en.pos, boss: kind === 'boss' && i === 0 })),
     deck: e.deck,
@@ -178,12 +189,10 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
 
 function applyWound(e: Expedition, c: RunChampion): void {
   e.wounds[c.id] = Math.min(F.wound.cap, e.wounds[c.id] + 1);
-  c.maxHp = maxHpWith(c.id, e.wounds[c.id]);
+  syncMaxHp(e, c);
   c.hp = Math.ceil(c.maxHp * F.wound.recoverHpFraction);
   c.downed = false;
 }
-
-const maxHpWith = (id: ChampionId, wounds: number): number => Math.round(CHAMPIONS[id].maxHp * (1 - F.wound.maxHpLoss * wounds));
 
 /**
  * Cierra el combate: vuelca el estado de los aliados en la run. Derrota → fin de la expedición (devuelve null).
@@ -191,6 +200,7 @@ const maxHpWith = (id: ChampionId, wounds: number): number => Math.round(CHAMPIO
  */
 export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind): ExpeditionRewards | null {
   if (s.outcome === 'ongoing') throw new Error('El combate no ha terminado');
+  e.inCombat = false;
   for (const a of alliesAfter(s)) {
     const c = e.run.champions.find((x) => x.id === a.id)!;
     c.hp = a.hp;
@@ -208,7 +218,28 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   const base = rollRewards(e.run, kind, BASE_GOLD[kind]);
   const pool = e.run.rng.shuffle(CARD_LIST.map((c) => c.id));
   const potion = e.run.rng.next() < CONFIG.potions.drop[kind] ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
-  return { ...base, cards: pool.slice(0, base.cardOptions), potion };
+  const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
+  return { ...base, cards: pool.slice(0, base.cardOptions), potion, gear };
+}
+
+/** `count` objetos distintos con probabilidad ponderada por rareza (sin reposición). */
+export function pickGear(rng: Rng, weights: Record<'common' | 'rare' | 'legendary', number>, count: number): string[] {
+  const pool = GEAR_LIST.filter((g) => weights[g.rarity] > 0);
+  const out: string[] = [];
+  while (out.length < count && pool.length) {
+    const total = pool.reduce((a, g) => a + weights[g.rarity], 0);
+    let r = rng.next() * total;
+    const i = pool.findIndex((g) => (r -= weights[g.rarity]) < 0);
+    out.push(pool.splice(i < 0 ? pool.length - 1 : i, 1)[0].id);
+  }
+  return out;
+}
+
+/** Recoge un objeto del botín (`null` = omitir): va al inventario. */
+export function claimGear(e: Expedition, gearId: string | null): void {
+  if (gearId === null) return;
+  if (!GEAR[gearId]) throw new Error(`Objeto desconocido: ${gearId}`);
+  e.inventory.push(gearId);
 }
 
 /** Recoge la poción del botín. Con el cinturón lleno hay que decir qué hueco sustituir (o `'new'` para descartarla). */
@@ -248,7 +279,7 @@ export function rest(e: Expedition, action: RestAction): void {
     const worst = [...e.run.champions].sort((a, b) => e.wounds[b.id] - e.wounds[a.id])[0];
     if (!e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
     e.wounds[worst.id]--;
-    worst.maxHp = maxHpWith(worst.id, e.wounds[worst.id]);
+    syncMaxHp(e, worst);
   }
   e.restUsed = true;
 }

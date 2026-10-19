@@ -1,8 +1,9 @@
 import { CARD_LIST, CARDS } from '../data/cards';
-import { CHAMPIONS } from '../data/champions';
+import { GEAR, GEAR_LIST } from '../data/gear';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
 import { claimPotion } from './expedition';
+import { syncMaxHp } from './gear';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
@@ -16,20 +17,29 @@ export interface ShopPotion {
   price: number;
   sold: boolean;
 }
+export interface ShopGear {
+  gearId: string;
+  price: number;
+  sold: boolean;
+}
 export interface ShopState {
   cards: ShopCard[];
+  gear: ShopGear[];
   potions: ShopPotion[];
   /** Una herida tratada por visita basta: el servicio se vende una vez. */
   woundTreated: boolean;
 }
 
 /** Abre el comerciante del nodo actual. El stock sale de la semilla de la run y no cambia al reabrir. */
+export const gearName = (id: string): string => GEAR[id].name;
+
 export function openShop(e: Expedition): ShopState {
   if (e.shop) return e.shop;
   const rng = e.run.rng;
   const cards = rng.shuffle(CARD_LIST).slice(0, 3).map((c) => ({ defId: c.id, price: CONFIG.shop.cardPrice[c.rarity], sold: false }));
   const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: CONFIG.shop.potionPrice[id], sold: false }));
-  e.shop = { cards, potions, woundTreated: false };
+  const gear = rng.shuffle(GEAR_LIST).slice(0, 2).map((g) => ({ gearId: g.id, price: CONFIG.shop.gearPrice[g.rarity], sold: false }));
+  e.shop = { cards, gear, potions, woundTreated: false };
   return e.shop;
 }
 
@@ -63,6 +73,15 @@ export function buyPotion(e: Expedition, index: number, slot?: number): void {
   item.sold = true;
 }
 
+export function buyGear(e: Expedition, index: number): void {
+  const item = stock(e).gear[index];
+  if (!item) throw new Error('Ese objeto no está en venta');
+  if (item.sold) throw new Error('Vendido');
+  pay(e, item.price);
+  item.sold = true;
+  e.inventory.push(item.gearId);
+}
+
 export function treatWoundAtShop(e: Expedition): void {
   const s = stock(e);
   if (s.woundTreated) throw new Error('Vendido');
@@ -70,7 +89,7 @@ export function treatWoundAtShop(e: Expedition): void {
   if (!e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
   pay(e, CONFIG.shop.treatWound);
   e.wounds[worst.id]--;
-  worst.maxHp = Math.round(CHAMPIONS[worst.id].maxHp * (1 - CONFIG.expedition.wound.maxHpLoss * e.wounds[worst.id]));
+  syncMaxHp(e, worst);
   s.woundTreated = true;
 }
 

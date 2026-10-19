@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { availableNodes, combatFromExpedition, createExpedition, enterNode } from '../../src/engine/expedition';
+import { equip } from '../../src/engine/gear';
 import { SAVE_KEY, SAVE_VERSION, createSaveManager, type StorageLike } from '../../src/save/saveManager';
 
 function memory(): StorageLike & { data: Map<string, string> } {
@@ -15,6 +16,8 @@ const played = (seed = 4) => {
   e.wounds.lux = 2;
   e.deck.push('x2');
   e.run.belt[0] = { id: 'health', spent: false };
+  e.inventory.push('infinity', 'warmog');
+  equip(e, 'yasuo', 'infinity');
   return e;
 };
 
@@ -36,6 +39,9 @@ describe('guardar y cargar', () => {
     expect(r.expedition.run.champions[1].hp).toBe(12);
     expect(r.expedition.wounds.lux).toBe(2);
     expect(r.expedition.deck).toEqual(e.deck);
+    expect(r.expedition.gear.yasuo.weapon).toBe('infinity');
+    expect(r.expedition.inventory).toEqual(['warmog']);
+    expect(r.expedition.inCombat).toBe(false);
     expect(r.expedition.visited).toEqual(e.visited);
     // el RNG se restaura con su estado: el siguiente combate sale igual que sin guardar
     const a = combatFromExpedition(e, 'combat');
@@ -97,6 +103,8 @@ describe('datos corruptos', () => {
     ['oro negativo', (r: any) => (r.expedition.run.gold = -5)],
     ['un presagio inventado', (r: any) => (r.expedition.run.omen = 'nada')],
     ['un RNG que no es número', (r: any) => (r.expedition.run.rng.state = 'x')],
+    ['un objeto de inventario inexistente', (r: any) => r.expedition.inventory.push('nope')],
+    ['un arma en el slot de armadura', (r: any) => (r.expedition.gear.lux.armor = 'rabadon')],
     ['una expedición ya terminada', (r: any) => (r.expedition.status = 'defeat')],
   ])('rechaza %s', (_name, tamper) => {
     const store = memory();

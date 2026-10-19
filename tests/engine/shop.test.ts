@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CARDS } from '../../src/data/cards';
 import { CONFIG } from '../../src/engine/config';
 import { createExpedition } from '../../src/engine/expedition';
-import { buyCard, buyPotion, openShop, removeCard, removalPrice, treatWoundAtShop } from '../../src/engine/shop';
+import { GEAR } from '../../src/data/gear';
+import { buyCard, buyGear, buyPotion, openShop, removeCard, removalPrice, treatWoundAtShop } from '../../src/engine/shop';
 
 const fresh = (gold = 500) => {
   const e = createExpedition(11);
@@ -93,5 +94,29 @@ describe('compras', () => {
     const e = fresh(5000);
     e.deck = e.deck.slice(0, 12);
     expect(() => removeCard(e, 0)).toThrow(/mazo/i);
+  });
+});
+
+describe('gear en venta', () => {
+  it('ofrece 2 objetos con el precio de su rareza', () => {
+    const e = fresh();
+    expect(e.shop!.gear).toHaveLength(2);
+    expect(new Set(e.shop!.gear.map((g) => g.gearId)).size).toBe(2);
+    for (const g of e.shop!.gear) expect(g.price).toBe(CONFIG.shop.gearPrice[GEAR[g.gearId].rarity]);
+  });
+
+  it('comprar gear lo manda al inventario y no se compra dos veces', () => {
+    const e = fresh(500);
+    const item = e.shop!.gear[0];
+    buyGear(e, 0);
+    expect(e.inventory).toEqual([item.gearId]);
+    expect(e.run.gold).toBe(500 - item.price);
+    expect(() => buyGear(e, 0)).toThrow(/vendid/i);
+  });
+
+  it('sin oro no compra', () => {
+    const e = fresh(1);
+    expect(() => buyGear(e, 1)).toThrow(/oro/i);
+    expect(e.inventory).toHaveLength(0);
   });
 });

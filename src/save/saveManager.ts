@@ -1,5 +1,6 @@
 import { CARDS } from '../data/cards';
 import { CHAMPION_IDS } from '../data/champions';
+import { GEAR } from '../data/gear';
 import { CONFIG } from '../engine/config';
 import type { Expedition } from '../engine/expedition';
 import { Rng } from '../engine/rng';
@@ -7,7 +8,7 @@ import { OMENS } from '../engine/run';
 import { POTIONS } from '../engine/potions';
 
 /** Versión del formato. Súbela (y añade una migración) si cambia la forma de lo que se guarda. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const SAVE_KEY = 'shattered-runeterra:run';
 export const CORRUPT_KEY = 'shattered-runeterra:run.corrupt';
 
@@ -60,6 +61,13 @@ function problem(x: any): string | null {
   }
   if (ids.size !== nodes.length) return 'nodos repetidos';
   for (const n of nodes) if (!n.next.every((id: unknown) => typeof id === 'string' && ids.has(id))) return 'camino';
+  if (!Array.isArray(x.inventory) || !x.inventory.every((id: unknown) => typeof id === 'string' && id in GEAR)) return 'inventario';
+  if (!isObj(x.gear)) return 'gear';
+  for (const id of CHAMPION_IDS) {
+    const g = x.gear[id];
+    if (!isObj(g)) return 'gear de campeón';
+    for (const slot of ['weapon', 'armor'] as const) if (g[slot] !== null && !(typeof g[slot] === 'string' && GEAR[g[slot]]?.slot === slot)) return 'gear equipado';
+  }
   if (x.currentId !== null && !ids.has(x.currentId)) return 'nodo actual';
   if (!Array.isArray(x.visited) || !x.visited.every((id: unknown) => typeof id === 'string' && ids.has(id))) return 'visitados';
   if (x.status !== 'active') return 'estado';
@@ -70,7 +78,7 @@ function problem(x: any): string | null {
 
 /** El RNG se guarda como un número (`state`) y se reconstruye al cargar; lo demás son datos planos. */
 function revive(x: any): Expedition {
-  return { ...x, run: { ...x.run, rng: new Rng(x.run.rng.state) }, shop: null };
+  return { ...x, run: { ...x.run, rng: new Rng(x.run.rng.state) }, shop: null, inCombat: false };
 }
 
 /**
