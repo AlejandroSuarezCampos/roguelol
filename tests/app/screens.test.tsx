@@ -32,9 +32,15 @@ describe('menú y preparación', () => {
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
   });
 
-  it('las opciones aún no implementadas están deshabilitadas', () => {
+  it('Equipo, Mejoras y Archivo abren su pantalla y se vuelve al menú', async () => {
+    const user = userEvent.setup();
     render(<App />);
-    for (const name of [/Equipo/, /Mejoras/, /Archivo/]) expect(screen.getByRole('button', { name })).toBeDisabled();
+    for (const [name, heading] of [[/^Equipo/, 'Equipo'], [/^Mejoras/, 'Mejoras'], [/^Archivo/, 'Archivo']] as const) {
+      await user.click(screen.getByRole('button', { name }));
+      expect(screen.getByText(heading, { selector: '.where b' })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Volver al menú' }));
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Shattered/);
+    }
   });
 
   it('mover a un campeón hacia el frente cambia su posición', async () => {
@@ -551,5 +557,78 @@ describe('forja en el descanso', () => {
     });
     render(<App />);
     expect(screen.getAllByText('Mejorada').length).toBeGreaterThan(0);
+  });
+});
+
+
+describe('metaprogresión en pantalla', () => {
+  it('Mejoras: sin Esquirlas no se compra; con ellas sube el nivel y se actualiza el saldo', async () => {
+    const user = userEvent.setup();
+    go(() => game.openMenuScreen('upgrades'));
+    render(<App />);
+    expect(screen.getByRole('button', { name: /Comprar Vigor nivel 1/ })).toBeDisabled();
+    expect(screen.getAllByText(/^Faltan \d+/).length).toBeGreaterThan(0);
+    go(() => {
+      game.getState().meta.shards = 100;
+      game.notify(null);
+    });
+    await user.click(screen.getByRole('button', { name: /Comprar Vigor nivel 1/ }));
+    expect(game.getState().meta.perks.vigor).toBe(1);
+    expect(screen.getByLabelText(/60 Esquirlas/)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Nivel 1 de 3' })).toBeInTheDocument();
+  });
+
+  it('Mejoras: borrar el progreso pide confirmación', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.openMenuScreen('upgrades');
+      game.getState().meta.shards = 70;
+      game.notify(null);
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Borrar progreso' }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Volver' }));
+    expect(game.getState().meta.shards).toBe(70);
+    await user.click(screen.getByRole('button', { name: 'Borrar progreso' }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Borrar todo' }));
+    expect(game.getState().meta.shards).toBe(0);
+  });
+
+  it('Archivo: el bestiario oculta lo no visto y enseña lo descubierto', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.openMenuScreen('archive');
+      game.getState().meta.bestiary.wolf = { seen: 3, defeated: 2 };
+    });
+    render(<App />);
+    await user.click(screen.getByRole('tab', { name: 'Bestiario' }));
+    expect(screen.getByText('Gran lobo sombrío')).toBeInTheDocument();
+    expect(screen.getByText(/Visto 3 veces · derrotado 2/)).toBeInTheDocument();
+    expect(screen.getAllByText('???').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Ataque \d+ a la posición 1/)).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Historial' }));
+    expect(screen.getByText('Expediciones')).toBeInTheDocument();
+  });
+
+  it('Equipo del menú: muestra las 8 cartas del campeón y alterna a la versión mejorada', async () => {
+    const user = userEvent.setup();
+    go(() => game.openMenuScreen('roster'));
+    render(<App />);
+    expect(screen.getByRole('heading', { name: /Leona · Tanque/ })).toBeInTheDocument();
+    expect(screen.getByText('Escudo del amanecer')).toBeInTheDocument();
+    expect(screen.queryByText('Mejorada')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /mejorada/ }));
+    expect(screen.getAllByText('Mejorada')).toHaveLength(8);
+    await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
+    expect(screen.getByRole('heading', { name: /Yasuo · Daño/ })).toBeInTheDocument();
+  });
+
+  it('el resultado muestra las Esquirlas ganadas', async () => {
+    const user = userEvent.setup();
+    toBattle();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Retirada/ }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Retirarme' }));
+    expect(screen.getByText(/\+\d+ Esquirlas · total \d+/)).toBeInTheDocument();
   });
 });

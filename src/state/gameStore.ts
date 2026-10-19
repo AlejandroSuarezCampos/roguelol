@@ -16,10 +16,13 @@ import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions'
 import { reorder } from '../engine/run';
 import { buyCard as engineBuyCard, buyGear as engineBuyGear, buyPotion as engineBuyPotion, openShop, removeCard as engineRemoveCard, treatWoundAtShop } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
+import { buyPerk as engineBuyPerk, newMeta, perksFor, recordRun, type MetaState } from '../engine/meta';
+import type { PerkId } from '../data/perks';
+import { createMetaManager, type MetaManager } from '../save/metaManager';
 import { browserStorage, createSaveManager, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
 
-export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'team' | 'result';
+export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'team' | 'result' | 'upgrades' | 'archive' | 'roster';
 
 /** Número flotante sobre una unidad tras una acción (daño, curación, bloqueo o estrés). */
 export interface FxEvent {
@@ -38,6 +41,10 @@ export interface GameState {
   cardClaimed: boolean;
   potionClaimed: boolean;
   gearClaimed: boolean;
+  /** Progreso permanente: Esquirlas, mejoras, bestiario e historial. */
+  meta: MetaState;
+  /** Esquirlas ganadas por la expedición que acaba de terminar (null si no procede). */
+  lastShards: number | null;
   /** Resumen de la expedición guardada (null = no hay). */
   saved: SaveSummary | null;
   /** Aviso para el menú (p. ej. un guardado dañado que se descartó). */
@@ -61,14 +68,17 @@ export interface GameState {
 type Snap = Map<string, { hp: number; block: number; stress: number }>;
 const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { hp: u.hp, block: u.block, stress: u.stress }]));
 
-const initial = (saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
+const initial = (meta: MetaState, saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
   screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false,
-  saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [], version: 0,
+  meta, lastShards: null, saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [], version: 0,
 });
 
-export function createGameStore(opts: { save?: SaveManager } = {}) {
+export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager } = {}) {
   const save = opts.save;
-  let state = initial(save?.summary() ?? null);
+  const metaStore = opts.meta;
+  const loaded = metaStore?.load();
+  const meta: MetaState = loaded?.meta ?? newMeta();
+  let state = initial(meta, save?.summary() ?? null, loaded?.corrupt ? `El progreso permanente estaba dañado (${loaded.corrupt}) y se ha reiniciado. Se conserva una copia.` : null);
   let fxKey = 0;
   const listeners = new Set<() => void>();
 
@@ -83,6 +93,11 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
         save.clear();
         state = { ...state, saved: null };
       }
+    }
+    // Al terminar la expedición se suma una sola vez al progreso permanente.
+    if (state.screen === 'result' && state.expedition && !state.expedition.recorded) {
+      state = { ...state, lastShards: recordRun(meta, state.expedition).shards };
+      metaStore?.save(meta);
     }
     listeners.forEach((l) => l());
   };
@@ -141,15 +156,15 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
 
     // ——— flujo general ———
     newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1, difficulty: DifficultyId = 'normal') {
-      state = initial(state.saved);
-      emit({ screen: 'prep', expedition: createExpedition(seed, difficulty) });
+      state = initial(meta, state.saved);
+      emit({ screen: 'prep', expedition: createExpedition(seed, difficulty, perksFor(meta)) });
     },
     /** Cambia la dificultad en la preparación (misma semilla, así que el Presagio no cambia; el mapa sí). */
     setDifficulty(difficulty: DifficultyId) {
       const e = state.expedition;
       if (!e || state.screen !== 'prep' || e.difficulty === difficulty) return;
       const order = e.run.champions.map((c) => [c.id, c.pos] as const);
-      const fresh = createExpedition(e.seed, difficulty);
+      const fresh = createExpedition(e.seed, difficulty, perksFor(meta));
       for (const [id, pos] of order) fresh.run.champions.find((c) => c.id === id)!.pos = pos;
       emit({ expedition: fresh });
     },
@@ -158,11 +173,30 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
       if (!save) return;
       const r = save.load();
       if (r.status === 'ok') {
-        state = initial(state.saved);
+        state = initial(meta, state.saved);
         emit({ screen: 'map', expedition: r.expedition });
       } else if (r.status === 'corrupt') {
         emit({ saved: null, notice: `El guardado estaba dañado (${r.reason}) y se ha descartado. Se conserva una copia.` });
       } else emit({ saved: null });
+    },
+    /** Pantallas del menú (Mejoras, Archivo, Equipo). */
+    openMenuScreen(screen: 'upgrades' | 'archive' | 'roster') {
+      emit({ screen, hint: null });
+    },
+    buyPerk(id: PerkId) {
+      try {
+        engineBuyPerk(meta, id);
+        metaStore?.save(meta);
+        emit({ hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
+    },
+    /** Borra el progreso permanente (la pantalla pide confirmación antes). */
+    resetProgress() {
+      Object.assign(meta, newMeta());
+      metaStore?.clear();
+      emit({ hint: null });
     },
     dismissNotice() {
       emit({ notice: null });
@@ -176,7 +210,7 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
       if (state.expedition) emit({ screen: 'map', hint: null });
     },
     toMenu() {
-      state = initial(save?.summary() ?? null);
+      state = initial(meta, save?.summary() ?? null);
       emit();
     },
     retreat() {
@@ -394,7 +428,8 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
 
 export type GameStore = ReturnType<typeof createGameStore>;
 
-export const game = createGameStore({ save: createSaveManager(browserStorage()) });
+const storage = browserStorage();
+export const game = createGameStore({ save: createSaveManager(storage), meta: createMetaManager(storage) });
 
 export function useGame(store: GameStore = game): GameState {
   return useSyncExternalStore(store.subscribe, store.getState);

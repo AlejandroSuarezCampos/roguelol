@@ -13,7 +13,7 @@ const BANNER = {
 } as const;
 
 export function ResultsScreen() {
-  const { expedition: e } = useGame();
+  const { expedition: e, lastShards, meta } = useGame();
   if (!e) return null;
   const b = BANNER[e.status];
   const floors = e.visited.length;
@@ -70,6 +70,11 @@ export function ResultsScreen() {
             <dt>Cartas en el mazo</dt><dd>{e.deck.length}</dd>
             <dt>Niebla final</dt><dd>{e.run.mist}</dd>
           </dl>
+          {lastShards !== null && (
+            <p className="tag gold shards" role="status">
+              <Icon name="relic" /> +{lastShards} Esquirlas · total {meta.shards}
+            </p>
+          )}
           <div className="row end">
             <button className="btn" onClick={() => game.toMenu()}>
               Menú principal

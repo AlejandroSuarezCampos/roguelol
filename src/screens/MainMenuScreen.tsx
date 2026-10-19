@@ -3,14 +3,14 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { Icon } from '../components/Icon';
 import { game, useGame } from '../state/gameStore';
 
-const SOON = [
-  { icon: 'team', name: 'Equipo', text: 'Fichas, gear y mazo' },
-  { icon: 'up', name: 'Mejoras', text: 'Forja de cartas' },
-  { icon: 'book', name: 'Archivo', text: 'Campeones y bestiario' },
-];
+const SECTIONS = [
+  { screen: 'roster', icon: 'team', name: 'Equipo', text: 'Campeones y cartas' },
+  { screen: 'upgrades', icon: 'up', name: 'Mejoras', text: 'Forja permanente' },
+  { screen: 'archive', icon: 'book', name: 'Archivo', text: 'Bestiario e historial' },
+] as const;
 
 export function MainMenuScreen() {
-  const { saved, notice } = useGame();
+  const { saved, notice, meta } = useGame();
   const [confirming, setConfirming] = useState(false);
   const newRun = () => (saved ? setConfirming(true) : game.newExpedition());
   return (
@@ -44,11 +44,11 @@ export function MainMenuScreen() {
           <b>Expedición</b>
           <span>{saved ? 'Empezar una nueva' : 'Cruza las Islas de la Sombra'}</span>
         </button>
-        {SOON.map((s) => (
-          <button key={s.name} className="mbtn" disabled aria-disabled="true">
+        {SECTIONS.map((s) => (
+          <button key={s.name} className="mbtn" onClick={() => game.openMenuScreen(s.screen)}>
             <Icon name={s.icon} />
             <b>{s.name}</b>
-            <span>Próximamente</span>
+            <span>{s.screen === 'upgrades' ? `${meta.shards} Esquirlas` : s.text}</span>
           </button>
         ))}
       </div>

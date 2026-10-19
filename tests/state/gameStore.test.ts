@@ -456,3 +456,73 @@ describe('dificultad', () => {
     expect(g.getState().expedition!.difficulty).toBe('nightmare');
   });
 });
+
+import { createMetaManager, META_KEY } from '../../src/save/metaManager';
+import { PERKS } from '../../src/data/perks';
+
+describe('metaprogresión en el store', () => {
+  const mem = (): StorageLike & { data: Map<string, string> } => {
+    const data = new Map<string, string>();
+    return { data, getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+  };
+
+  it('las Esquirlas se ganan una sola vez al terminar la expedición y se guardan', () => {
+    const store = mem();
+    const g = createGameStore({ save: createSaveManager(store), meta: createMetaManager(store) });
+    g.newExpedition(5);
+    g.startExpedition();
+    g.retreat();
+    const shards = g.getState().lastShards!;
+    expect(shards).toBeGreaterThanOrEqual(5);
+    expect(g.getState().meta.shards).toBe(shards);
+    expect(JSON.parse(store.data.get(META_KEY)!).meta.shards).toBe(shards);
+    g.toMenu();
+    g.openMenuScreen('archive');
+    expect(g.getState().meta.shards).toBe(shards); // no se vuelve a sumar
+    const g2 = createGameStore({ save: createSaveManager(store), meta: createMetaManager(store) });
+    expect(g2.getState().meta.shards).toBe(shards);
+  });
+
+  it('comprar una mejora gasta Esquirlas, se guarda y se aplica a la siguiente expedición', () => {
+    const store = mem();
+    const g = createGameStore({ meta: createMetaManager(store) });
+    g.getState().meta.shards = 500;
+    g.buyPerk('vigor');
+    g.buyPerk('provisions');
+    expect(g.getState().meta.perks.vigor).toBe(1);
+    expect(g.getState().meta.shards).toBe(500 - PERKS.vigor.costs[0] - PERKS.provisions.costs[0]);
+    g.newExpedition(3);
+    const e = g.getState().expedition!;
+    expect(e.run.gold).toBe(PERKS.provisions.values[0]);
+    expect(e.run.champions[0].maxHp).toBeGreaterThan(0);
+    expect(e.perks.hp).toBe(PERKS.vigor.values[0]);
+    g.setDifficulty('nightmare');
+    expect(g.getState().expedition!.perks.hp).toBe(PERKS.vigor.values[0]);
+  });
+
+  it('comprar sin saldo o al máximo da un aviso', () => {
+    const g = createGameStore({ meta: createMetaManager(mem()) });
+    g.buyPerk('mastery');
+    expect(g.getState().hint).toMatch(/Esquirlas/);
+    expect(g.getState().meta.perks.mastery).toBe(0);
+  });
+
+  it('borrar el progreso lo deja a cero', () => {
+    const store = mem();
+    const g = createGameStore({ meta: createMetaManager(store) });
+    g.getState().meta.shards = 50;
+    g.buyPerk('belt');
+    g.resetProgress();
+    expect(g.getState().meta.shards).toBe(0);
+    expect(g.getState().meta.perks.belt).toBe(0);
+    expect(store.data.has(META_KEY)).toBe(false);
+  });
+
+  it('un progreso dañado se descarta con un aviso en el menú', () => {
+    const store = mem();
+    store.setItem(META_KEY, 'basura');
+    const g = createGameStore({ meta: createMetaManager(store) });
+    expect(g.getState().notice).toMatch(/progreso permanente/);
+    expect(g.getState().meta.shards).toBe(0);
+  });
+});
