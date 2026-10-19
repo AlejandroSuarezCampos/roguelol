@@ -188,7 +188,11 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
           return emit({ screen: 'shop', hint: null });
         }
         if (node.type === 'event') return emit({ screen: 'event', event: pickEvent(e), eventOutcome: null, hint: null });
-        if (kind) emit({ screen: 'battle', combat: combatFromExpedition(e, kind), combatKind: kind, hint: null, fx: [], selectedUid: null, selectedPotion: null });
+        if (kind) {
+          const combat = combatFromExpedition(e, kind);
+          const activeRelics = [...new Set(combat.relicLog.map((l) => l.relic))]; // las del primer turno pulsan al empezar
+          emit({ screen: 'battle', combat, combatKind: kind, hint: null, fx: [], activeRelics, selectedUid: null, selectedPotion: null });
+        }
         else emit({ screen: 'rest', hint: null });
       } catch {
         fail('Ese nodo no es accesible');

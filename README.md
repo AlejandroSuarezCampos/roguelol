@@ -30,7 +30,9 @@ Comerciante y eventos: [`specs/2026-10-19-comerciante-eventos-design.md`](docs/s
 
 Gear: [`specs/2026-10-19-gear-design.md`](docs/superpowers/specs/2026-10-19-gear-design.md).
 
-Fuera de esta fase (botones deshabilitados): Mejoras, Archivo, Tesoro, Santuario, reliquias con efecto, pasivas de gear y metaprogresión.
+Reliquias: [`specs/2026-10-19-reliquias-design.md`](docs/superpowers/specs/2026-10-19-reliquias-design.md).
+
+Fuera de esta fase (botones deshabilitados): Mejoras, Archivo, Tesoro, Santuario, pasivas de gear y metaprogresión.
 
 ## Motor de reglas (TypeScript)
 

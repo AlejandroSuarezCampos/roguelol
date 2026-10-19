@@ -23,5 +23,17 @@ await page.getByRole('button', { name: /^Yasuo/ }).click();
 await page.getByRole('button', { name: 'Equipar en Yasuo' }).first().click();
 await page.waitForTimeout(200);
 await page.screenshot({ path: `${out}/t2-team-equipped.png` });
+await page.evaluate(() => {
+  const g = window.__game;
+  const e = g.getState().expedition;
+  e.run.relics.push('stone', 'clock', 'bowl', 'voidshard');
+  g.closeTeam();
+  const n = e.map.nodes.find((x) => x.floor === 0);
+  g.chooseNode(n.id);
+});
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${out}/t3-battle-relics.png` });
+await page.getByRole('button', { name: /Corazón|Talismán/ }).first().click().catch(() => {});
+await page.screenshot({ path: `${out}/t4-relic-open.png` });
 console.log('errores:', s.errors());
 await s.close();
