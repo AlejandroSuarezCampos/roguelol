@@ -163,6 +163,8 @@ export interface CombatState {
   relicQueue: RelicEvent[];
   /** Activaciones, en orden, para el feedback de la UI. */
   relicLog: { relic: string; turn: number }[];
+  /** Aliados que han caído en algún momento del combate (aunque luego los reanimen). */
+  fallen: string[];
   /** Marcas que aplicará la siguiente carta de AP de este turno (Elixir de brujería). */
   pendingApMark: number;
   rng: Rng;

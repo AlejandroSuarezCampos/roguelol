@@ -1,4 +1,5 @@
 import { CARD_LIST, CARDS } from '../data/cards';
+import { DIFFICULTIES } from '../data/difficulty';
 import { GEAR, GEAR_LIST } from '../data/gear';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
@@ -30,15 +31,18 @@ export interface ShopState {
   woundTreated: boolean;
 }
 
+/** Precio con el modificador de la dificultad. */
+const priced = (e: Expedition, base: number): number => Math.round(base * DIFFICULTIES[e.difficulty].shopPrice);
+
 /** Abre el comerciante del nodo actual. El stock sale de la semilla de la run y no cambia al reabrir. */
 export const gearName = (id: string): string => GEAR[id].name;
 
 export function openShop(e: Expedition): ShopState {
   if (e.shop) return e.shop;
   const rng = e.run.rng;
-  const cards = rng.shuffle(CARD_LIST).slice(0, 3).map((c) => ({ defId: c.id, price: CONFIG.shop.cardPrice[c.rarity], sold: false }));
-  const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: CONFIG.shop.potionPrice[id], sold: false }));
-  const gear = rng.shuffle(GEAR_LIST).slice(0, 2).map((g) => ({ gearId: g.id, price: CONFIG.shop.gearPrice[g.rarity], sold: false }));
+  const cards = rng.shuffle(CARD_LIST).slice(0, 3).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
+  const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: priced(e, CONFIG.shop.potionPrice[id]), sold: false }));
+  const gear = rng.shuffle(GEAR_LIST).slice(0, 2).map((g) => ({ gearId: g.id, price: priced(e, CONFIG.shop.gearPrice[g.rarity]), sold: false }));
   e.shop = { cards, gear, potions, woundTreated: false };
   return e.shop;
 }
@@ -87,13 +91,13 @@ export function treatWoundAtShop(e: Expedition): void {
   if (s.woundTreated) throw new Error('Vendido');
   const worst = [...e.run.champions].sort((a, b) => e.wounds[b.id] - e.wounds[a.id])[0];
   if (!e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
-  pay(e, CONFIG.shop.treatWound);
+  pay(e, priced(e, CONFIG.shop.treatWound));
   e.wounds[worst.id]--;
   syncMaxHp(e, worst);
   s.woundTreated = true;
 }
 
-export const removalPrice = (e: Expedition): number => CONFIG.shop.removeCard + e.removals * CONFIG.shop.removeCardStep;
+export const removalPrice = (e: Expedition): number => priced(e, CONFIG.shop.removeCard + e.removals * CONFIG.shop.removeCardStep);
 
 /** Quita la carta en la posición `deckIndex` del mazo. */
 export function removeCard(e: Expedition, deckIndex: number): void {

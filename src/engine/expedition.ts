@@ -1,5 +1,6 @@
 import { CARD_LIST, CARDS, STARTER_DECK } from '../data/cards';
 import { GEAR, GEAR_LIST } from '../data/gear';
+import { DIFFICULTIES, type DifficultyId } from '../data/difficulty';
 import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
 import { BASE_GOLD, ENCOUNTERS, ENEMIES, type EncounterKind } from '../data/enemies';
 import { alliesAfter, startCombat } from './combat';
@@ -13,7 +14,7 @@ import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type
 import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
 import type { ShopState } from './shop';
-import type { ChampionId, CombatState, PotionId } from './types';
+import type { ChampionId, CombatState, EnemyDef, PotionId } from './types';
 
 export interface MapNode {
   id: string;
@@ -31,6 +32,9 @@ export interface ExpeditionMap {
 export type ExpeditionStatus = 'active' | 'victory' | 'defeat' | 'retreat';
 
 export interface Expedition {
+  difficulty: DifficultyId;
+  /** Campeones muertos para siempre (Pesadilla). Ya no están en `run.champions`. */
+  dead: ChampionId[];
   run: RunState;
   /** Ids de CardDef del mazo combinado del equipo. */
   deck: string[];
@@ -78,14 +82,14 @@ const F = CONFIG.expedition;
  * Mapa de 8 pisos de 2–3 nodos: combates; élites desde el piso 2; descansos entre 2 y 4; comerciantes en 2–5 (uno por piso como
  * mucho); eventos en 1–5; descanso previo al jefe. Siempre hay al menos un comerciante (2–4) y un evento (1–4).
  */
-export function generateMap(rng: Rng): ExpeditionMap {
+export function generateMap(rng: Rng, restWeight = 1): ExpeditionMap {
   const nodes: MapNode[] = [];
   const byFloor: MapNode[][] = [];
   for (let f = 0; f < F.floors; f++) {
     const count = f === F.floors - 1 ? 1 : 2 + rng.int(2);
     const row: MapNode[] = [];
     for (let i = 0; i < count; i++) {
-      const type = pickType(rng, f, row.some((n) => n.type === 'shop'));
+      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight);
       row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
     }
     byFloor.push(row);
@@ -119,27 +123,27 @@ function ensureType(nodes: MapNode[], rng: Rng, type: NodeType, from: number, to
   if (candidates.length) rng.pick(candidates).type = type;
 }
 
-function pickType(rng: Rng, floor: number, shopInFloor: boolean): NodeType {
+function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number): NodeType {
   if (floor === F.floors - 1) return 'boss';
   if (floor === F.floors - 2) return 'rest';
   if (floor === 0) return 'combat';
   const r = rng.next();
   if (floor >= 2 && r < 0.14) return 'elite';
-  if (floor >= 2 && floor <= F.floors - 4 && r < 0.32) return 'rest';
+  if (floor >= 2 && floor <= F.floors - 4 && r < 0.14 + 0.18 * restWeight) return 'rest';
   if (floor >= 2 && floor <= F.floors - 3 && !shopInFloor && r < 0.44) return 'shop';
   if (floor <= F.floors - 3 && r < 0.6) return 'event';
   return 'combat';
 }
 
-export function createExpedition(seed: number): Expedition {
+export function createExpedition(seed: number, difficulty: DifficultyId = 'normal'): Expedition {
   const champions: RunChampion[] = CHAMPION_IDS.map((id) => ({
     id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp, maxHp: CHAMPIONS[id].maxHp, stress: 0, downed: false,
   }));
   const run = createRun(seed, champions);
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
-  const map = generateMap(new Rng(seed ^ 0x9e3779b9));
+  const map = generateMap(new Rng(seed ^ 0x9e3779b9), DIFFICULTIES[difficulty].restWeight);
   return {
-    run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
+    difficulty, dead: [], run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
     gear: emptyGear(), inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
@@ -171,6 +175,17 @@ export function enterNode(e: Expedition, id: string): MapNode {
   return n;
 }
 
+/** Copia de los enemigos con el ataque y el bloqueo de sus intenciones multiplicados (no toca los datos originales). */
+function scaleEnemies(defs: Record<string, EnemyDef>, factor: number): Record<string, EnemyDef> {
+  if (factor === 1) return defs;
+  return Object.fromEntries(
+    Object.entries(defs).map(([id, d]) => [
+      id,
+      { ...d, script: d.script.map((i) => (i.kind === 'attack' || i.kind === 'block' ? { ...i, amount: Math.round(i.amount * factor) } : i)) },
+    ]),
+  );
+}
+
 export const encounterKind = (type: NodeType): EncounterKind | null =>
   type === 'combat' || type === 'elite' || type === 'boss' ? type : null;
 
@@ -179,6 +194,8 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
   const { run } = e;
   e.inCombat = true;
   const encounter = run.rng.pick(ENCOUNTERS[kind]);
+  const diff = DIFFICULTIES[e.difficulty];
+  const mods = combatMods(run.mist, kind === 'boss');
   return startCombat({
     seed: 1 + run.rng.int(2 ** 31 - 1),
     allies: run.champions.map((c) => ({
@@ -187,19 +204,34 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
     enemies: encounter.map((en, i) => ({ uid: `e${i + 1}`, defId: en.defId, pos: en.pos, boss: kind === 'boss' && i === 0 })),
     deck: e.deck,
     cards: CARDS,
-    enemyDefs: ENEMIES,
+    enemyDefs: scaleEnemies(ENEMIES, diff.enemyAttack),
     omen: run.omen,
-    mods: combatMods(run.mist, kind === 'boss'),
+    mods: { ...mods, hpMultiplier: mods.hpMultiplier * diff.enemyHp },
     belt: run.belt,
     relics: run.relics,
   });
 }
 
-function applyWound(e: Expedition, c: RunChampion): void {
+/** Herida grave: −10 % de vida máxima (con tope). `recover`: el derribado vuelve en pie con una parte de su vida. */
+function applyWound(e: Expedition, c: RunChampion, recover: boolean): void {
   e.wounds[c.id] = Math.min(F.wound.cap, e.wounds[c.id] + 1);
   syncMaxHp(e, c);
-  c.hp = Math.ceil(c.maxHp * F.wound.recoverHpFraction);
-  c.downed = false;
+  if (recover) {
+    c.hp = Math.ceil(c.maxHp * F.wound.recoverHpFraction);
+    c.downed = false;
+  }
+}
+
+/** Muerte permanente (Pesadilla): sale del equipo, su gear vuelve al inventario y sus cartas salen del mazo. */
+function killChampion(e: Expedition, c: RunChampion): void {
+  e.run.champions = e.run.champions.filter((x) => x !== c);
+  e.dead.push(c.id);
+  for (const slot of ['weapon', 'armor'] as const) {
+    const g = e.gear[c.id][slot];
+    if (g) e.inventory.push(g);
+    e.gear[c.id][slot] = null;
+  }
+  e.deck = e.deck.filter((id) => CARDS[id].owner !== c.id);
 }
 
 /**
@@ -219,14 +251,23 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
     e.status = 'defeat';
     return null;
   }
+  const diff = DIFFICULTIES[e.difficulty];
   const relicNotes = runRelicNotes(e, 'combatEnd', true); // antes de las heridas: los derribados no se curan
-  for (const c of e.run.champions) if (c.downed) applyWound(e, c);
+  for (const c of [...e.run.champions]) {
+    if (c.downed) diff.permadeath ? killChampion(e, c) : applyWound(e, c, true);
+    else if (diff.permadeath && s.fallen.includes(c.id)) applyWound(e, c, false); // reanimado: sobrevive, pero herido
+  }
+  if (!e.run.champions.length) {
+    e.status = 'defeat';
+    return null;
+  }
   e.stats.combats++;
   if (kind === 'elite') e.stats.elites++;
   if (kind === 'boss') e.status = 'victory';
   const base = rollRewards(e.run, kind, BASE_GOLD[kind]);
+  base.gold = Math.round(base.gold * diff.gold);
   const pool = e.run.rng.shuffle(CARD_LIST.map((c) => c.id));
-  const potion = e.run.rng.next() < CONFIG.potions.drop[kind] ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
+  const potion = e.run.rng.next() < CONFIG.potions.drop[kind] * diff.potionDrop ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
   const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
   const fresh = e.run.rng.shuffle(RELIC_LIST.map((r) => r.id).filter((id) => !e.run.relics.includes(id)));
   const relicIds = fresh.slice(0, base.relics);
@@ -284,7 +325,7 @@ export function rest(e: Expedition, action: RestAction): void {
   if (e.restUsed) throw new Error('Ya descansaste en esta parada');
   if (action === 'heal') {
     for (const c of e.run.champions)
-      if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + Math.floor(c.maxHp * F.rest.healFraction));
+      if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + Math.floor(c.maxHp * DIFFICULTIES[e.difficulty].restHeal));
   } else if (action === 'calm') {
     for (const c of e.run.champions) c.stress = Math.max(0, c.stress - F.rest.stressRelief);
   } else {

@@ -79,6 +79,7 @@ export function startCombat(cfg: CombatSetup): CombatState {
     relicState: newRelicState(),
     relicQueue: [{ type: 'combatStart' }],
     relicLog: [],
+    fallen: [],
     pendingApMark: 0,
     rng,
     outcome: 'ongoing',

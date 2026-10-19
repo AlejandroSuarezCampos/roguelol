@@ -43,7 +43,8 @@ export function equip(e: Expedition, id: ChampionId, gearId: string): void {
   const def = GEAR[gearId];
   const at = e.inventory.indexOf(gearId);
   if (!def || at < 0) throw new Error('Ese objeto no está en el inventario');
-  const champ = e.run.champions.find((c) => c.id === id)!;
+  const champ = e.run.champions.find((c) => c.id === id);
+  if (!champ) throw new Error('Ese campeón ha muerto');
   const before = champ.maxHp;
   e.inventory.splice(at, 1);
   const old = e.gear[id][def.slot];

@@ -74,7 +74,7 @@ export function makeState(over: Partial<CombatState> = {}): CombatState {
     drawPile: [], hand: [], discard: [], energy: 3, turn: 1, swapUsed: false, playedByOwner: {}, otherCardsWhileSelfish: 0,
     omen: 'lament', intents: {}, scriptIndex: {},
     mods: { intentStressBonus: 0, startShadowMark: false, hpMultiplier: 1, bossExtraIntent: false },
-    belt: [null, null, null], relics: [], relicState: { attacksThisTurn: 0, ownersThisTurn: [], turnUses: {}, combatUses: {} }, relicQueue: [], relicLog: [],
+    belt: [null, null, null], relics: [], relicState: { attacksThisTurn: 0, ownersThisTurn: [], turnUses: {}, combatUses: {} }, relicQueue: [], relicLog: [], fallen: [],
     pendingApMark: 0, rng: new SeqRng([]), outcome: 'ongoing', ...over,
   };
 }
