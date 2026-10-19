@@ -186,3 +186,29 @@ describe('combate', () => {
     expect(calls).toBe(1);
   });
 });
+
+describe('pociones en el mapa', () => {
+  it('una poción curativa seleccionada cura al campeón elegido y se gasta', () => {
+    const g = createGameStore();
+    g.newExpedition(1);
+    g.startExpedition();
+    const e = g.getState().expedition!;
+    e.run.belt[0] = { id: 'health', spent: false };
+    e.run.champions[0].hp = 10;
+    g.selectPotion(0);
+    g.drinkPotion('leona');
+    expect(e.run.champions[0].hp).toBe(30);
+    expect(e.run.belt[0]).toBeNull();
+    expect(g.getState().selectedPotion).toBeNull();
+  });
+
+  it('un elixir no curativo da un aviso', () => {
+    const g = createGameStore();
+    g.newExpedition(1);
+    g.startExpedition();
+    g.getState().expedition!.run.belt[0] = { id: 'iron', spent: false };
+    g.selectPotion(0);
+    g.drinkPotion('leona');
+    expect(g.getState().hint).toMatch(/curativas/i);
+  });
+});

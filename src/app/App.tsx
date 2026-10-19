@@ -1,3 +1,4 @@
+import { ExpeditionMapScreen } from '../screens/ExpeditionMapScreen';
 import { MainMenuScreen } from '../screens/MainMenuScreen';
 import { PartySetupScreen } from '../screens/PartySetupScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
@@ -10,7 +11,8 @@ export function App() {
       {screen === 'menu' && <MainMenuScreen />}
       {screen === 'prep' && <PartySetupScreen />}
       {screen === 'result' && <ResultsScreen />}
-      {(screen === 'map' || screen === 'battle' || screen === 'reward' || screen === 'rest') && <p>En construcción: {screen}</p>}
+      {screen === 'map' && <ExpeditionMapScreen />}
+      {(screen === 'battle' || screen === 'reward' || screen === 'rest') && <p>En construcción: {screen}</p>}
     </div>
   );
 }

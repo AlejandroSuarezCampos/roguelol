@@ -7,7 +7,7 @@ import {
   enterNode, finishCombat, rest as engineRest, retreat as engineRetreat, type Expedition, type ExpeditionRewards, type RestAction,
 } from '../engine/expedition';
 import { swapAllies } from '../engine/formation';
-import { usePotion as engineUsePotion } from '../engine/potions';
+import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions';
 import { reorder } from '../engine/run';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
 
@@ -164,6 +164,19 @@ export function createGameStore() {
     },
     usePotion(slot: number, targetId?: string) {
       act((s) => engineUsePotion(s, slot, targetId));
+    },
+    /** Fuera de combate: bebe la poción seleccionada (solo curativas) sobre un campeón. */
+    drinkPotion(championId: ChampionId) {
+      const e = state.expedition;
+      if (!e || state.selectedPotion === null) return;
+      const champ = e.run.champions.find((c) => c.id === championId);
+      if (!champ) return;
+      try {
+        usePotionOnMap(e.run.belt, state.selectedPotion, champ);
+        emit({ selectedPotion: null, hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
     },
     endTurn() {
       act((s) => endTeamTurn(s));
