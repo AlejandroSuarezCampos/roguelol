@@ -28,13 +28,13 @@
 
 ## Siguientes pasos
 
-1. **Confirmar con el usuario la regla de Vulnerable** (ver «Decisiones pendientes»). Si la cambia, ajusta la spec, `vulnerableTick` en `combat.ts` y sus tests.
+1. ~~Confirmar la regla de Vulnerable~~ — **hecho**, el usuario confirmó la del plan.
 2. **Fase 1 — esqueleto React** (decidido por el usuario): Vite + React consumiendo el motor. Empieza con `superpowers:brainstorming` (alcance, estado de la app, cómo se migra el prototipo).
 3. Alinear el prototipo de `design/` con el motor (textos de cartas, intenciones con `intentValue`).
 
 ## Decisiones pendientes y temas aparcados
 
-- **Vulnerable por ronda (pendiente de confirmar):** la regla aprobada («−1 al final del turno del afectado») hacía que el vulnerable de un aliado caducase antes de que atacasen los enemigos. El plan usa: aliados pierden 1 al empezar su siguiente turno; enemigos, justo después de actuar.
+- **Vulnerable por ronda (confirmado por el usuario):** la regla aprobada («−1 al final del turno del afectado») hacía que el vulnerable de un aliado caducase antes de que atacasen los enemigos. El plan usa: aliados pierden 1 al empezar su siguiente turno; enemigos, justo después de actuar.
 - `Rng` no es serializable todavía (guardar/cargar run lo necesitará).
 - No hay pegamento run → combate (crear el `CombatState` desde el estado de la run y devolver el resultado).
 - Deriva (Presagio) combinada con revivir: comportamiento sin especificar.

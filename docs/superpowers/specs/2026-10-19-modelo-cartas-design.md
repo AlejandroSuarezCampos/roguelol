@@ -64,7 +64,7 @@ Una única función `computeDamage` calcula el número; `applyDamage` sigue sien
 |---|---|
 | **Quemadura** | Al empezar el turno del afectado (aliados: inicio del turno del equipo; enemigos: antes de resolver su intención) recibe tanto daño **verdadero** como acumulaciones tenga, y luego pierde 1 acumulación |
 | **Carga** | Recurso acumulable (Yasuo). No hace nada por sí sola; la consumen efectos con `consumeStatus` |
-| **Vulnerable** | Recibe +50 % de daño (paso 6). Pierde 1 acumulación por **ronda**: los aliados al empezar su siguiente turno (así dura mientras atacan los enemigos), los enemigos justo después de actuar. Cada acumulación = una ronda. *Pendiente de confirmar por el usuario* (la redacción aprobada, «al final del turno del afectado», hacía que el vulnerable de un aliado caducase antes de que los enemigos atacasen) |
+| **Vulnerable** | Recibe +50 % de daño (paso 6). Pierde 1 acumulación por **ronda**: los aliados al empezar su siguiente turno (así dura mientras atacan los enemigos), los enemigos justo después de actuar. Cada acumulación = una ronda. *Confirmado por el usuario el 2026-10-19* (la redacción original, «al final del turno del afectado», hacía que el vulnerable de un aliado caducase antes de que los enemigos atacasen) |
 
 El daño de quemadura pasa por `applyDamage`, así que respeta el bloqueo y puede derribar. La quemadura no es un golpe de un enemigo, así que no activa la Marca de Sombra.
 
