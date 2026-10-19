@@ -34,7 +34,7 @@ Todo el azar usa un RNG con semilla guardado en el estado, así que cualquier co
 | Python | 3.12.10 (vale 3.10+) | Servidor local `http.server` y scripts de pintura | Sí |
 | numpy, Pillow | 2.5.4 / 12.3.0 | Regenerar los fondos (`design/tools/`) | Solo si regeneras imágenes |
 | Git | 2.54 | Clonar y subir el repositorio | Sí |
-| Node.js | 24.19 (instalado, **no usado**) | No hace falta para el prototipo; lo necesitará la implementación final (Vite + React + TypeScript, según `CLAUDE_CODE_SPEC.md` del paquete de handoff, que no está en este repo), Node 20+ | Más adelante |
+| Node.js | ^22.12 o ^24 (se usa 24.19) | **Necesario para ejecutar los tests del motor** (`npm install`, `npm test`) y para la futura app React (Vite + React + TypeScript, según `CLAUDE_CODE_SPEC.md` del paquete de handoff, que no está en este repo) | Ya |
 | React / Vite / TypeScript | — | No se usan todavía: el prototipo es HTML/CSS/JS puro | Más adelante |
 
 Instalación en otro PC:

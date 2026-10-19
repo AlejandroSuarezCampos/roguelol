@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CRISIS } from '../../src/data/champions';
-import { endTeamTurn, startCombat, type CombatSetup } from '../../src/engine/combat';
+import { endTeamTurn, intentValue, startCombat, type CombatSetup } from '../../src/engine/combat';
 import type { ChampionId, Pos } from '../../src/engine/types';
 import { CARDS, ENEMIES, u } from './fixtures';
 
@@ -124,5 +124,25 @@ describe('crisis y virtud al empezar el turno', () => {
     u(s, 'soraka').virtueActive = true;
     endTeamTurn(s);
     expect(u(s, 'soraka').block).toBe(4);
+  });
+});
+
+describe('valor de intención para la UI', () => {
+  it('suma la bonificación de posición ideal al ataque', () => {
+    const s = startCombat(setup());
+    expect(intentValue(s, u(s, 'e1'), ENEMIES.wolf.script[0])).toBe(10);
+    u(s, 'e1').pos = 2;
+    u(s, 'e2').pos = 1;
+    expect(intentValue(s, u(s, 'e1'), ENEMIES.wolf.script[0])).toBe(8);
+  });
+
+  it('aplica el multiplicador de crítico', () => {
+    const s = startCombat(setup());
+    expect(intentValue(s, u(s, 'e2'), ENEMIES.gromp.script[0])).toBe(7);
+  });
+
+  it('suma el extra de estrés de la niebla', () => {
+    const s = startCombat(setup({ mods: { intentStressBonus: 3, startShadowMark: false, hpMultiplier: 1, bossExtraIntent: false } }));
+    expect(intentValue(s, u(s, 'e1'), ENEMIES.wolf.script[1])).toBe(13);
   });
 });

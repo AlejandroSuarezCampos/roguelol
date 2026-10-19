@@ -115,8 +115,24 @@ export function startTeamTurn(s: CombatState): void {
   }
 }
 
-function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
+/** Valor que muestra la UI y que se aplica al resolver: ya incluye bonus de posición, crítico y extra de niebla. */
+export function intentValue(s: CombatState, enemy: Unit, i: Intent): number {
   const def = s.enemyDefs[s.enemyOf[enemy.id]];
+  switch (i.kind) {
+    case 'attack': {
+      const amt = i.amount + (def.idealPositions?.includes(enemy.pos) ? (def.positionBonus ?? 0) : 0);
+      return i.crit ? Math.floor(amt * CONFIG.critMultiplier) : amt;
+    }
+    case 'stress':
+      return i.amount + s.mods.intentStressBonus;
+    case 'block':
+      return i.amount;
+    case 'reposition':
+      return 0;
+  }
+}
+
+function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
   const allyAt = (p: Pos) => {
     const u = unitAt(s, 'ally', p);
     return u && !u.downed ? u : byPos(living(s, 'ally'))[0];
@@ -125,9 +141,7 @@ function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
     case 'attack': {
       const t = allyAt(i.target);
       if (!t) return;
-      let amt = i.amount + (def.idealPositions?.includes(enemy.pos) ? (def.positionBonus ?? 0) : 0);
-      if (i.crit) amt = Math.floor(amt * CONFIG.critMultiplier);
-      applyDamage(s, t, amt, { crit: i.crit });
+      applyDamage(s, t, intentValue(s, enemy, i), { crit: i.crit });
       if (enemy.statuses.shadowMark) addStress(s, t, CONFIG.mist.shadowMarkStress);
       break;
     }
@@ -136,7 +150,7 @@ function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
       break;
     case 'stress': {
       const t = allyAt(i.target);
-      if (t) addStress(s, t, i.amount + s.mods.intentStressBonus);
+      if (t) addStress(s, t, intentValue(s, enemy, i));
       break;
     }
     case 'reposition':
