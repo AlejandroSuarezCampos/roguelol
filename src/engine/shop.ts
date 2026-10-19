@@ -1,9 +1,9 @@
-import { CARD_LIST, CARDS } from '../data/cards';
+import { CARDS } from '../data/cards';
 import { DIFFICULTIES } from '../data/difficulty';
 import { GEAR, GEAR_LIST } from '../data/gear';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
-import { claimPotion } from './expedition';
+import { cardPool, claimPotion } from './expedition';
 import { syncMaxHp } from './gear';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
@@ -40,7 +40,7 @@ export const gearName = (id: string): string => GEAR[id].name;
 export function openShop(e: Expedition): ShopState {
   if (e.shop) return e.shop;
   const rng = e.run.rng;
-  const cards = rng.shuffle(CARD_LIST).slice(0, 3).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
+  const cards = rng.shuffle(cardPool(e)).slice(0, 3).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
   const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: priced(e, CONFIG.shop.potionPrice[id]), sold: false }));
   const gear = rng.shuffle(GEAR_LIST).slice(0, 2).map((g) => ({ gearId: g.id, price: priced(e, CONFIG.shop.gearPrice[g.rarity]), sold: false }));
   e.shop = { cards, gear, potions, woundTreated: false };

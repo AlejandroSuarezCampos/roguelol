@@ -424,3 +424,66 @@ describe('reliquias en pantalla', () => {
     expect(screen.getByText(/Corazón incandescente: \+6 de vida/)).toBeInTheDocument();
   });
 });
+
+describe('Pesadilla en pantalla', () => {
+  it('la preparación explica la muerte permanente al elegir Pesadilla y se puede volver a Normal', async () => {
+    const user = userEvent.setup();
+    go(() => game.newExpedition(2));
+    render(<App />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Pesadilla/ }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/muere para siempre/);
+    expect(game.getState().expedition!.difficulty).toBe('nightmare');
+    expect(screen.getAllByText('Pesadilla').length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('radio', { name: /Normal/ }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('en combate avisa de quién morirá si sigue derribado', () => {
+    go(() => {
+      game.newExpedition(3, 'nightmare');
+      game.startExpedition();
+      game.chooseNode(availableNodes(game.getState().expedition!)[0].id);
+      const lux = game.getState().combat!.units.find((u) => u.id === 'lux')!;
+      lux.hp = 0;
+      lux.downed = true;
+      game.notify(null);
+    });
+    render(<App />);
+    expect(screen.getByRole('alert')).toHaveTextContent(/Lux está derribado/);
+  });
+
+  it('en Normal no hay aviso de muerte', () => {
+    go(() => {
+      game.newExpedition(3);
+      game.startExpedition();
+      game.chooseNode(availableNodes(game.getState().expedition!)[0].id);
+      const lux = game.getState().combat!.units.find((u) => u.id === 'lux')!;
+      lux.hp = 0;
+      lux.downed = true;
+      game.notify(null);
+    });
+    render(<App />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('Equipo y Resultado marcan a los muertos', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(3, 'nightmare');
+      game.startExpedition();
+      const e = game.getState().expedition!;
+      e.dead.push('lux');
+      e.run.champions = e.run.champions.filter((c) => c.id !== 'lux');
+      e.deck = e.deck.filter((id) => !id.startsWith('x'));
+      game.notify(null);
+    });
+    render(<App />);
+    expect(screen.getByText(/Caídos: Lux/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Equipo/ }));
+    expect(screen.getByLabelText('Lux: muerto')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Volver al mapa' }));
+    await user.click(screen.getByRole('button', { name: /Retirada/ }));
+    expect(screen.getByText('Muerto para siempre')).toBeInTheDocument();
+  });
+});

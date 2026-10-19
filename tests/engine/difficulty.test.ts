@@ -188,3 +188,33 @@ describe('muerte permanente', () => {
     expect(() => equip(e, 'lux', 'rabadon')).toThrow(/muerto/i);
   });
 });
+
+describe('cartas de campeones muertos', () => {
+  it('ni el botín, ni la tienda, ni los eventos ofrecen cartas de un campeón muerto', async () => {
+    const { openShop } = await import('../../src/engine/shop');
+    const { EVENTS } = await import('../../src/data/events');
+    const { resolveChoice } = await import('../../src/engine/events');
+    for (let seed = 1; seed <= 40; seed++) {
+      const e = createExpedition(seed, 'nightmare');
+      const s = won(e);
+      applyDamage(s, s.units.find((u) => u.id === 'lux')!, 9999);
+      applyDamage(s, s.units.find((u) => u.id === 'soraka')!, 9999);
+      const r = finishCombat(e, s, 'combat')!;
+      expect(e.dead.sort()).toEqual(['lux', 'soraka']);
+      for (const id of r.cards) expect(['lux', 'soraka']).not.toContain(CARDS[id].owner);
+      for (const c of openShop(e).cards) expect(['lux', 'soraka']).not.toContain(CARDS[c.defId].owner);
+      e.run.gold = 500;
+      for (const ev of EVENTS) for (let i = 0; i < ev.choices.length; i++) resolveChoice(e, ev, i);
+      expect(e.deck.every((id) => !['lux', 'soraka'].includes(CARDS[id].owner))).toBe(true);
+    }
+  });
+
+  it('claimCard rechaza una carta de un campeón muerto', async () => {
+    const { claimCard } = await import('../../src/engine/expedition');
+    const e = createExpedition(2, 'nightmare');
+    const s = won(e);
+    applyDamage(s, s.units.find((u) => u.id === 'lux')!, 9999);
+    finishCombat(e, s, 'combat');
+    expect(() => claimCard(e, 'x1')).toThrow(/muerto/);
+  });
+});

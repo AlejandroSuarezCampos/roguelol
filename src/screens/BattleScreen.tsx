@@ -155,6 +155,15 @@ export function BattleScreen() {
         )}
       </div>
 
+      {e.difficulty === 'nightmare' && !over && allies.some((a) => a.downed) && (
+        <p className="warnbox red deathwarn" role="alert">
+          <Icon name="down" />
+          <span>
+            <b>Pesadilla:</b> {allies.filter((a) => a.downed).map((a) => a.name).join(' y ')} {allies.filter((a) => a.downed).length > 1 ? 'están derribados' : 'está derribado'}. Si{' '}
+            {allies.filter((a) => a.downed).length > 1 ? 'siguen' : 'sigue'} así al terminar el combate, {allies.filter((a) => a.downed).length > 1 ? 'morirán' : 'morirá'} para siempre. Reanimar (Renacer) los salva con una herida grave.
+          </span>
+        </p>
+      )}
       <main className="stage" aria-label="Escenario de combate">
         <div className="scene" aria-hidden />
         <div className="team">

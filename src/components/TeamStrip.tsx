@@ -1,3 +1,4 @@
+import { CHAMPIONS } from '../data/champions';
 import type { Expedition } from '../engine/expedition';
 import { ChampionPortrait } from './ChampionPortrait';
 import { Icon } from './Icon';
@@ -26,6 +27,11 @@ export function TeamStrip({ e, onPick, armed }: { e: Expedition; onPick?: (id: E
           </span>
         </button>
       ))}
+      {e.dead.length > 0 && (
+        <p className="tag bad" role="status">
+          <Icon name="down" /> Caídos: {e.dead.map((id) => CHAMPIONS[id].name).join(', ')}
+        </p>
+      )}
     </div>
   );
 }

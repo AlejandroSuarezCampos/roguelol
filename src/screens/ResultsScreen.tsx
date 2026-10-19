@@ -2,6 +2,7 @@ import { ChampionPortrait } from '../components/ChampionPortrait';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { HpBar } from '../components/Meters';
+import { CHAMPIONS } from '../data/champions';
 import { game, useGame } from '../state/gameStore';
 
 const BANNER = {
@@ -30,6 +31,13 @@ export function ResultsScreen() {
             <Icon name="team" /> Equipo
           </h3>
           <div className="row team-end">
+            {e.dead.map((id) => (
+              <article key={id} className="slotcard dead">
+                <ChampionPortrait id={id} className="big" />
+                <b className="fd">{CHAMPIONS[id].name}</b>
+                <span className="tag bad"><Icon name="down" /> Muerto para siempre</span>
+              </article>
+            ))}
             {e.run.champions.map((c) => (
               <article key={c.id} className={`slotcard ${c.downed ? 'dead' : ''}`}>
                 <ChampionPortrait id={c.id} className="big" />

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import type { DifficultyId } from '../data/difficulty';
 import type { EventDef } from '../data/events';
 import type { EncounterKind } from '../data/enemies';
 import { cardOf, forcedTarget, playCard as enginePlayCard } from '../engine/cards';
@@ -139,9 +140,18 @@ export function createGameStore(opts: { save?: SaveManager } = {}) {
     },
 
     // ——— flujo general ———
-    newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1) {
+    newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1, difficulty: DifficultyId = 'normal') {
       state = initial(state.saved);
-      emit({ screen: 'prep', expedition: createExpedition(seed) });
+      emit({ screen: 'prep', expedition: createExpedition(seed, difficulty) });
+    },
+    /** Cambia la dificultad en la preparación (misma semilla, así que el Presagio no cambia; el mapa sí). */
+    setDifficulty(difficulty: DifficultyId) {
+      const e = state.expedition;
+      if (!e || state.screen !== 'prep' || e.difficulty === difficulty) return;
+      const order = e.run.champions.map((c) => [c.id, c.pos] as const);
+      const fresh = createExpedition(e.seed, difficulty);
+      for (const [id, pos] of order) fresh.run.champions.find((c) => c.id === id)!.pos = pos;
+      emit({ expedition: fresh });
     },
     /** Retoma la expedición guardada en el mapa. Un guardado dañado se descarta con un aviso. */
     continueExpedition() {

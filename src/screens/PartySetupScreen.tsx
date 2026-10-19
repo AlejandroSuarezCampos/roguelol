@@ -5,6 +5,7 @@ import { HpBar, StressMeter } from '../components/Meters';
 import { CHAMPIONS } from '../data/champions';
 import { CRISIS_INFO, OMEN_INFO } from '../data/glossary';
 import { CRISIS } from '../data/champions';
+import { DIFFICULTIES, type DifficultyId } from '../data/difficulty';
 import { CONFIG } from '../engine/config';
 import type { Pos } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
@@ -77,16 +78,44 @@ export function PartySetupScreen() {
                 <p className="sub">{omen.text} Fijo toda la expedición.</p>
               </div>
             </div>
-            <div className="warnbox red">
-              <Icon name="wound" />
-              <div>
-                <b>Dificultad Normal</b>
-                <p className="sub">
-                  Un campeón derribado sobrevive a la victoria con una herida grave: −{CONFIG.expedition.wound.maxHpLoss * 100}% de vida máxima
-                  (hasta {CONFIG.expedition.wound.cap}). Se trata en el descanso.
-                </p>
+            <fieldset className="diffpick">
+              <legend className="fd">Dificultad</legend>
+              {(Object.keys(DIFFICULTIES) as DifficultyId[]).map((id) => (
+                <label key={id} className={`diffopt ${e.difficulty === id ? 'on' : ''} ${id}`}>
+                  <input type="radio" name="difficulty" checked={e.difficulty === id} onChange={() => game.setDifficulty(id)} />
+                  <b>{DIFFICULTIES[id].name}</b>
+                  <small>{DIFFICULTIES[id].summary}</small>
+                </label>
+              ))}
+            </fieldset>
+            {e.difficulty === 'normal' ? (
+              <div className="warnbox">
+                <Icon name="wound" />
+                <div>
+                  <b>Herida grave</b>
+                  <p className="sub">
+                    Un campeón derribado al ganar un combate sobrevive con una herida grave: −{CONFIG.expedition.wound.maxHpLoss * 100}% de vida máxima (hasta{' '}
+                    {CONFIG.expedition.wound.cap}). Se trata en el descanso o en el comerciante.
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="warnbox red" role="alert">
+                <Icon name="down" />
+                <div>
+                  <b>Muerte permanente</b>
+                  <p className="sub">
+                    Si un campeón <b>sigue derribado</b> cuando termina un combate, <b>muere para siempre</b>: sale del equipo y sus cartas salen del mazo.
+                    Si lo reanimas antes del final, sobrevive con una herida grave. Sin tiradas ocultas.
+                  </p>
+                  <ul className="sub">
+                    <li>Enemigos con +{Math.round((DIFFICULTIES.nightmare.enemyHp - 1) * 100)}% de vida y +{Math.round((DIFFICULTIES.nightmare.enemyAttack - 1) * 100)}% de daño.</li>
+                    <li>Menos descansos en el mapa; descansar cura el {DIFFICULTIES.nightmare.restHeal * 100}%.</li>
+                    <li>Oro −{Math.round((1 - DIFFICULTIES.nightmare.gold) * 100)}%, menos pociones y precios +{Math.round((DIFFICULTIES.nightmare.shopPrice - 1) * 100)}%.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
             <p className="sub">Mazo inicial: {e.deck.length} cartas. Máximo {CONFIG.cardsPerChampion} cartas por campeón y turno. Energía {CONFIG.energyPerTurn}.</p>
           </div>
           <div className="row end">

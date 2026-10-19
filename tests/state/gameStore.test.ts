@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cardOf } from '../../src/engine/cards';
 import { availableNodes } from '../../src/engine/expedition';
+import { createExpedition } from '../../src/engine/expedition';
 import { createGameStore } from '../../src/state/gameStore';
 
 function inBattle(seed = 3) {
@@ -426,5 +427,32 @@ describe('reliquias en la interfaz', () => {
     g.concludeCombat();
     const r = g.getState().rewards!;
     for (const id of r.relicIds ?? []) expect(g.getState().expedition!.run.relics).toContain(id);
+  });
+});
+
+describe('dificultad', () => {
+  it('se elige en la preparación y se conserva el orden del equipo', () => {
+    const g = createGameStore();
+    g.newExpedition(5);
+    g.reorderTeam('soraka', 1);
+    g.setDifficulty('nightmare');
+    const e = g.getState().expedition!;
+    expect(e.difficulty).toBe('nightmare');
+    expect(e.run.champions.find((c) => c.id === 'soraka')!.pos).toBe(1);
+    expect(e.run.omen).toBe(createExpedition(5).run.omen); // mismo presagio: misma semilla
+  });
+
+  it('no se puede cambiar una vez empezada la expedición', () => {
+    const g = createGameStore();
+    g.newExpedition(5);
+    g.startExpedition();
+    g.setDifficulty('nightmare');
+    expect(g.getState().expedition!.difficulty).toBe('normal');
+  });
+
+  it('una expedición nueva puede empezar en Pesadilla', () => {
+    const g = createGameStore();
+    g.newExpedition(5, 'nightmare');
+    expect(g.getState().expedition!.difficulty).toBe('nightmare');
   });
 });

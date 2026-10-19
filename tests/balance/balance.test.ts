@@ -29,3 +29,26 @@ describe('equilibrio con bot', () => {
     expect(wins).toBeLessThan(0.7);
   });
 });
+
+describe('Pesadilla con bot', () => {
+  const runs = Array.from({ length: 80 }, (_, i) => {
+    const e = createExpedition(1000 + i, 'nightmare');
+    return { e, r: playExpedition(e, 7 * i + 1) };
+  });
+
+  it('es claramente más difícil que Normal', () => {
+    const normalWins = runs.length && Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i), 7 * i + 1)).filter((r) => r.status === 'victory').length;
+    const hardWins = runs.filter((x) => x.r.status === 'victory').length;
+    expect(hardWins).toBeLessThan(normalWins as number);
+  });
+
+  it('la muerte permanente se nota: de media muere más de un campeón por expedición', () => {
+    const deaths = runs.reduce((a, x) => a + x.e.dead.length, 0) / runs.length;
+    expect(deaths).toBeGreaterThan(1);
+  });
+
+  it('sigue siendo jugable: los combates normales se ganan más de la mitad de las veces', () => {
+    const f = runs.flatMap((x) => x.r.fights.filter((y) => y.kind === 'combat'));
+    expect(f.filter((y) => y.won).length / f.length).toBeGreaterThan(0.5);
+  });
+});

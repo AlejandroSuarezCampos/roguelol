@@ -1,7 +1,7 @@
-import { CARD_LIST, CARDS } from '../data/cards';
+import { CARDS } from '../data/cards';
 import { EVENTS, type EventChoice, type EventDef, type EventEffect } from '../data/events';
 import { CONFIG } from './config';
-import { claimPotion, type Expedition } from './expedition';
+import { cardPool, claimPotion, type Expedition } from './expedition';
 import { syncMaxHp } from './gear';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
@@ -50,7 +50,7 @@ function apply(e: Expedition, fx: EventEffect, lines: string[]): void {
       lines.push(`${fx.amount > 0 ? '+' : ''}${fx.amount} de niebla`);
       break;
     case 'addCard': {
-      const pool = CARD_LIST.filter((c) => !fx.rarity || c.rarity === fx.rarity);
+      const pool = cardPool(e).filter((c) => !fx.rarity || c.rarity === fx.rarity);
       const card = run.rng.pick(pool);
       e.deck.push(card.id);
       lines.push(`Nueva carta: ${CARDS[card.id].name}`);

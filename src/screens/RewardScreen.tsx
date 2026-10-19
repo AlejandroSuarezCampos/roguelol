@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon';
 import { GearItem } from '../components/GearItem';
 import { RelicList } from '../components/RelicBar';
 import { CARDS } from '../data/cards';
-import { CHAMPION_IDS, CHAMPIONS } from '../data/champions';
+import { CHAMPIONS } from '../data/champions';
 import { compareGear } from '../engine/gear';
 import { CONFIG } from '../engine/config';
 import { POTIONS } from '../engine/potions';
@@ -106,7 +106,8 @@ export function RewardScreen() {
                   {pickedGear === id && (
                     <div className="equipon">
                       <small className="sub">Equipar ahora en…</small>
-                      {CHAMPION_IDS.map((c) => {
+                      {e.run.champions.map((ch) => {
+                        const c = ch.id;
                         const d = compareGear(e, c, id);
                         const sum = [...Object.entries(d.stats).map(([k, v]) => `${v > 0 ? '▲' : '▼'}${k}`), d.hp ? `${d.hp > 0 ? '▲' : '▼'}vida` : ''].filter(Boolean).join(' ');
                         return (
@@ -122,8 +123,8 @@ export function RewardScreen() {
                   )}
                   {pickedGear === id && (
                     <div className="cmp">
-                      {CHAMPION_IDS.map((c) => (
-                        <GearCompareRow key={c} champ={c} id={id} />
+                      {e.run.champions.map((ch) => (
+                        <GearCompareRow key={ch.id} champ={ch.id} id={id} />
                       ))}
                     </div>
                   )}
@@ -174,7 +175,7 @@ export function RewardScreen() {
 }
 
 /** Fila de comparación: lo que cambia en ese campeón si equipa el objeto (verde sube, rojo baja). */
-function GearCompareRow({ champ, id }: { champ: (typeof CHAMPION_IDS)[number]; id: string }) {
+function GearCompareRow({ champ, id }: { champ: keyof typeof CHAMPIONS; id: string }) {
   const { expedition: e } = useGame();
   if (!e) return null;
   const d = compareGear(e, champ, id);

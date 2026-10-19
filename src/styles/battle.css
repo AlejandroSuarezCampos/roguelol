@@ -133,6 +133,7 @@
 .pilelist .dot{width:10px;height:10px;border-radius:50%;flex:none}
 .pilelist small{color:var(--ink2)}.pilelist .n{margin-left:auto;font-weight:700;color:var(--gold)}
 @media (max-width:900px){.hand{overflow-x:auto;max-width:100%}.endbtn,.playbtn{right:16px}.orb{left:96px}}
+.deathwarn{position:absolute;left:50%;top:104px;transform:translateX(-50%);z-index:12;max-width:min(720px,92%);margin:0;background:rgba(40,8,8,.92)}
 /* reliquias */
 .relbar{position:relative;display:flex;align-items:center;gap:8px;z-index:9}
 .relbar.empty{font-size:12px}

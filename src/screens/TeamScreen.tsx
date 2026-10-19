@@ -6,7 +6,7 @@ import { RelicList } from '../components/RelicBar';
 import { Icon } from '../components/Icon';
 import { HpBar, StressMeter } from '../components/Meters';
 import { CARDS } from '../data/cards';
-import { CHAMPIONS, CRISIS, CHAMPION_IDS } from '../data/champions';
+import { CHAMPIONS, CRISIS } from '../data/champions';
 import { SLOT_LABEL, type GearSlot } from '../data/gear';
 import { CRISIS_INFO } from '../data/glossary';
 import { compareGear, finalStatsFor } from '../engine/gear';
@@ -19,7 +19,7 @@ const SLOTS: GearSlot[] = ['weapon', 'armor'];
 /** Equipo: ficha del campeón con sus estadísticas finales, gear (equipar/quitar con comparación) y el mazo. */
 export function TeamScreen() {
   const { expedition: e, hint } = useGame();
-  const [sel, setSel] = useState<ChampionId>('leona');
+  const [selected, setSel] = useState<ChampionId>('leona');
   const deck = useMemo(() => {
     if (!e) return [];
     const m = new Map<string, number>();
@@ -27,6 +27,8 @@ export function TeamScreen() {
     return [...m.entries()].map(([id, n]) => ({ def: CARDS[id], n }));
   }, [e, e?.deck.length]);
   if (!e) return null;
+  // si el seleccionado ha muerto, se muestra el primero que siga vivo
+  const sel: ChampionId = e.run.champions.some((x) => x.id === selected) ? selected : e.run.champions[0].id;
   const c = e.run.champions.find((x) => x.id === sel)!;
   const def = CHAMPIONS[sel];
   const crisis = CRISIS_INFO[CRISIS[sel]];
@@ -43,8 +45,17 @@ export function TeamScreen() {
       </Hud>
       <div className="team-body">
         <nav className="panel champlist" aria-label="Campeones">
-          {CHAMPION_IDS.map((id) => {
-            const ch = e.run.champions.find((x) => x.id === id)!;
+          {e.dead.map((id) => (
+            <div key={id} className="tcard down" aria-label={`${CHAMPIONS[id].name}: muerto`}>
+              <ChampionPortrait id={id} className="mini" />
+              <span className="tinfo">
+                <b>{CHAMPIONS[id].name}</b>
+                <span className="tag bad"><Icon name="down" /> Muerto</span>
+              </span>
+            </div>
+          ))}
+          {e.run.champions.map((ch) => {
+            const id = ch.id;
             return (
               <button key={id} className={`tcard ${id === sel ? 'on' : ''}`} aria-pressed={id === sel} onClick={() => setSel(id)}>
                 <ChampionPortrait id={id} className="mini" />

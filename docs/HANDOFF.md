@@ -9,7 +9,7 @@
 | Prototipo visual (`design/`) | HTML/CSS/JS sin build. Todas las pantallas unificadas (principal, mapa, combate, resto). Arte de Riot enlazado (hotlink). |
 | Motor de reglas (`src/engine`, `tests/engine`) | Núcleo fusionado en `main`: posiciones con bonus, intercambio por 1 de energía, estrés/crisis/virtud, Presagio de los caídos, Niebla Negra, botín, cinturón de pociones, bucle de turnos e intenciones.  |
 | Modelo de cartas §9 + daño §5.4 | **Hecho y fusionado en `main`** según [`plans/2026-10-19-modelo-cartas.md`](superpowers/plans/2026-10-19-modelo-cartas.md). **101 tests en verde.** |
-| React (fase 1) | **Hecha** según [`plans/2026-10-19-react-fase1.md`](superpowers/plans/2026-10-19-react-fase1.md): Vite + React 19 + TS; Menú → Preparación → Mapa → Combate → Botín → Descanso → Resultado con el motor real. Incluye `engine/expedition.ts` (mapa con semilla, pegamento run→combate, botín, heridas, descanso), 32 cartas y 6 enemigos provisionales, bot de equilibrio (`npm run balance`) y capturas e2e (`tests/e2e`). Fase 1b añadida: Comerciante (`engine/shop.ts`) y Eventos (`engine/events.ts`, `data/events.ts`) según [`plans/2026-10-19-comerciante-eventos.md`](superpowers/plans/2026-10-19-comerciante-eventos.md). Guardado automático (`src/save/saveManager.ts`, formato v2) y gear con pantalla de Equipo (`engine/gear.ts`, `data/gear.ts`; [`plans/2026-10-19-gear.md`](superpowers/plans/2026-10-19-gear.md)). Reliquias con efectos (`engine/relics.ts`, `data/relics.ts`; [`plans/2026-10-19-reliquias.md`](superpowers/plans/2026-10-19-reliquias.md)): cola de eventos con tope anti-bucle y 9 reliquias. **296 tests en verde.** |
+| React (fase 1) | **Hecha** según [`plans/2026-10-19-react-fase1.md`](superpowers/plans/2026-10-19-react-fase1.md): Vite + React 19 + TS; Menú → Preparación → Mapa → Combate → Botín → Descanso → Resultado con el motor real. Incluye `engine/expedition.ts` (mapa con semilla, pegamento run→combate, botín, heridas, descanso), 32 cartas y 6 enemigos provisionales, bot de equilibrio (`npm run balance`) y capturas e2e (`tests/e2e`). Fase 1b añadida: Comerciante (`engine/shop.ts`) y Eventos (`engine/events.ts`, `data/events.ts`) según [`plans/2026-10-19-comerciante-eventos.md`](superpowers/plans/2026-10-19-comerciante-eventos.md). Guardado automático (`src/save/saveManager.ts`, formato v2) y gear con pantalla de Equipo (`engine/gear.ts`, `data/gear.ts`; [`plans/2026-10-19-gear.md`](superpowers/plans/2026-10-19-gear.md)). Reliquias con efectos (`engine/relics.ts`, `data/relics.ts`; [`plans/2026-10-19-reliquias.md`](superpowers/plans/2026-10-19-reliquias.md)): cola de eventos con tope anti-bucle y 9 reliquias. Dificultad Pesadilla con muerte permanente (`data/difficulty.ts`; [`plans/2026-10-19-pesadilla.md`](superpowers/plans/2026-10-19-pesadilla.md)). **327 tests en verde.** |
 | Git | El trabajo de la fase 1 está en la rama `claude/charming-allen-k5fbs9` (subida). `main` local sigue por delante de `origin`: no hacer `push` de `main` hasta que el usuario lo diga. |
 
 ## Documentos (orden de autoridad, de más a menos)
@@ -28,11 +28,11 @@
 
 ## Siguientes pasos
 
-1. **Revisar las decisiones de la fase 1** que tomó Claude por delegación (specs `react-fase1-design.md`, `comerciante-eventos-design.md`, `gear-design.md` y `reliquias-design.md`, «[mi decisión]»): alcance, mapa de 8 pisos, botín, descanso, heridas graves, 32 cartas, 12 objetos, 9 reliquias, eventos y números de enemigos.
+1. **Revisar las decisiones de la fase 1** que tomó Claude por delegación (specs `react-fase1-design.md`, `comerciante-eventos-design.md`, `gear-design.md`, `reliquias-design.md` y `pesadilla-design.md`, «[mi decisión]»): alcance, mapa de 8 pisos, botín, descanso, heridas graves, 32 cartas, 12 objetos, 9 reliquias, eventos, modificadores de Pesadilla y números de enemigos.
 2. **Contenido:** pasivas y efectos negativos del gear (el sistema de reliquias ya los puede expresar), más reliquias (legendarias de jefe, `onAttack`/`onCriticalHit`/`onStressThreshold`), efectos de carta que faltan en el motor (robar, convertir recursos), mejoras de cartas (`CardDef.upgrade` ya existe en el motor; falta la pantalla Mejoras).
 3. **Más nodos:** Santuario y Tesoro (Comerciante y Evento ya existen; el comerciante aún no vende gear).
 4. **Pantallas fuera de la rebanada:** Equipo, Mejoras, Archivo (botones deshabilitados en el menú).
-5. **Fase 5:** metaprogresión (el guardado de la run ya existe; falta el guardado persistente entre runs) y dificultad Pesadilla.
+5. **Fase 5:** metaprogresión (el guardado de la run ya existe; falta el guardado persistente entre runs: desbloqueos, Archivo, mejoras permanentes).
 6. Alinear con el prototipo de `design/`: arte de fondo del combate (hoy es un degradado CSS), animaciones de ataque, escenas de comerciante/evento.
 
 ## Decisiones pendientes y temas aparcados
@@ -41,7 +41,7 @@
 - Guardado: solo se guarda en el mapa (no a mitad de combate). Si cambias la forma de `Expedition`, sube `SAVE_VERSION` y escribe una migración o los guardados viejos se descartan.
 - Deriva (Presagio) combinada con revivir: comportamiento sin especificar.
 - El `CLAUDE_CODE_SPEC.md` original pide listar sus reglas ambiguas antes de programar cada fase: se hizo la fase 1 sin esa ronda de preguntas (el usuario delegó); hacerla antes de la fase 3.
-- Equilibrio: el bot (que compra, equipa, bebe pociones y elige eventos al azar) gana ~28 % de las expediciones y un humano debería ganar más. Cotas anchas en `tests/balance/balance.test.ts`; afinar en `src/data/` con `npm run balance`.
+- Equilibrio: el bot (que compra, equipa, bebe pociones y elige eventos al azar) gana ~26 % en Normal y ~4 % en Pesadilla (`npm run balance`) de las expediciones y un humano debería ganar más. Cotas anchas en `tests/balance/balance.test.ts`; afinar en `src/data/` con `npm run balance`.
 - **Skills de Claude Code:** `superpowers`, `ui-ux-pro-max` y las demás no están preinstaladas en las sesiones en la nube; hay que volver a subirlas o instalarlas desde sus repos (`obra/superpowers`, `nextlevelbuilder/ui-ux-pro-max-skill`, `DietrichGebert/ponytail`, `nutlope/hallmark`, `microsoft/playwright-cli`, `vercel-labs/agent-skills`).
 
 ## Cómo ejecutar

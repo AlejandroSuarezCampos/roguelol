@@ -191,3 +191,14 @@
 .pilelist.cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:4px 18px}
 .small{font-size:12px}
 .teamscreen.scene-bg{background:linear-gradient(180deg,rgba(1,10,19,.8),rgba(1,10,19,.94)),var(--menu-bg) center/cover fixed}
+/* dificultad */
+.diffpick{border:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.diffpick legend{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:6px}
+.diffopt{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line2);background:rgba(1,10,19,.55);cursor:pointer;position:relative}
+.diffopt input{position:absolute;opacity:0}
+.diffopt b{font:700 15px var(--fd);text-transform:uppercase;letter-spacing:.08em;color:var(--gold-hi)}
+.diffopt small{color:var(--ink2);font-size:12px}
+.diffopt.on{border-color:var(--gold);box-shadow:inset 0 0 18px rgba(10,200,185,.2)}
+.diffopt.nightmare.on{border-color:var(--bad);box-shadow:inset 0 0 18px rgba(255,95,95,.2)}
+.diffopt:has(input:focus-visible){outline:2px solid var(--magic);outline-offset:3px}
+.rules ul{padding-left:18px;margin-top:6px}

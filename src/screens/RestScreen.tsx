@@ -1,6 +1,7 @@
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { TeamStrip } from '../components/TeamStrip';
+import { DIFFICULTIES } from '../data/difficulty';
 import { CONFIG } from '../engine/config';
 import type { RestAction } from '../engine/expedition';
 import { game, useGame } from '../state/gameStore';
@@ -13,7 +14,7 @@ export function RestScreen() {
   if (!e) return null;
   const woundsTotal = Object.values(e.wounds).reduce((a, b) => a + b, 0);
   const options: { id: RestAction; icon: string; name: string; text: string; disabled: boolean; extra?: boolean }[] = [
-    { id: 'heal', icon: 'heal', name: 'Descansar', text: `Cura el ${R.healFraction * 100}% de la vida máxima a quienes siguen en pie.`, disabled: e.restUsed },
+    { id: 'heal', icon: 'heal', name: 'Descansar', text: `Cura el ${Math.round(DIFFICULTIES[e.difficulty].restHeal * 100)}% de la vida máxima a quienes siguen en pie.`, disabled: e.restUsed },
     { id: 'calm', icon: 'stress', name: 'Meditar', text: `Reduce ${R.stressRelief} de estrés a todo el equipo.`, disabled: e.restUsed },
     {
       id: 'treat', icon: 'wound', name: 'Tratar herida',

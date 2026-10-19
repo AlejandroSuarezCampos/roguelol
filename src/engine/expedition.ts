@@ -32,6 +32,8 @@ export interface ExpeditionMap {
 export type ExpeditionStatus = 'active' | 'victory' | 'defeat' | 'retreat';
 
 export interface Expedition {
+  /** Semilla con la que se creó (para recrear la preparación al cambiar de dificultad). */
+  seed: number;
   difficulty: DifficultyId;
   /** Campeones muertos para siempre (Pesadilla). Ya no están en `run.champions`. */
   dead: ChampionId[];
@@ -143,7 +145,7 @@ export function createExpedition(seed: number, difficulty: DifficultyId = 'norma
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
   const map = generateMap(new Rng(seed ^ 0x9e3779b9), DIFFICULTIES[difficulty].restWeight);
   return {
-    difficulty, dead: [], run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
+    seed, difficulty, dead: [], run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
     gear: emptyGear(), inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
@@ -266,7 +268,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   if (kind === 'boss') e.status = 'victory';
   const base = rollRewards(e.run, kind, BASE_GOLD[kind]);
   base.gold = Math.round(base.gold * diff.gold);
-  const pool = e.run.rng.shuffle(CARD_LIST.map((c) => c.id));
+  const pool = e.run.rng.shuffle(cardPool(e).map((c) => c.id));
   const potion = e.run.rng.next() < CONFIG.potions.drop[kind] * diff.potionDrop ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
   const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
   const fresh = e.run.rng.shuffle(RELIC_LIST.map((r) => r.id).filter((id) => !e.run.relics.includes(id)));
@@ -302,6 +304,9 @@ export function claimPotion(e: Expedition, id: PotionId, slot?: number | 'new'):
   return slot === 'new' ? 'discarded' : 'replaced';
 }
 
+/** Cartas que pueden salir como botín, en tienda o en eventos: solo las de campeones que siguen vivos. */
+export const cardPool = (e: Expedition) => CARD_LIST.filter((c) => e.run.champions.some((ch) => ch.id === c.owner));
+
 export function claimRewards(e: Expedition, r: Rewards & { relicIds?: string[] }): void {
   e.run.gold += r.gold;
   for (const id of r.relicIds ?? []) if (!e.run.relics.includes(id)) e.run.relics.push(id);
@@ -311,6 +316,7 @@ export function claimRewards(e: Expedition, r: Rewards & { relicIds?: string[] }
 export function claimCard(e: Expedition, defId: string | null): void {
   if (defId === null) return;
   if (!CARDS[defId]) throw new Error(`Carta desconocida: ${defId}`);
+  if (!e.run.champions.some((c) => c.id === CARDS[defId].owner)) throw new Error('Su campeón ha muerto');
   e.deck.push(defId);
 }
 

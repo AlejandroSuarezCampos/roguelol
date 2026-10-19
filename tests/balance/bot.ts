@@ -8,7 +8,6 @@ import type { Expedition } from '../../src/engine/expedition';
 import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
 import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
 import { compareGear, equip } from '../../src/engine/gear';
-import { CHAMPION_IDS } from '../../src/data/champions';
 import { GEAR } from '../../src/data/gear';
 import type { ChampionId } from '../../src/engine/types';
 import { POTIONS, usePotion, usePotionOnMap, whyCannotUse } from '../../src/engine/potions';
@@ -147,17 +146,20 @@ function gearScore(e: Expedition, champ: ChampionId, gearId: string): number {
   return Object.entries({ ...d.stats, hp: d.hp }).reduce((a, [k, v]) => a + (w[k] ?? 0) * (v as number), 0);
 }
 
+const aliveIds = (e: Expedition): ChampionId[] => e.run.champions.map((c) => c.id);
+
 /** Equipa cada objeto del inventario en quien más gane con él (si alguien gana). */
 function equipBest(e: Expedition): void {
   for (const id of [...e.inventory]) {
-    const best = CHAMPION_IDS.map((c) => ({ c, s: gearScore(e, c, id) })).sort((a, b) => b.s - a.s)[0];
-    if (best.s > 0) equip(e, best.c, id);
+    const best = aliveIds(e).map((c) => ({ c, s: gearScore(e, c, id) })).sort((a, b) => b.s - a.s)[0];
+    if (best && best.s > 0) equip(e, best.c, id);
   }
 }
 
 /** Mejor opción de un botín de gear (la que más sube a su mejor destinatario). */
 function bestGear(e: Expedition, options: string[]): string {
-  return [...options].sort((a, b) => Math.max(...CHAMPION_IDS.map((c) => gearScore(e, c, b))) - Math.max(...CHAMPION_IDS.map((c) => gearScore(e, c, a))))[0];
+  const best = (id: string) => Math.max(...aliveIds(e).map((c) => gearScore(e, c, id)));
+  return [...options].sort((a, b) => best(b) - best(a))[0];
 }
 
 /** Antes de cada nodo bebe pociones curativas si alguien está por debajo del 50 %. */

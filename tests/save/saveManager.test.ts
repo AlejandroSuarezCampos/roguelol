@@ -109,6 +109,9 @@ describe('datos corruptos', () => {
     ['un arma en el slot de armadura', (r: any) => (r.expedition.gear.lux.armor = 'rabadon')],
     ['una reliquia inexistente', (r: any) => r.expedition.run.relics.push('nope')],
     ['una reliquia repetida', (r: any) => r.expedition.run.relics.push('heart', 'heart')],
+    ['una dificultad inventada', (r: any) => (r.expedition.difficulty = 'facil')],
+    ['un muerto en Normal', (r: any) => { r.expedition.dead = ['lux']; r.expedition.run.champions.splice(2, 1); }],
+    ['un campeón vivo y muerto a la vez', (r: any) => { r.expedition.difficulty = 'nightmare'; r.expedition.dead = ['leona']; }],
     ['una expedición ya terminada', (r: any) => (r.expedition.status = 'defeat')],
   ])('rechaza %s', (_name, tamper) => {
     const store = memory();
@@ -118,6 +121,21 @@ describe('datos corruptos', () => {
     tamper(raw);
     store.setItem(SAVE_KEY, JSON.stringify(raw));
     expect(m.load().status).toBe('corrupt');
+  });
+
+  it('una expedición de Pesadilla con un muerto se guarda y se carga', () => {
+    const store = memory();
+    const m = createSaveManager(store);
+    const e = createExpedition(4, 'nightmare');
+    e.dead.push('lux');
+    e.run.champions = e.run.champions.filter((c) => c.id !== 'lux');
+    e.deck = e.deck.filter((id) => !id.startsWith('x'));
+    m.save(e);
+    const r = m.load();
+    if (r.status !== 'ok') throw new Error(r.status);
+    expect(r.expedition.difficulty).toBe('nightmare');
+    expect(r.expedition.dead).toEqual(['lux']);
+    expect(r.expedition.run.champions).toHaveLength(3);
   });
 
   it('sin almacenamiento disponible nada falla', () => {

@@ -22,7 +22,7 @@ Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Comba
     npm install
     npm run dev        # http://localhost:5173
     npm run build      # typecheck + build de producción en dist/
-    npm run balance    # simula 300 expediciones con un bot y muestra tasas de victoria
+    npm run balance    # simula 300 expediciones con un bot (Normal y Pesadilla) y muestra tasas de victoria
 
 Estructura: `src/app` (raíz), `src/screens` (una por pantalla), `src/components` (carta, unidad, intención, barras…), `src/state` (store y selectores), `src/save` (guardado), `src/data` (cartas, enemigos, campeones, glosario), `src/styles` (tokens y CSS), `tests/` (motor, datos, estado, pantallas, equilibrio y `e2e/` con capturas en Chromium real).
 
@@ -31,6 +31,8 @@ Comerciante y eventos: [`specs/2026-10-19-comerciante-eventos-design.md`](docs/s
 Gear: [`specs/2026-10-19-gear-design.md`](docs/superpowers/specs/2026-10-19-gear-design.md).
 
 Reliquias: [`specs/2026-10-19-reliquias-design.md`](docs/superpowers/specs/2026-10-19-reliquias-design.md).
+
+Dificultad Pesadilla (muerte permanente): [`specs/2026-10-19-pesadilla-design.md`](docs/superpowers/specs/2026-10-19-pesadilla-design.md). Todos los modificadores están en `src/data/difficulty.ts`.
 
 Fuera de esta fase (botones deshabilitados): Mejoras, Archivo, Tesoro, Santuario, pasivas de gear y metaprogresión.
 
