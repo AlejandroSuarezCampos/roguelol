@@ -78,7 +78,7 @@ export function TeamScreen() {
             </div>
           </div>
           <h4 className="fd">Estadísticas finales</h4>
-          <dl className="stats">
+          <dl className="statlist">
             {lines.map((l) => (
               <div key={l.key} className="statrow">
                 <dt>{l.label}</dt>

@@ -54,6 +54,13 @@ for (let step = 0; step < max; step++) {
       await page.locator('.choices .card').first().click();
       await page.getByRole('button', { name: 'Añadir al mazo' }).click();
     }
+    if (await page.getByRole('button', { name: 'Elegir objeto' }).count()) {
+      await page.getByRole('button', { name: 'Elegir objeto' }).click();
+      await once('62-gear-choose');
+      await page.locator('.gearpick').first().click();
+      await once('63-gear-compare');
+      await page.locator('.equipon .btn').first().click();
+    }
     if (await page.getByRole('button', { name: 'Recoger', exact: true }).count()) await page.getByRole('button', { name: 'Recoger', exact: true }).click();
     await page.getByRole('button', { name: /Continuar|Ver resultado/ }).click();
     continue;

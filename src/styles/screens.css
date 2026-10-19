@@ -178,6 +178,7 @@
 .tcard.on{border-color:var(--gold);box-shadow:inset 0 0 18px rgba(10,200,185,.2)}
 .sheetrow{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
 .sheetrow .port.big{width:130px;aspect-ratio:308/360;flex:none}
+.statlist{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;margin:0}
 .statrow{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(120,90,40,.4);padding:3px 0}
 .statrow dd{font-weight:700;margin:0}
 .teamscreen h4{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin:12px 0 6px}

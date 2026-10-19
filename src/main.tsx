@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
+import { game } from './state/gameStore';
 import { IMG } from './ui/images';
 import './styles/index.css';
 
@@ -14,3 +15,6 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Atajo para pruebas e2e y depuración: `?debug` expone el store en `window.__game`.
+if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __game: typeof game }).__game = game;
