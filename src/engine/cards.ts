@@ -131,6 +131,10 @@ export function playCard(s: CombatState, uid: string, targetId?: string): void {
 
   const targets = targetsOf(s, card, owner, t);
   for (const e of effectsFor(s, card)) resolve(s, e, owner, targets);
+  if (s.pendingApMark && card.scaling === 'ap') {
+    for (const u of targets) if (u.side === 'enemy' && !u.downed) u.statuses.mark = (u.statuses.mark ?? 0) + s.pendingApMark;
+    s.pendingApMark = 0;
+  }
 
   // Estrés que genera la propia carta; la virtud del dueño lo anula.
   if (!owner.virtueActive) {
