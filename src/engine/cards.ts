@@ -10,9 +10,14 @@ export function ownerOf(s: CombatState, card: CardDef): Unit {
   return u;
 }
 
-/** Coste real de la carta (las tareas siguientes añaden modificadores). */
-export function cardCost(_s: CombatState, card: CardDef): number {
-  return card.cost;
+const crisisOf = (u: Unit) => (u.crisisActive ? u.crisis : undefined);
+
+/** Coste real: base, −1 en Egoísmo. */
+export function cardCost(s: CombatState, card: CardDef): number {
+  const o = ownerOf(s, card);
+  let c = card.cost;
+  if (crisisOf(o) === 'selfish') c -= 1;
+  return Math.max(0, c);
 }
 
 /** Motivo por el que no se puede jugar la carta (null = se puede). La UI lo muestra tal cual. */
@@ -23,6 +28,10 @@ export function whyCannotPlay(s: CombatState, card: CardDef, target?: Unit): str
   if (s.energy < cardCost(s, card)) return 'Energía insuficiente';
   if ((s.playedByOwner[card.owner] ?? 0) >= CONFIG.cardsPerChampion)
     return `Límite de ${CONFIG.cardsPerChampion} cartas de ${o.name} este turno`;
+  if (crisisOf(o) === 'panic' && card.type === 'attack') return `${o.name} en Pánico: no puede atacar`;
+  const selfish = living(s, 'ally').find((u) => crisisOf(u) === 'selfish');
+  if (selfish && selfish.id !== card.owner && s.otherCardsWhileSelfish >= 1)
+    return `${selfish.name} en Egoísmo: solo 1 carta de otro campeón por turno`;
   const t = target;
   if (card.target === 'enemy') {
     if (!t) return 'Elige un objetivo';
@@ -32,6 +41,7 @@ export function whyCannotPlay(s: CombatState, card: CardDef, target?: Unit): str
   if (card.target === 'ally') {
     if (!t) return 'Elige un objetivo';
     if (t.side !== 'ally') return 'Debe ser un aliado';
+    if (crisisOf(o) === 'rage') return `${o.name} en Ira: no puede apuntar a aliados`;
     const revives = card.effects.some((e) => e.type === 'revive');
     if (revives && !t.downed) return 'Solo a un aliado derribado';
     if (!revives && t.downed) return 'Derribado: no recibe efectos normales';
@@ -66,7 +76,7 @@ function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void 
   for (const u of e.on === 'self' ? [owner] : targets) {
     switch (e.type) {
       case 'damage': {
-        let amt = e.amount;
+        let amt = e.amount + (crisisOf(owner) === 'rage' ? CONFIG.crisis.rageDamage : 0);
         const crit = !!e.canCrit && owner.critChance > 0 && s.rng.next() < owner.critChance;
         if (crit) amt = Math.floor(amt * CONFIG.critMultiplier);
         applyDamage(s, u, amt, { crit });
@@ -76,7 +86,7 @@ function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void 
         gainBlock(u, e.amount);
         break;
       case 'heal':
-        heal(u, e.amount);
+        heal(u, crisisOf(owner) === 'despair' ? Math.floor(e.amount * CONFIG.crisis.despairHealFactor) : e.amount);
         break;
       case 'applyStatus':
         if (!u.downed) u.statuses[e.status] = (u.statuses[e.status] ?? 0) + e.stacks;
@@ -104,12 +114,16 @@ export function playCard(s: CombatState, uid: string, targetId?: string): void {
   const why = whyCannotPlay(s, card, t);
   if (why) throw new Error(why);
 
+  const selfish = living(s, 'ally').find((u) => crisisOf(u) === 'selfish');
   s.energy -= cardCost(s, card);
   s.playedByOwner[card.owner] = (s.playedByOwner[card.owner] ?? 0) + 1;
+  if (selfish && selfish.id !== card.owner) s.otherCardsWhileSelfish++;
   const [inst] = s.hand.splice(idx, 1);
 
   const targets = targetsOf(s, card, owner, t);
   for (const e of effectsFor(s, card)) resolve(s, e, owner, targets);
 
+  // Estrés que genera la propia carta; la virtud del dueño lo anula.
+  if (!owner.virtueActive && crisisOf(owner) === 'despair') addStress(s, owner, CONFIG.crisis.despairSelfStress);
   s.discard.push(inst);
 }

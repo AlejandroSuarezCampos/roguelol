@@ -96,3 +96,40 @@ describe('jugar cartas', () => {
     expect(u(s, 'lux').stress).toBe(18);
   });
 });
+
+describe('crisis al jugar cartas', () => {
+  it('Ira: +3 de daño y no puede apuntar a aliados', () => {
+    const s = makeState();
+    Object.assign(u(s, 'lux'), { crisis: 'rage', crisisActive: true, stress: 100 });
+    expect(whyCannotPlay(s, CARDS.barrier, u(s, 'leona'))).toBe('Lux en Ira: no puede apuntar a aliados');
+    const [id] = give(s, 'bind');
+    playCard(s, id, 'e1');
+    expect(u(s, 'e1').hp).toBe(22);
+  });
+
+  it('Egoísmo: sus cartas cuestan 1 menos y solo 1 carta de otro campeón por turno', () => {
+    const s = makeState();
+    Object.assign(u(s, 'yasuo'), { crisisActive: true, stress: 100 });
+    const [t, g1, g2] = give(s, 'tempest', 'guard', 'guard');
+    playCard(s, t, 'e1');
+    expect(s.energy).toBe(3);
+    playCard(s, g1);
+    expect(() => playCard(s, g2)).toThrow('Yasuo en Egoísmo: solo 1 carta de otro campeón por turno');
+  });
+
+  it('Pánico: no puede jugar ataques', () => {
+    const s = makeState();
+    Object.assign(u(s, 'leona'), { crisis: 'panic', crisisActive: true, stress: 100 });
+    expect(whyCannotPlay(s, CARDS.strike, u(s, 'e1'))).toBe('Leona en Pánico: no puede atacar');
+  });
+
+  it('Desesperación: cura la mitad y suma +3 de estrés a sí misma', () => {
+    const s = makeState();
+    Object.assign(u(s, 'soraka'), { crisisActive: true, stress: 100 });
+    u(s, 'leona').hp = 20;
+    const [id] = give(s, 'touch');
+    playCard(s, id, 'leona');
+    expect(u(s, 'leona').hp).toBe(25);
+    expect(u(s, 'soraka').stress).toBe(100);
+  });
+});
