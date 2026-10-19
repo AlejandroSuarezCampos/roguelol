@@ -5,7 +5,7 @@
 Enmienda a [`docs/handoff/CLAUDE_CODE_SPEC.md`](../../handoff/CLAUDE_CODE_SPEC.md). Donde este documento y la spec original difieran, **manda este documento**. Lo que no se menciona aquí sigue como en la spec original.
 
 Subproyectos siguientes (specs propias, fuera de alcance aquí):
-2. **Interfaz:** reflejar estas reglas en el prototipo y cubrir huecos (visor de mazo/descarte, ficha de enemigo, registro de turno, Ajustes, «Continuar expedición», glosario, Cementerio, sonido y animaciones, límite de 3 cartas por campeón visible).
+2. **Interfaz:** reflejar estas reglas en el prototipo y cubrir huecos (visor de mazo/descarte, ficha de enemigo, registro de turno, Ajustes, «Continuar expedición», glosario, Cementerio, sonido y animaciones, límite de 3 cartas por campeón visible, barra de reliquias sin límite que admita cualquier cantidad y muestre el total sin «/6»).
 3. **Base técnica:** datos separados de la UI con textos de carta generados desde los números, y assets de Riot descargados localmente.
 
 Todos los números marcados con **(ajustable)** son valores de partida para balance; deben vivir en datos/configuración, nunca repetidos en el código.
@@ -98,17 +98,18 @@ Todos los números marcados con **(ajustable)** son valores de partida para bala
 | 0–29 **Bruma** | — | — |
 | 30–59 **Niebla** | Sus intenciones de estrés hacen +3 | +15 % de oro |
 | 60–89 **Niebla densa** | Empiezan el combate con 1 **Marca de Sombra** (+2 estrés al golpear) | Las recompensas de carta ofrecen 4 opciones en vez de 3 |
-| 90–100 **Ruina** | +20 % de vida | Las élites dan **una reliquia extra** y los combates normales tienen un **10 % de reliquia** |
+| 90–100 **Ruina** | +20 % de vida | Las élites dan **una reliquia extra** y los combates normales tienen un **10 % (ajustable) de reliquia** |
 
 - **Jefe:** si se entra en el nodo del jefe con 60 o más de niebla, Viego tiene una **intención extra** en su primer turno.
 
-## 6. Reliquias de élite y límite de reliquias
+## 6. Reliquias de élite y sin límite de reliquias
 
-**Enmienda §8 y §13.**
+**Enmienda §3 (alcance: «Reliquias: máximo seis por expedición»), §8 («Máximo de seis reliquias activas por run») y §13.**
 
 - **Toda élite da 1 reliquia** como recompensa, con cualquier nivel de niebla (como en Slay the Spire). En Ruina, 2.
 - Las tiradas de reliquia de los combates normales en Ruina usan el RNG con semilla; la probabilidad se muestra en la vista previa del nodo y en la pantalla de botín.
-- Con 6/6 reliquias, una reliquia nueva ofrece **reemplazar una existente** (elegida por el jugador, irreversible y confirmada) o **convertirla en 40 de oro (ajustable)**.
+- **No hay límite de reliquias por expedición:** se conservan todas las que se consigan durante la run. Se elimina el máximo de seis.
+- **Riesgo de balance:** sin límite, la probabilidad de reliquia en Ruina y la reliquia extra de élite son las principales fuentes de acumulación; vigilarlas en las pruebas de balance (ambas ajustables).
 
 ## 7. Cinturón de pociones
 
@@ -154,7 +155,7 @@ Todo azar de este documento (sorteo del Presagio, tirada de crisis/virtud, reliq
 - Cada fuente de estrés aplica su valor exacto; al llegar a 100 la tirada con semilla fija produce el mismo resultado; crisis y virtud aplican y retiran sus efectos según lo definido.
 - Con cada uno de los 4 presagios, jugar una carta de un caído aplica exactamente su coste y nada más; reanimar lo elimina; nunca se activa su bonus de posición.
 - La niebla suma +8 / +15 al entrar en nodos, −15 al avivar la hoguera sin consumir la elección de descanso, y cada tramo aplica exactamente sus efectos; el jefe gana la intención extra solo con ≥60.
-- Toda élite da 1 reliquia (2 en Ruina); con 6/6 se ofrece reemplazar o convertir en oro.
+- Toda élite da 1 reliquia (2 en Ruina); no existe límite: la reliquia número 7 o posterior se añade igual que la primera.
 - Pociones: 3 huecos, sin coste de energía, gestión de cinturón lleno, curativas utilizables en el mapa, ninguna cura a derribados.
 
 ## 11. Fuera de alcance
