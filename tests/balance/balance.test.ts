@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PERKS } from '../../src/data/perks';
 import { createExpedition } from '../../src/engine/expedition';
 import { playExpedition, type RunReport } from './bot';
 
@@ -50,5 +51,18 @@ describe('Pesadilla con bot', () => {
   it('sigue siendo jugable: los combates normales se ganan más de la mitad de las veces', () => {
     const f = runs.flatMap((x) => x.r.fights.filter((y) => y.kind === 'combat'));
     expect(f.filter((y) => y.won).length / f.length).toBeGreaterThan(0.5);
+  });
+});
+
+describe('mejoras permanentes con bot', () => {
+  const maxPerks = { hp: PERKS.vigor.values[2], gold: PERKS.provisions.values[2], potions: PERKS.belt.values[2], upgradedCards: PERKS.mastery.values[2] };
+  const wins = (perks?: typeof maxPerks) =>
+    Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 'normal', perks), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
+
+  it('con todo al máximo ayudan, pero no hacen trivial la expedición (spec §14)', () => {
+    const base = wins();
+    const maxed = wins(maxPerks);
+    expect(maxed).toBeGreaterThan(base);
+    expect(maxed).toBeLessThan(0.75);
   });
 });

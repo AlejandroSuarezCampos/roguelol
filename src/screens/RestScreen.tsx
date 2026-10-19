@@ -6,7 +6,7 @@ import { TeamStrip } from '../components/TeamStrip';
 import { applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { DIFFICULTIES } from '../data/difficulty';
 import { CONFIG } from '../engine/config';
-import type { RestAction } from '../engine/expedition';
+import { livingWounds, type RestAction } from '../engine/expedition';
 import { game, useGame } from '../state/gameStore';
 
 const R = CONFIG.expedition.rest;
@@ -17,7 +17,7 @@ export function RestScreen() {
   const [forging, setForging] = useState(false);
   const [pick, setPick] = useState<number | null>(null);
   if (!e) return null;
-  const woundsTotal = Object.values(e.wounds).reduce((a, b) => a + b, 0);
+  const woundsTotal = livingWounds(e);
   const options: { id: RestAction; icon: string; name: string; text: string; disabled: boolean; extra?: boolean }[] = [
     { id: 'heal', icon: 'heal', name: 'Descansar', text: `Cura el ${Math.round(DIFFICULTIES[e.difficulty].restHeal * 100)}% de la vida máxima a quienes siguen en pie.`, disabled: e.restUsed },
     { id: 'calm', icon: 'stress', name: 'Meditar', text: `Reduce ${R.stressRelief} de estrés a todo el equipo.`, disabled: e.restUsed },

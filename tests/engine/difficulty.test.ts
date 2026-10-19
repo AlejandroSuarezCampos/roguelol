@@ -3,7 +3,7 @@ import { CARDS } from '../../src/data/cards';
 import { DIFFICULTIES } from '../../src/data/difficulty';
 import { ENEMIES } from '../../src/data/enemies';
 import { CONFIG } from '../../src/engine/config';
-import { combatFromExpedition, createExpedition, finishCombat, generateMap, rest, type Expedition } from '../../src/engine/expedition';
+import { combatFromExpedition, createExpedition, finishCombat, generateMap, livingWounds, rest, type Expedition } from '../../src/engine/expedition';
 import { equip } from '../../src/engine/gear';
 import { Rng } from '../../src/engine/rng';
 import { openShop, removalPrice } from '../../src/engine/shop';
@@ -216,5 +216,18 @@ describe('cartas de campeones muertos', () => {
     applyDamage(s, s.units.find((u) => u.id === 'lux')!, 9999);
     finishCombat(e, s, 'combat');
     expect(() => claimCard(e, 'x1')).toThrow(/muerto/);
+  });
+});
+
+describe('heridas de campeones muertos', () => {
+  it('no cuentan para tratar heridas: ni en el descanso ni en el comerciante', () => {
+    const e = createExpedition(2, 'nightmare');
+    e.wounds.lux = 2;
+    e.dead.push('lux');
+    e.run.champions = e.run.champions.filter((c) => c.id !== 'lux');
+    expect(livingWounds(e)).toBe(0);
+    expect(() => rest(e, 'treat')).toThrow(/Nadie tiene heridas/);
+    e.wounds.leona = 1;
+    expect(livingWounds(e)).toBe(1);
   });
 });

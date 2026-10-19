@@ -19,12 +19,12 @@ Que cada expedición, gane o pierda, deje algo: **Esquirlas** para mejoras perma
 
 | Mejora | Nivel 1 / 2 / 3 | Coste (Esquirlas) |
 |---|---|---|
-| Vigor | +5 / +10 / +15 de vida máxima a cada campeón | 40 / 80 / 120 |
-| Provisiones | +25 / +50 / +75 de oro inicial | 30 / 60 / 90 |
+| Vigor | +2 / +3 / +4 de vida máxima a cada campeón | 40 / 80 / 120 |
+| Provisiones | +15 / +30 / +45 de oro inicial | 30 / 60 / 90 |
 | Cinturón | Empiezas con 1 / 2 / 3 pociones de vida | 35 / 70 / 105 |
 | Maestría | 1 / 2 / 3 cartas del mazo inicial ya mejoradas | 50 / 100 / 150 |
 
-3. **Techo [mi decisión]:** con todo al máximo la ventaja sigue siendo moderada (≈ +15 % de vida, +75 de oro, 3 pociones, 3 cartas mejoradas): el bot de equilibrio debe seguir sin ganar siempre.
+3. **Techo [mi decisión]:** medido con el bot, **+15 de vida fue la ventaja más potente** (por sí sola pasaba del 27 % al 56 % de victorias), así que Vigor es pequeño a propósito. Con todo al máximo el bot pasa de ~26 % a ~60 % (Normal): sube mucho, pero cuesta ~465 Esquirlas (unas 10 expediciones) y Pesadilla existe para quien lo domine. Un test acota que el máximo nunca llegue al 75 %.
 4. **Archivo:** campeones (ficha y cartas), bestiario (cuántas veces visto y derrotado cada enemigo; lo no visto sale como «???») e historial (expediciones, victorias, derrotas, retiradas, mejor piso, muertes de Pesadilla).
 5. **Guardado:** clave propia (`shattered-runeterra:meta`), `version` propia, validación y copia de seguridad si está dañado; si no hay almacenamiento el juego funciona con progreso de la sesión.
 

@@ -17,8 +17,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 /** Mejoras permanentes provisionales (spec §14: moderadas). Se aplican al empezar cada expedición. */
 export const PERKS: Record<PerkId, PerkDef> = {
-  vigor: { id: 'vigor', name: 'Vigor', icon: 'hp', text: (v) => `+${v} de vida máxima a cada campeón`, costs: [40, 80, 120], values: [5, 10, 15] },
-  provisions: { id: 'provisions', name: 'Provisiones', icon: 'gold', text: (v) => `+${v} de oro al empezar`, costs: [30, 60, 90], values: [25, 50, 75] },
+  vigor: { id: 'vigor', name: 'Vigor', icon: 'hp', text: (v) => `+${v} de vida máxima a cada campeón`, costs: [40, 80, 120], values: [2, 3, 4] },
+  provisions: { id: 'provisions', name: 'Provisiones', icon: 'gold', text: (v) => `+${v} de oro al empezar`, costs: [30, 60, 90], values: [15, 30, 45] },
   belt: { id: 'belt', name: 'Cinturón', icon: 'potion', text: (v) => `Empiezas con ${plural(v, 'poción', 'pociones')} de vida`, costs: [35, 70, 105], values: [1, 2, 3] },
-  mastery: { id: 'mastery', name: 'Maestría', icon: 'up', text: (v) => `${plural(v, 'carta', 'cartas')} del mazo inicial ya mejoradas`, costs: [50, 100, 150], values: [1, 2, 3] },
+  mastery: { id: 'mastery', name: 'Maestría', icon: 'up', text: (v) => `${plural(v, 'carta', 'cartas')} del mazo inicial ya ${v === 1 ? 'mejorada' : 'mejoradas'}`, costs: [50, 100, 150], values: [1, 2, 3] },
 };

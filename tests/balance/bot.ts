@@ -5,7 +5,7 @@ import { living } from '../../src/engine/formation';
 import { Rng } from '../../src/engine/rng';
 import type { CardDef, CombatState, Unit } from '../../src/engine/types';
 import type { Expedition } from '../../src/engine/expedition';
-import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, livingWounds, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
 import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
 import { compareGear, equip } from '../../src/engine/gear';
 import { GEAR } from '../../src/data/gear';
@@ -124,7 +124,7 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
       resolveChoice(e, ev, rng.pick(ok).i);
     } else if (node.type === 'rest') {
       const hurt = e.run.champions.some((c) => c.hp < c.maxHp * 0.7 || c.downed);
-      const wounded = Object.values(e.wounds).some((w) => w > 0);
+      const wounded = livingWounds(e) > 0;
       if (hurt) rest(e, 'heal');
       else if (e.run.champions.some((c) => c.stress >= 40)) rest(e, 'calm');
       else if (wounded) rest(e, 'treat');
@@ -188,7 +188,7 @@ function visitShop(e: Expedition, rng: Rng): void {
       /* sin oro o sin hueco: el bot simplemente no compra */
     }
   };
-  if (Object.values(e.wounds).some((w) => w > 0)) tryBuy(() => treatWoundAtShop(e));
+  if (livingWounds(e) > 0) tryBuy(() => treatWoundAtShop(e));
   shop.potions.forEach((p, i) => POTIONS[p.id].healing && !p.sold && tryBuy(() => buyPotion(e, i)));
   shop.gear.forEach((_, i) => tryBuy(() => buyGear(e, i)));
   equipBest(e);

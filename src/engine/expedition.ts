@@ -337,6 +337,9 @@ export function claimCard(e: Expedition, defId: string | null): void {
   e.deck.push(defId);
 }
 
+/** Heridas de los campeones que siguen vivos (las de un muerto ya no se pueden tratar). */
+export const livingWounds = (e: Expedition): number => e.run.champions.reduce((a, c) => a + e.wounds[c.id], 0);
+
 /** Una acción de descanso por parada (curar, calmar o tratar una herida) y, aparte, avivar la hoguera. */
 /** Mejora la carta en la posición `deckIndex` del mazo (la marca con «+»). */
 export function upgradeCard(e: Expedition, deckIndex: number): void {

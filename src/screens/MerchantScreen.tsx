@@ -6,6 +6,7 @@ import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { CARDS, applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { CONFIG } from '../engine/config';
+import { livingWounds } from '../engine/expedition';
 import { POTIONS } from '../engine/potions';
 import { removalPrice } from '../engine/shop';
 import { game, useGame } from '../state/gameStore';
@@ -36,7 +37,7 @@ export function MerchantScreen() {
   if (!e || !e.shop) return null;
   const shop = e.shop;
   const gold = e.run.gold;
-  const woundTotal = Object.values(e.wounds).reduce((a, b) => a + b, 0);
+  const woundTotal = livingWounds(e);
   const beltFull = !e.run.belt.includes(null);
   const price = removalPrice(e);
   return (

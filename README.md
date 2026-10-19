@@ -32,9 +32,11 @@ Gear: [`specs/2026-10-19-gear-design.md`](docs/superpowers/specs/2026-10-19-gear
 
 Reliquias: [`specs/2026-10-19-reliquias-design.md`](docs/superpowers/specs/2026-10-19-reliquias-design.md).
 
+Metaprogresión (Esquirlas, Mejoras, Archivo y Equipo del menú): [`specs/2026-10-19-metaprogresion-design.md`](docs/superpowers/specs/2026-10-19-metaprogresion-design.md); el progreso permanente se guarda aparte en `localStorage` (`shattered-runeterra:meta`).
+
 Dificultad Pesadilla (muerte permanente): [`specs/2026-10-19-pesadilla-design.md`](docs/superpowers/specs/2026-10-19-pesadilla-design.md). Todos los modificadores están en `src/data/difficulty.ts`.
 
-Fuera de esta fase (botones deshabilitados): Mejoras, Archivo, Tesoro, Santuario, pasivas de gear y metaprogresión.
+Fuera de esta fase: Tesoro, Santuario, pasivas de gear y campeones nuevos.
 
 ## Motor de reglas (TypeScript)
 
