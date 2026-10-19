@@ -8,6 +8,7 @@ import { rollRewards, type Rewards } from './rewards';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
+import type { ShopState } from './shop';
 import type { ChampionId, CombatState, PotionId } from './types';
 
 export interface MapNode {
@@ -38,6 +39,12 @@ export interface Expedition {
   wounds: Record<ChampionId, number>;
   restUsed: boolean;
   stoked: boolean;
+  /** Stock del comerciante del nodo actual (null fuera de una tienda). */
+  shop: ShopState | null;
+  /** Cartas eliminadas en tiendas: cada una encarece la siguiente. */
+  removals: number;
+  /** Ids de eventos ya vistos esta expedición. */
+  seenEvents: string[];
   stats: { combats: number; elites: number };
 }
 
@@ -118,7 +125,7 @@ export function createExpedition(seed: number): Expedition {
   const map = generateMap(new Rng(seed ^ 0x9e3779b9));
   return {
     run, deck: [...STARTER_DECK], map, currentId: null, visited: [], status: 'active',
-    wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, stats: { combats: 0, elites: 0 },
+    wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
 }
 
@@ -143,6 +150,7 @@ export function enterNode(e: Expedition, id: string): MapNode {
   e.visited.push(n.id);
   e.restUsed = false;
   e.stoked = false;
+  e.shop = null;
   return n;
 }
 
