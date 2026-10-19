@@ -32,6 +32,21 @@ describe('datos de eventos', () => {
   });
 });
 
+describe('sin cartas de esa rareza', () => {
+  it('con un solo campeón vivo sin épicas, el evento da otra carta (o ninguna) y no falla', () => {
+    const e = createExpedition(1, 'nightmare');
+    e.run.champions = e.run.champions.filter((c) => c.id === 'yasuo'); // Yasuo no tiene cartas épicas
+    e.dead.push('leona', 'lux', 'soraka');
+    e.deck = e.deck.filter((id) => CARDS[id].owner === 'yasuo');
+    const x = ev('void_altar');
+    const before = e.deck.length;
+    const out = resolveChoice(e, x, 0);
+    expect(e.deck.length).toBe(before + 1);
+    expect(CARDS[e.deck.at(-1)!].owner).toBe('yasuo');
+    expect(out.lines.join(' ')).toMatch(/Nueva carta/);
+  });
+});
+
 describe('pickEvent', () => {
   it('no repite eventos hasta agotarlos y es reproducible con la semilla', () => {
     const e = createExpedition(9);

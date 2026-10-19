@@ -73,7 +73,10 @@ export function processRelics(s: CombatState): void {
   s.relicQueue.length = 0; // lo que no cupo en el presupuesto se descarta: el tope es duro
 }
 
-/** Reliquias de expedición (fuera del combate). Devuelve el texto de lo que han hecho para enseñarlo en el botín. */
+/**
+ * Reliquias de expedición con efecto puntual (fuera del combate). Devuelve el texto de lo que han hecho para enseñarlo en el botín.
+ * (El alivio de niebla de la Lámpara no pasa por aquí: se resta de lo que sube al entrar, ver `mistGainFor`.)
+ */
 export function runRelicNotes(e: Expedition, on: 'combatEnd' | 'nodeEntered', won: boolean): string[] {
   const notes: string[] = [];
   for (const id of e.run.relics) {
@@ -83,10 +86,6 @@ export function runRelicNotes(e: Expedition, on: 'combatEnd' | 'nodeEntered', wo
     if (def.run.healAll) {
       for (const c of e.run.champions) if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + def.run.healAll);
       notes.push(`${def.name}: +${def.run.healAll} de vida a cada campeón en pie`);
-    }
-    if (def.run.mist) {
-      e.run.mist = Math.max(0, Math.min(100, e.run.mist + def.run.mist));
-      notes.push(`${def.name}: ${def.run.mist > 0 ? '+' : ''}${def.run.mist} de niebla`);
     }
   }
   return notes;

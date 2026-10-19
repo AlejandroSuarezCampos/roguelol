@@ -48,7 +48,7 @@ export function intentView(s: CombatState, enemy: Unit): IntentView[] {
   return (s.intents[enemy.id] ?? []).map((intent) => {
     const value = intentValue(s, enemy, intent);
     const target = intent.kind === 'attack' || intent.kind === 'stress' ? intentTarget(s, intent.target) : undefined;
-    const lethal = intent.kind === 'attack' && !!target && value > target.hp + target.block;
+    const lethal = intent.kind === 'attack' && !!target && value >= target.hp + target.block;
     const danger = intent.kind === 'attack' && !!target && value >= target.maxHp / 3;
     return { intent, value, target, lethal, danger };
   });

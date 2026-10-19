@@ -8,7 +8,7 @@ import { CARDS, applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { CONFIG } from '../engine/config';
 import { livingWounds } from '../engine/expedition';
 import { POTIONS } from '../engine/potions';
-import { removalPrice } from '../engine/shop';
+import { minDeckFor, removalPrice, treatWoundPrice } from '../engine/shop';
 import { game, useGame } from '../state/gameStore';
 
 function Price({ price, gold, sold, label, onBuy }: { price: number; gold: number; sold?: boolean; label: string; onBuy: () => void }) {
@@ -92,15 +92,15 @@ export function MerchantScreen() {
                 <b>Tratar herida</b>
                 <small>{woundTotal ? 'Quita una herida al campeón más herido.' : 'Nadie tiene heridas.'}</small>
               </div>
-              <Price price={CONFIG.shop.treatWound} gold={gold} sold={shop.woundTreated || woundTotal === 0} label="Tratar herida" onBuy={() => game.treatWound()} />
+              <Price price={treatWoundPrice(e)} gold={gold} sold={shop.woundTreated || woundTotal === 0} label="Tratar herida" onBuy={() => game.treatWound()} />
             </div>
             <div className="ware">
               <div className="wcons">
                 <Icon name="x" />
                 <b>Eliminar carta</b>
-                <small>Quita una carta del mazo ({e.deck.length}, mínimo {CONFIG.shop.minDeck}). Cada eliminación encarece la siguiente.</small>
+                <small>Quita una carta del mazo ({e.deck.length}, mínimo {minDeckFor(e)}). Cada eliminación encarece la siguiente.</small>
               </div>
-              <Price price={price} gold={gold} sold={e.deck.length <= CONFIG.shop.minDeck} label="Eliminar carta" onBuy={() => setRemoving(true)} />
+              <Price price={price} gold={gold} sold={e.deck.length <= minDeckFor(e)} label="Eliminar carta" onBuy={() => setRemoving(true)} />
             </div>
           </div>
         </section>

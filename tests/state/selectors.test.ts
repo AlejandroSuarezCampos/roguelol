@@ -89,6 +89,17 @@ describe('intentView', () => {
     expect(intentTarget(s, 1)!.id).toBe('yasuo');
   });
 
+  it('es letal cuando el golpe iguala exactamente la vida más el bloqueo', () => {
+    const s = makeState();
+    s.intents = { e1: [{ kind: 'attack', amount: 8, target: 1 }], e2: [] };
+    const hit = intentView(s, u(s, 'e1'))[0].value;
+    u(s, 'leona').hp = hit - 4;
+    u(s, 'leona').block = 4;
+    expect(intentView(s, u(s, 'e1'))[0].lethal).toBe(true);
+    u(s, 'leona').hp = hit - 3;
+    expect(intentView(s, u(s, 'e1'))[0].lethal).toBe(false);
+  });
+
   it('no es letal si el bloqueo lo cubre', () => {
     const s = makeState();
     s.intents = { e1: [{ kind: 'attack', amount: 8, target: 1 }], e2: [] };

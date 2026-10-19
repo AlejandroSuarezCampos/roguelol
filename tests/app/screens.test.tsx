@@ -281,6 +281,29 @@ describe('comerciante', () => {
   });
 });
 
+describe('precios del comerciante según la dificultad', () => {
+  it('«Tratar herida» muestra y cobra el precio con el modificador de Pesadilla', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.newExpedition(2, 'nightmare');
+      game.startExpedition();
+      const e = game.getState().expedition!;
+      const target = e.map.nodes.find((n) => n.type === 'shop')!;
+      e.currentId = 'n0-0';
+      e.map.nodes.find((n) => n.id === 'n0-0')!.next = [target.id];
+      e.wounds.leona = 1;
+      e.run.gold = 31;
+      game.chooseNode(target.id);
+    });
+    render(<App />);
+    const buy = screen.getByRole('button', { name: /Comprar Tratar herida por 31 de oro/ });
+    expect(buy).toBeEnabled();
+    await user.click(buy);
+    expect(game.getState().expedition!.run.gold).toBe(0);
+    expect(game.getState().expedition!.wounds.leona).toBe(0);
+  });
+});
+
 describe('evento', () => {
   it('muestra las 3 opciones y, al elegir, el resultado y «Continuar»', async () => {
     const user = userEvent.setup();

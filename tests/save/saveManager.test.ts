@@ -151,6 +151,27 @@ describe('datos corruptos', () => {
     expect(r.expedition.run.champions).toHaveLength(3);
   });
 
+  it('una expedición con pocas cartas por muertes de Pesadilla se carga igualmente', () => {
+    const store = memory();
+    const m = createSaveManager(store);
+    const e = createExpedition(4, 'nightmare');
+    for (const dead of ['lux', 'soraka'] as const) {
+      e.dead.push(dead);
+      e.run.champions = e.run.champions.filter((c) => c.id !== dead);
+    }
+    e.deck = e.deck.filter((id) => !'xs'.includes(id[0]));
+    expect(e.deck.length).toBeLessThan(12);
+    m.save(e);
+    expect(m.load().status).toBe('ok');
+  });
+
+  it('save devuelve el resumen calculado y null si no se pudo guardar', () => {
+    const m = createSaveManager(memory(), () => 1234);
+    expect(m.save(played())).toEqual({ floor: 1, gold: 77, champions: 4, savedAt: 1234 });
+    const boom: StorageLike = { getItem: () => null, setItem: () => { throw new Error('cuota'); }, removeItem: () => undefined };
+    expect(createSaveManager(boom).save(played())).toBeNull();
+  });
+
   it('sin almacenamiento disponible nada falla', () => {
     const m = createSaveManager(null);
     expect(() => m.save(played())).not.toThrow();

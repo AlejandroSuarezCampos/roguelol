@@ -231,3 +231,22 @@ describe('heridas de campeones muertos', () => {
     expect(livingWounds(e)).toBe(1);
   });
 });
+
+describe('mazo pequeño tras muertes', () => {
+  it('el mínimo del comerciante es 3 cartas por campeón vivo', async () => {
+    const { removeCard, openShop, minDeckFor } = await import('../../src/engine/shop');
+    const e = createExpedition(2, 'nightmare');
+    for (const dead of ['lux', 'soraka'] as const) {
+      e.dead.push(dead);
+      e.run.champions = e.run.champions.filter((c) => c.id !== dead);
+      e.deck = e.deck.filter((id) => CARDS[id.replace('+', '')].owner !== dead);
+    }
+    expect(e.deck).toHaveLength(10);
+    expect(minDeckFor(e)).toBe(6);
+    e.run.gold = 9999;
+    openShop(e);
+    for (let i = 0; i < 4; i++) removeCard(e, 0);
+    expect(e.deck).toHaveLength(6);
+    expect(() => removeCard(e, 0)).toThrow(/menos de 6/);
+  });
+});

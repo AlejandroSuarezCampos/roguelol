@@ -58,7 +58,7 @@ function problem(x: any): string | null {
     if (![c.hp, c.maxHp, c.stress].every(isNum) || c.maxHp <= 0 || c.hp < 0 || c.hp > c.maxHp || c.stress < 0 || c.stress > 100 || typeof c.downed !== 'boolean') return 'vida o estrés';
   }
   if (!Array.isArray(x.deck) || !x.deck.every((id: unknown) => typeof id === 'string' && baseCardId(id) in CARDS)) return 'mazo';
-  if (x.deck.length < CONFIG.shop.minDeck) return 'mazo demasiado pequeño';
+  if (!x.deck.length) return 'mazo vacío';
   const nodes = x.map.nodes;
   if (!Array.isArray(nodes) || !nodes.length) return 'mapa';
   const ids = new Set<string>();
@@ -120,10 +120,15 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
   }
 
   return {
-    save(e: Expedition): void {
-      if (e.status !== 'active') return;
-      const payload = { version: SAVE_VERSION, savedAt: now(), expedition: { ...e, shop: null } };
-      safe((s) => s.setItem(SAVE_KEY, JSON.stringify(payload)), undefined);
+    /** Guarda la expedición y devuelve su resumen (calculado en memoria: no hace falta releer lo guardado). */
+    save(e: Expedition): SaveSummary | null {
+      if (e.status !== 'active') return null;
+      const savedAt = now();
+      const payload = { version: SAVE_VERSION, savedAt, expedition: { ...e, shop: null } };
+      const ok = safe((s) => (s.setItem(SAVE_KEY, JSON.stringify(payload)), true), false);
+      if (!ok) return null;
+      const cur = e.currentId ? e.map.nodes.find((n) => n.id === e.currentId) : null;
+      return { floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt };
     },
     load(): LoadResult {
       const r = read();

@@ -92,7 +92,7 @@ describe('compras', () => {
 
   it('no deja quedarse con menos cartas de las que permite jugar', () => {
     const e = fresh(5000);
-    e.deck = e.deck.slice(0, 12);
+    e.deck = e.deck.slice(0, 12); // 4 campeones vivos → mínimo 12
     expect(() => removeCard(e, 0)).toThrow(/mazo/i);
   });
 });

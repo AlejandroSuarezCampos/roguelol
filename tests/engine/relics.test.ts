@@ -294,3 +294,24 @@ describe('botín de reliquias', () => {
     expect(ENEMIES.wolf).toBeDefined();
   });
 });
+
+describe('Lámpara de la Niebla: resta de lo que sube, no después del tope', () => {
+  it('a mucha niebla sigue subiendo 3 menos que sin lámpara, y la vista previa coincide', async () => {
+    const { previewNode } = await import('../../src/engine/run');
+    const without = createExpedition(2);
+    without.run.mist = 50;
+    const withLamp = createExpedition(2);
+    withLamp.run.relics.push('lamp');
+    withLamp.run.mist = 50;
+    expect(previewNode(without.run, 'combat').mistAfter).toBe(58);
+    expect(previewNode(withLamp.run, 'combat').mistAfter).toBe(55);
+    enterNode(withLamp, availableNodes(withLamp)[0].id);
+    expect(withLamp.run.mist).toBe(55);
+    const edge = createExpedition(2);
+    edge.run.relics.push('lamp');
+    edge.run.mist = 98;
+    expect(previewNode(edge.run, 'combat').mistAfter).toBe(100);
+    enterNode(edge, availableNodes(edge)[0].id);
+    expect(edge.run.mist).toBe(100);
+  });
+});

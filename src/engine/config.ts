@@ -51,8 +51,8 @@ export const CONFIG = {
     treatWound: 25,
     removeCard: 75,
     removeCardStep: 25,
-    /** No se puede dejar el mazo por debajo de esto (3 cartas por campeón). */
-    minDeck: 12,
+    /** No se puede dejar el mazo por debajo de esto por cada campeón vivo (= cartas por campeón y turno). */
+    minDeckPerChampion: 3,
   },
   potions: { drop: { combat: 0.35, elite: 1, boss: 0 }, beltSize: 3, health: 20, refillable: 8, iron: 15, sorceryMarks: 2 },
 } as const;

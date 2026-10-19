@@ -50,7 +50,14 @@ function apply(e: Expedition, fx: EventEffect, lines: string[]): void {
       lines.push(`${fx.amount > 0 ? '+' : ''}${fx.amount} de niebla`);
       break;
     case 'addCard': {
-      const pool = cardPool(e).filter((c) => !fx.rarity || c.rarity === fx.rarity);
+      // Si no queda ninguna carta de esa rareza entre los campeones vivos, vale cualquiera; si no hay ninguna, no se da nada.
+      const all = cardPool(e);
+      const wanted = all.filter((c) => !fx.rarity || c.rarity === fx.rarity);
+      const pool = wanted.length ? wanted : all;
+      if (!pool.length) {
+        lines.push('No queda ninguna carta que ofrecer');
+        break;
+      }
       const card = run.rng.pick(pool);
       e.deck.push(card.id);
       lines.push(`Nueva carta: ${CARDS[card.id].name}`);

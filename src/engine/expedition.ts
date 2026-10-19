@@ -5,7 +5,7 @@ import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
 import { BASE_GOLD, ENCOUNTERS, ENEMIES, type EncounterKind } from '../data/enemies';
 import { alliesAfter, startCombat } from './combat';
 import { CONFIG } from './config';
-import { emptyGear, finalStatsFor, syncMaxHp, type ChampionGear } from './gear';
+import { emptyGear, equip, finalStatsFor, syncMaxHp, type ChampionGear } from './gear';
 import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { RELIC_LIST } from '../data/relics';
@@ -183,7 +183,6 @@ export function enterNode(e: Expedition, id: string): MapNode {
   const n = availableNodes(e).find((x) => x.id === id);
   if (!n) throw new Error('Nodo no accesible');
   runEnterNode(e.run, n.type);
-  runRelicNotes(e, 'nodeEntered', true);
   e.currentId = n.id;
   e.visited.push(n.id);
   e.restUsed = false;
@@ -306,11 +305,17 @@ export function pickGear(rng: Rng, weights: Record<'common' | 'rare' | 'legendar
   return out;
 }
 
-/** Recoge un objeto del botín (`null` = omitir): va al inventario. */
-export function claimGear(e: Expedition, gearId: string | null): void {
+/**
+ * Recoge un objeto del botín (`null` = omitir): va al inventario y, con `equipOn`, se equipa enseguida.
+ * Atómico: si no se puede equipar (campeón muerto, en combate…) no se recoge nada.
+ */
+export function claimGear(e: Expedition, gearId: string | null, equipOn?: ChampionId): void {
   if (gearId === null) return;
   if (!GEAR[gearId]) throw new Error(`Objeto desconocido: ${gearId}`);
+  if (equipOn && !e.run.champions.some((c) => c.id === equipOn)) throw new Error('Ese campeón ha muerto');
+  if (equipOn && e.inCombat) throw new Error('No se puede cambiar el equipo en combate');
   e.inventory.push(gearId);
+  if (equipOn) equip(e, equipOn, gearId);
 }
 
 /** Recoge la poción del botín. Con el cinturón lleno hay que decir qué hueco sustituir (o `'new'` para descartarla). */
@@ -340,7 +345,6 @@ export function claimCard(e: Expedition, defId: string | null): void {
 /** Heridas de los campeones que siguen vivos (las de un muerto ya no se pueden tratar). */
 export const livingWounds = (e: Expedition): number => e.run.champions.reduce((a, c) => a + e.wounds[c.id], 0);
 
-/** Una acción de descanso por parada (curar, calmar o tratar una herida) y, aparte, avivar la hoguera. */
 /** Mejora la carta en la posición `deckIndex` del mazo (la marca con «+»). */
 export function upgradeCard(e: Expedition, deckIndex: number): void {
   const id = e.deck[deckIndex];
@@ -350,6 +354,7 @@ export function upgradeCard(e: Expedition, deckIndex: number): void {
   e.deck[deckIndex] = upgradedId(id);
 }
 
+/** Una acción de descanso por parada (curar, calmar, tratar una herida o forjar una carta) y, aparte, avivar la hoguera. */
 export function rest(e: Expedition, action: RestAction, deckIndex?: number): void {
   if (action === 'stoke') {
     if (e.stoked) throw new Error('La hoguera ya está avivada');

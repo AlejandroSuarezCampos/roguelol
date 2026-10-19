@@ -1,4 +1,5 @@
 import { CONFIG } from './config';
+import { RELICS } from '../data/relics';
 import { mistGain, mistTier, type MistTier, type NodeType } from './mist';
 import { emptyBelt } from './potions';
 import { relicChanceFor } from './rewards';
@@ -36,8 +37,14 @@ export function createRun(seed: number, champions: RunChampion[]): RunState {
   return { rng, omen: rng.pick(OMENS), mist: 0, gold: 0, relics: [], belt: emptyBelt(), champions };
 }
 
+/** Niebla que sube al entrar en un nodo: la base del tipo menos lo que quiten las reliquias (Lámpara de la Niebla), sin bajar de 0. */
+export function mistGainFor(run: RunState, type: NodeType): number {
+  const relief = run.relics.reduce((a, id) => a + (RELICS[id]?.run?.on === 'nodeEntered' ? (RELICS[id].run!.mist ?? 0) : 0), 0);
+  return Math.max(0, mistGain(type) + relief);
+}
+
 export function enterNode(run: RunState, type: NodeType): void {
-  run.mist = clamp(run.mist + mistGain(type));
+  run.mist = clamp(run.mist + mistGainFor(run, type));
 }
 
 /** «Avivar la hoguera»: acción adicional del campamento. Solo toca la niebla, no la elección del descanso. */
@@ -47,7 +54,7 @@ export function stokeFire(run: RunState): void {
 
 /** Vista previa de un nodo disponible: niebla resultante, tramo y probabilidad de reliquia. */
 export function previewNode(run: RunState, type: NodeType): { mistAfter: number; tier: MistTier; relicChance: number } {
-  const mistAfter = clamp(run.mist + mistGain(type));
+  const mistAfter = clamp(run.mist + mistGainFor(run, type));
   return { mistAfter, tier: mistTier(mistAfter), relicChance: relicChanceFor(type, mistAfter) };
 }
 

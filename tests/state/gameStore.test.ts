@@ -526,3 +526,44 @@ describe('metaprogresión en el store', () => {
     expect(g.getState().meta.shards).toBe(0);
   });
 });
+
+describe('robustez de las acciones de botín', () => {
+  it('equipar el botín en un campeón muerto no recoge nada ni cierra la elección', () => {
+    const g = createGameStore();
+    g.newExpedition(3, 'nightmare');
+    g.startExpedition();
+    g.chooseNode(availableNodes(g.getState().expedition!)[0].id);
+    win(g);
+    g.concludeCombat();
+    const e = g.getState().expedition!;
+    e.dead.push('lux');
+    e.run.champions = e.run.champions.filter((c) => c.id !== 'lux');
+    g.getState().rewards!.gear = ['rabadon'];
+    g.claimGear('rabadon', 'lux');
+    expect(e.inventory).toEqual([]);
+    expect(g.getState().gearClaimed).toBe(false);
+    expect(g.getState().hint).toMatch(/muerto/);
+    g.claimGear('rabadon', 'leona');
+    expect(e.gear.leona.weapon).toBe('rabadon');
+    expect(g.getState().gearClaimed).toBe(true);
+  });
+
+  it('concludeCombat es idempotente: un segundo clic no reparte dos veces el botín ni suma heridas', () => {
+    const g = inBattle();
+    win(g);
+    const s = g.getState().combat!;
+    s.units.find((u) => u.id === 'lux')!.downed = true;
+    s.units.find((u) => u.id === 'lux')!.hp = 0;
+    g.concludeCombat();
+    const e = g.getState().expedition!;
+    const gold = e.run.gold;
+    const wounds = { ...e.wounds };
+    const combats = e.stats.combats;
+    g.concludeCombat();
+    g.concludeCombat();
+    expect(e.run.gold).toBe(gold);
+    expect(e.wounds).toEqual(wounds);
+    expect(e.stats.combats).toBe(combats);
+    expect(g.getState().screen).toBe('reward');
+  });
+});

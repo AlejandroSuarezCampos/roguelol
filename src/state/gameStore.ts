@@ -87,8 +87,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     // Autoguardado en los puntos seguros: al volver al mapa. Al terminar la expedición se borra.
     if (save && state.expedition) {
       if (state.screen === 'map' && state.expedition.status === 'active') {
-        save.save(state.expedition);
-        state = { ...state, saved: save.summary() };
+        state = { ...state, saved: save.save(state.expedition) ?? state.saved };
       } else if (state.screen === 'result') {
         save.clear();
         state = { ...state, saved: null };
@@ -224,8 +223,13 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     chooseNode(id: string) {
       const e = state.expedition;
       if (!e) return;
+      let node;
       try {
-        const node = enterNode(e, id);
+        node = enterNode(e, id);
+      } catch {
+        return fail('Ese nodo no es accesible');
+      }
+      try {
         const kind = encounterKind(node.type);
         if (node.type === 'shop') {
           openShop(e);
@@ -238,8 +242,8 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
           emit({ screen: 'battle', combat, combatKind: kind, hint: null, fx: [], activeRelics, selectedUid: null, selectedPotion: null });
         }
         else emit({ screen: 'rest', hint: null });
-      } catch {
-        fail('Ese nodo no es accesible');
+      } catch (err) {
+        fail((err as Error).message); // el nodo ya se ha pisado: se enseña el error real, no uno engañoso
       }
     },
 
@@ -311,19 +315,24 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     concludeCombat() {
       const e = state.expedition;
       const s = state.combat;
-      if (!e || !s || !state.combatKind) return;
+      // Idempotente: un segundo clic (o un Enter repetido) no vuelve a cerrar el combate ni a repartir el botín.
+      if (!e || !s || !state.combatKind || state.screen !== 'battle' || s.outcome === 'ongoing') return;
       const rewards = finishCombat(e, s, state.combatKind);
-      if (!rewards) return emit({ screen: 'result', hint: null });
+      if (!rewards) return emit({ screen: 'result', combat: null, hint: null });
       claimRewards(e, rewards);
-      emit({ screen: 'reward', rewards, cardClaimed: false, potionClaimed: false, gearClaimed: false, hint: null, fx: [] });
+      emit({ screen: 'reward', combat: null, rewards, cardClaimed: false, potionClaimed: false, gearClaimed: false, hint: null, fx: [] });
     },
     claimCard(defId: string | null) {
       const e = state.expedition;
       if (!e || !state.rewards) return;
       if (state.cardClaimed) return fail('Ya elegiste una carta');
       if (defId !== null && !state.rewards.cards.includes(defId)) return fail('Esa carta no está en el botín');
-      engineClaimCard(e, defId);
-      emit({ cardClaimed: true, hint: null });
+      try {
+        engineClaimCard(e, defId);
+        emit({ cardClaimed: true, hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
     },
     /** Elige un objeto del botín (`null` = omitir). Con `equipOn`, lo equipa enseguida en ese campeón. */
     claimGear(gearId: string | null, equipOn?: ChampionId) {
@@ -332,8 +341,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (state.gearClaimed) return fail('Ya elegiste un objeto');
       if (gearId !== null && !state.rewards.gear.includes(gearId)) return fail('Ese objeto no está en el botín');
       try {
-        engineClaimGear(e, gearId);
-        if (gearId !== null && equipOn) engineEquip(e, equipOn, gearId);
+        engineClaimGear(e, gearId, equipOn); // atómico: si no se puede equipar, no se recoge
         emit({ gearClaimed: true, hint: null });
       } catch (err) {
         fail((err as Error).message);
@@ -343,9 +351,13 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       const e = state.expedition;
       const potion = state.rewards?.potion;
       if (!e || !potion || state.potionClaimed) return;
-      const r = engineClaimPotion(e, potion, slot);
-      if (r === 'full') return fail('Cinturón lleno: elige qué poción sustituir');
-      emit({ potionClaimed: true, hint: null });
+      try {
+        const r = engineClaimPotion(e, potion, slot);
+        if (r === 'full') return fail('Cinturón lleno: elige qué poción sustituir');
+        emit({ potionClaimed: true, hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
     },
     finishRewards() {
       const e = state.expedition;

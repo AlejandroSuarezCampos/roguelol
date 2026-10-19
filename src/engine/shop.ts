@@ -35,8 +35,6 @@ export interface ShopState {
 const priced = (e: Expedition, base: number): number => Math.round(base * DIFFICULTIES[e.difficulty].shopPrice);
 
 /** Abre el comerciante del nodo actual. El stock sale de la semilla de la run y no cambia al reabrir. */
-export const gearName = (id: string): string => GEAR[id].name;
-
 export function openShop(e: Expedition): ShopState {
   if (e.shop) return e.shop;
   const rng = e.run.rng;
@@ -91,11 +89,17 @@ export function treatWoundAtShop(e: Expedition): void {
   if (s.woundTreated) throw new Error('Vendido');
   const worst = [...e.run.champions].sort((a, b) => e.wounds[b.id] - e.wounds[a.id])[0];
   if (!e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
-  pay(e, priced(e, CONFIG.shop.treatWound));
+  pay(e, treatWoundPrice(e));
   e.wounds[worst.id]--;
   syncMaxHp(e, worst);
   s.woundTreated = true;
 }
+
+/** Mínimo de cartas del mazo: 3 por campeón vivo. */
+export const minDeckFor = (e: Expedition): number => CONFIG.shop.minDeckPerChampion * e.run.champions.length;
+
+/** Precio de «Tratar herida» con el modificador de la dificultad. */
+export const treatWoundPrice = (e: Expedition): number => priced(e, CONFIG.shop.treatWound);
 
 export const removalPrice = (e: Expedition): number => priced(e, CONFIG.shop.removeCard + e.removals * CONFIG.shop.removeCardStep);
 
@@ -103,7 +107,7 @@ export const removalPrice = (e: Expedition): number => priced(e, CONFIG.shop.rem
 export function removeCard(e: Expedition, deckIndex: number): void {
   stock(e);
   if (!e.deck[deckIndex] || !deckCardDef(e.deck[deckIndex])) throw new Error('Esa carta no está en el mazo');
-  if (e.deck.length <= CONFIG.shop.minDeck) throw new Error(`El mazo no puede tener menos de ${CONFIG.shop.minDeck} cartas`);
+  if (e.deck.length <= minDeckFor(e)) throw new Error(`El mazo no puede tener menos de ${minDeckFor(e)} cartas`);
   pay(e, removalPrice(e));
   e.deck.splice(deckIndex, 1);
   e.removals++;
