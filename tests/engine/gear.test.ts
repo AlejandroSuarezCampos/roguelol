@@ -104,13 +104,36 @@ describe('vida máxima', () => {
     expect(champ(e, 'leona').hp).toBe(CHAMPIONS.leona.maxHp);
   });
 
-  it('desequipar vida nunca deja a un campeón vivo en 0', () => {
+  it('quitar un objeto de vida que dejaría al campeón sin vida se rechaza y no cambia nada', () => {
     const e = createExpedition(1);
     e.inventory.push('warmog');
     equip(e, 'soraka', 'warmog');
-    champ(e, 'soraka').hp = 5;
-    unequip(e, 'soraka', 'armor');
-    expect(champ(e, 'soraka').hp).toBeGreaterThanOrEqual(1);
+    champ(e, 'soraka').hp = 5; // quitarlo restaría 60: quedaría en −55
+    expect(() => unequip(e, 'soraka', 'armor')).toThrow(/sin vida/);
+    expect(e.gear.soraka.armor).toBe('warmog');
+    expect(e.inventory).toEqual([]);
+    expect(champ(e, 'soraka').hp).toBe(5);
+    expect(champ(e, 'soraka').maxHp).toBe(maxHpFor(e, 'soraka'));
+  });
+
+  it('el ciclo equipar/quitar con poca vida no regala vida (el caso límite que el recorte a 1 permitía)', () => {
+    const e = createExpedition(1);
+    e.inventory.push('blade'); // +15 de vida
+    champ(e, 'leona').hp = 3;
+    equip(e, 'leona', 'blade');
+    expect(champ(e, 'leona').hp).toBe(18);
+    unequip(e, 'leona', 'weapon');
+    expect(champ(e, 'leona').hp).toBe(3);
+  });
+
+  it('cambiar un objeto por otro con menos vida se rechaza si dejaría a 0', () => {
+    const e = createExpedition(1);
+    e.inventory.push('titanic', 'ring'); // +30 y +10 de vida en el slot de arma
+    equip(e, 'yasuo', 'titanic');
+    champ(e, 'yasuo').hp = 10;
+    expect(() => equip(e, 'yasuo', 'ring')).toThrow(/sin vida/);
+    expect(e.gear.yasuo.weapon).toBe('titanic');
+    expect(e.inventory).toEqual(['ring']);
   });
 
   it('equipar y quitar en bucle no cura gratis', () => {

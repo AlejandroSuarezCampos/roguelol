@@ -307,7 +307,7 @@ describe('guardado automático', () => {
     expect(store.data.has(SAVE_KEY)).toBe(true);
     expect(g.getState().saved).toMatchObject({ floor: 0, gold: 0 });
     g.getState().expedition!.run.gold = 42;
-    g.selectPotion(null); // cualquier emisión en el mapa vuelve a guardar
+    g.reorderTeam('leona', 1); // una acción del mapa que cambia la expedición vuelve a guardar
     const g2 = createGameStore({ save: createSaveManager(store) });
     expect(g2.getState().saved).toMatchObject({ gold: 42 });
     g2.continueExpedition();

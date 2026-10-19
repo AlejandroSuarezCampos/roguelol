@@ -37,36 +37,63 @@ function assertFree(e: Expedition): void {
   if (e.inCombat) throw new Error('No se puede cambiar el equipo en combate');
 }
 
+/**
+ * Cambia el gear de un campeón y mueve su vida actual lo mismo que su vida máxima: el equipo ni crea ni destruye vida, así que equipar y
+ * quitar en bucle no cura gratis. Si el cambio lo dejaría sin vida, se rechaza (hay que curarlo antes) y no se toca nada.
+ */
+function changeGear(e: Expedition, id: ChampionId, mutate: () => void, undo: () => void): void {
+  const c = e.run.champions.find((x) => x.id === id);
+  if (!c) throw new Error('Ese campeón ha muerto');
+  mutate();
+  const next = maxHpFor(e, id);
+  const delta = next - c.maxHp;
+  if (!c.downed && c.hp + delta < 1) {
+    undo();
+    throw new Error(`Cambiarlo dejaría a ${c.name} sin vida: cúrala antes`);
+  }
+  c.maxHp = next;
+  if (!c.downed) c.hp = Math.min(next, c.hp + delta);
+}
+
 /** Equipa un objeto del inventario en su slot; el que hubiera vuelve al inventario. Equipar vida sube también la vida actual. */
 export function equip(e: Expedition, id: ChampionId, gearId: string): void {
   assertFree(e);
   const def = GEAR[gearId];
   const at = e.inventory.indexOf(gearId);
   if (!def || at < 0) throw new Error('Ese objeto no está en el inventario');
-  const champ = e.run.champions.find((c) => c.id === id);
-  if (!champ) throw new Error('Ese campeón ha muerto');
-  e.inventory.splice(at, 1);
   const old = e.gear[id][def.slot];
-  if (old) e.inventory.push(old);
-  e.gear[id][def.slot] = gearId;
-  shiftMaxHp(e, champ);
-}
-
-/** Ajusta la vida máxima al cambiar de gear y mueve la vida actual la misma cantidad (el equipo no crea ni destruye vida: equipar y quitar no cura gratis). */
-function shiftMaxHp(e: Expedition, c: Expedition['run']['champions'][number]): void {
-  const next = maxHpFor(e, c.id);
-  const delta = next - c.maxHp;
-  c.maxHp = next;
-  if (!c.downed) c.hp = Math.max(1, Math.min(next, c.hp + delta));
+  changeGear(
+    e,
+    id,
+    () => {
+      e.inventory.splice(at, 1);
+      if (old) e.inventory.push(old);
+      e.gear[id][def.slot] = gearId;
+    },
+    () => {
+      if (old) e.inventory.pop();
+      e.inventory.splice(at, 0, gearId);
+      e.gear[id][def.slot] = old;
+    },
+  );
 }
 
 export function unequip(e: Expedition, id: ChampionId, slot: GearSlot): void {
   assertFree(e);
   const old = e.gear[id][slot];
   if (!old) throw new Error('No hay nada equipado en ese slot');
-  e.gear[id][slot] = null;
-  e.inventory.push(old);
-  shiftMaxHp(e, e.run.champions.find((c) => c.id === id)!);
+  changeGear(
+    e,
+    id,
+    () => {
+      e.gear[id][slot] = null;
+      e.inventory.push(old);
+    },
+    () => {
+      e.inventory.pop();
+      e.gear[id][slot] = old;
+    },
+  );
 }
 
 /** Diferencia de estadísticas y vida si `gearId` sustituyera a lo que lleva el campeón en ese slot (para la comparación). */

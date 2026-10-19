@@ -77,3 +77,13 @@ describe('huecos tras una muerte permanente', () => {
     expect(canSwap(s, 1, 3)).toBe('No son adyacentes');
   });
 });
+
+describe('posiciones fuera de rango', () => {
+  it('nunca se sale del 1–4, ni siquiera hacia un hueco', () => {
+    const s = makeState();
+    expect(canSwap(s, 4, 5 as never)).toBe('Posición no válida');
+    expect(canSwap(s, 0 as never, 1)).toBe('Posición no válida');
+    expect(() => swapAllies(s, 4, 5 as never)).toThrow(/no válida/);
+    expect(u(s, 'soraka').pos).toBe(4);
+  });
+});

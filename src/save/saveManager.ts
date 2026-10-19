@@ -11,6 +11,8 @@ import { POTIONS } from '../engine/potions';
 
 /** Versión del formato. Súbela (y añade una migración) si cambia la forma de lo que se guarda. */
 export const SAVE_VERSION = 5;
+/** Versiones que se pueden cargar. La 4 es igual que la 5 sin diario (se carga con el diario vacío). */
+const LOADABLE_VERSIONS = [4, 5];
 export const SAVE_KEY = 'shattered-runeterra:run';
 export const CORRUPT_KEY = 'shattered-runeterra:run.corrupt';
 
@@ -27,12 +29,14 @@ export interface StorageLike {
 export interface JournalEntry {
   a: string;
   p: unknown[];
+  /** Huella del estado tras la acción: si al reproducir no coincide, el diario se da por inválido (nada se desvía en silencio). */
+  f?: string;
 }
 export const JOURNAL_ACTIONS = [
   'chooseNode', 'playCard', 'swap', 'usePotion', 'endTurn', 'concludeCombat', 'claimCard', 'claimGear', 'claimPotion',
   'restAction', 'buyCard', 'buyPotion', 'buyGear', 'treatWound', 'removeCard', 'chooseEventOption',
 ] as const;
-const MAX_JOURNAL = 4000;
+const MAX_JOURNAL = 20000;
 
 export type LoadResult =
   | { status: 'none' }
@@ -106,7 +110,8 @@ function problem(x: any): string | null {
 function journalProblem(j: unknown): string | null {
   if (j === undefined) return null;
   if (!Array.isArray(j) || j.length > MAX_JOURNAL) return 'diario';
-  for (const x of j) if (!isObj(x) || !(JOURNAL_ACTIONS as readonly string[]).includes(x.a) || !Array.isArray(x.p)) return 'diario';
+  for (const x of j)
+    if (!isObj(x) || !(JOURNAL_ACTIONS as readonly string[]).includes(x.a) || !Array.isArray(x.p) || (x.f !== undefined && typeof x.f !== 'string')) return 'diario';
   return null;
 }
 
@@ -148,9 +153,12 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
     } catch {
       return { raw, error: 'JSON inválido' };
     }
-    if (!isObj(data) || data.version !== SAVE_VERSION) return { raw, error: `versión ${isObj(data) ? data.version : '?'} no soportada` };
-    const why = problem(data.expedition) ?? journalProblem(data.journal);
-    return why ? { raw, error: why } : { raw, data };
+    if (!isObj(data) || !LOADABLE_VERSIONS.includes(data.version)) return { raw, error: `versión ${isObj(data) ? data.version : '?'} no soportada` };
+    const why = problem(data.expedition);
+    if (why) return { raw, error: why };
+    // Un diario ilegible o enorme no tira el guardado entero: se descarta el diario y se conserva el punto seguro.
+    if (journalProblem(data.journal)) data.journal = [];
+    return { raw, data };
   }
 
   return {
@@ -187,9 +195,7 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
       return { summary: summaryOf(r.data.expedition, r.data.savedAt), corrupt: null };
     },
     summary(): SaveSummary | null {
-      const r = read();
-      if (!r || 'error' in r) return null;
-      return summaryOf(r.data.expedition, r.data.savedAt);
+      return this.inspect().summary;
     },
     clear(): void {
       safe((s) => s.removeItem(SAVE_KEY), undefined);

@@ -656,6 +656,23 @@ describe('metaprogresión en pantalla', () => {
   });
 });
 
+describe('Enter con una carta ya elegida', () => {
+  it('juega la carta aunque el foco esté en ella (no la deselecciona)', async () => {
+    const user = userEvent.setup();
+    toBattle();
+    render(<App />);
+    const s = game.getState().combat!;
+    const i = s.hand.findIndex((c) => ['self', 'allEnemies', 'allAllies'].includes(cardOf(s, c).target) && cardOf(s, c).cost <= s.energy);
+    if (i < 0) return;
+    const hand = within(screen.getByRole('group', { name: 'Mano' })).getAllByRole('button');
+    await user.click(hand[i]); // elige la carta con el ratón: queda enfocada
+    expect(game.getState().selectedUid).toBe(s.hand[i].uid);
+    const before = game.getState().combat!.hand.length;
+    await user.keyboard('{Enter}');
+    expect(game.getState().combat!.hand.length).toBe(before - 1);
+  });
+});
+
 describe('atajos de teclado con ventanas abiertas', () => {
   it('con la confirmación de retirada abierta, «e» no termina el turno ni los dígitos eligen carta', async () => {
     const user = userEvent.setup();

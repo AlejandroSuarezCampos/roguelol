@@ -90,18 +90,25 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
   let replaying = false;
   let replayFailed = false;
 
+  /** Punto seguro (mapa o Equipo: no hay ningún nodo a medias): guarda la expedición tal cual. */
+  function persistSafePoint(): void {
+    const e = state.expedition;
+    if (!save || replaying || !e || e.status !== 'active') return;
+    journal = [];
+    state = { ...state, saved: save.save(e) ?? state.saved };
+  }
+
   const emit = (patch: Partial<GameState> = {}) => {
     state = { ...state, ...patch };
-    // Punto seguro: mapa y pantalla de Equipo (no hay ningún nodo a medias). Al terminar la expedición se borra el guardado.
-    if (state.expedition && (state.screen === 'map' || state.screen === 'team') && state.expedition.status === 'active') {
-      checkpoint = cloneExpedition(state.expedition);
-      journal = [];
-      if (save && !replaying) state = { ...state, saved: save.save(state.expedition) ?? state.saved };
-    } else if (save && state.expedition && state.screen === 'result') {
-      save.clear();
-      checkpoint = null;
-      journal = [];
-      state = { ...state, saved: null };
+    // Los cambios de pantalla son los puntos de guardado: al llegar al mapa o a Equipo se guarda; al terminar la expedición se borra.
+    if ('screen' in patch && state.expedition) {
+      if (state.screen === 'map' || state.screen === 'team') persistSafePoint();
+      else if (state.screen === 'result' && save) {
+        save.clear();
+        checkpoint = null;
+        journal = [];
+        state = { ...state, saved: null };
+      }
     }
     // Al terminar la expedición se suma una sola vez al progreso permanente.
     if (state.screen === 'result' && state.expedition && !state.expedition.recorded) {
@@ -109,6 +116,13 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       metaStore?.save(meta);
     }
     listeners.forEach((l) => l());
+  };
+
+  /** Huella del estado visible de la partida: sirve para comprobar que reproducir el diario no se desvía. */
+  const fingerprint = (): string => {
+    const e = state.expedition;
+    const c = state.combat;
+    return [state.screen, e?.run.rng.state, c?.rng.state, c?.turn, c?.energy, c?.hand.length, e?.run.gold, e?.deck.length].join('|');
   };
 
   /** Ejecuta una acción del motor, traduce sus errores a un aviso y calcula los efectos flotantes. */
@@ -152,7 +166,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
   /** Apunta una acción hecha dentro de un nodo y la guarda junto al punto seguro. */
   function record(a: JournalEntry['a'], ...p: unknown[]): void {
     if (replaying || !save || !checkpoint) return;
-    journal.push({ a, p });
+    journal.push({ a, p, f: fingerprint() });
     save.save(checkpoint, journal);
   }
 
@@ -163,6 +177,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       fn();
       emit({ hint: null });
       if (entry && state.screen === 'shop') record(...entry);
+      else if (state.screen === 'map' || state.screen === 'team') persistSafePoint();
     } catch (err) {
       fail((err as Error).message);
     }
@@ -197,13 +212,15 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         state = initial(meta, state.saved);
         replaying = true;
         replayFailed = false;
-        emit({ screen: 'map', expedition: r.expedition }); // fija el punto seguro (sin guardar: aún falta reproducir)
-        for (const { a, p } of r.journal) {
+        checkpoint = cloneExpedition(r.expedition); // el punto al que se vuelve si la reproducción falla
+        emit({ screen: 'map', expedition: r.expedition }); // (sin guardar: aún falta reproducir)
+        for (const { a, p, f } of r.journal) {
           try {
-            (api as unknown as Record<string, (...args: unknown[]) => void>)[a](...p.map((x) => (x === null ? undefined : x)));
+            (api as unknown as Record<string, (...args: unknown[]) => void>)[a](...p);
           } catch {
             replayFailed = true;
           }
+          if (f !== undefined && fingerprint() !== f) replayFailed = true; // el estado se desvió del original
           if (replayFailed) break;
         }
         replaying = false;
@@ -246,6 +263,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (!state.expedition) return;
       reorder(state.expedition.run, id, to);
       emit();
+      if (state.screen === 'map' || state.screen === 'team') persistSafePoint();
     },
     startExpedition() {
       if (state.expedition) emit({ screen: 'map', hint: null });
@@ -267,7 +285,10 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (!e) return;
       let node;
       try {
+        const before = cloneExpedition(e); // punto seguro: el estado justo antes de pisar el nodo
         node = enterNode(e, id);
+        checkpoint = before;
+        journal = [];
       } catch {
         return fail('Ese nodo no es accesible');
       }
@@ -299,8 +320,9 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     selectPotion(slot: number | null) {
       emit({ selectedPotion: slot === state.selectedPotion ? null : slot, selectedUid: null, hint: null });
     },
-    playCard(uid: string, targetId?: string) {
-      if (act((s) => enginePlayCard(s, uid, targetId))) record('playCard', uid, targetId);
+    playCard(uid: string, targetId?: string | null) {
+      const target = targetId ?? undefined; // un diario guardado trae `null` donde no había objetivo
+      if (act((s) => enginePlayCard(s, uid, target))) record('playCard', uid, target);
     },
     /** Clic en una unidad: juega la carta seleccionada o usa la poción seleccionada sobre ella. */
     clickUnit(unitId: string) {
@@ -323,8 +345,9 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     swap(a: Pos, b: Pos) {
       if (act((s) => swapAllies(s, a, b))) record('swap', a, b);
     },
-    usePotion(slot: number, targetId?: string) {
-      if (act((s) => engineUsePotion(s, slot, targetId))) record('usePotion', slot, targetId);
+    usePotion(slot: number, targetId?: string | null) {
+      const target = targetId ?? undefined;
+      if (act((s) => engineUsePotion(s, slot, target))) record('usePotion', slot, target);
     },
     /** Fuera de combate: bebe la poción seleccionada (solo curativas) sobre un campeón. */
     drinkPotion(championId: ChampionId) {
@@ -335,6 +358,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       try {
         usePotionOnMap(e.run.belt, state.selectedPotion, champ);
         emit({ selectedPotion: null, hint: null });
+        persistSafePoint();
       } catch (err) {
         fail((err as Error).message);
       }
@@ -379,20 +403,21 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       }
     },
     /** Elige un objeto del botín (`null` = omitir). Con `equipOn`, lo equipa enseguida en ese campeón. */
-    claimGear(gearId: string | null, equipOn?: ChampionId) {
+    claimGear(gearId: string | null, equipOn?: ChampionId | null) {
       const e = state.expedition;
       if (!e || !state.rewards?.gear) return;
       if (state.gearClaimed) return fail('Ya elegiste un objeto');
       if (gearId !== null && !state.rewards.gear.includes(gearId)) return fail('Ese objeto no está en el botín');
       try {
-        engineClaimGear(e, gearId, equipOn); // atómico: si no se puede equipar, no se recoge
+        engineClaimGear(e, gearId, equipOn ?? undefined); // atómico: si no se puede equipar, no se recoge
         emit({ gearClaimed: true, hint: null });
         record('claimGear', gearId, equipOn);
       } catch (err) {
         fail((err as Error).message);
       }
     },
-    claimPotion(slot?: number | 'new') {
+    claimPotion(slotArg?: number | 'new' | null) {
+      const slot = slotArg ?? undefined;
       const e = state.expedition;
       const potion = state.rewards?.potion;
       if (!e || !potion || state.potionClaimed) return;
@@ -426,9 +451,10 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     },
 
     // ——— descanso ———
-    restAction(action: RestAction, deckIndex?: number) {
+    restAction(action: RestAction, deckIndexArg?: number | null) {
       const e = state.expedition;
       if (!e) return;
+      const deckIndex = deckIndexArg ?? undefined;
       try {
         engineRest(e, action, deckIndex);
         emit({ hint: null });
@@ -445,7 +471,8 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     buyCard(index: number) {
       shopAction(() => engineBuyCard(state.expedition!, index), ['buyCard', index]);
     },
-    buyPotion(index: number, slot?: number) {
+    buyPotion(index: number, slotArg?: number | null) {
+      const slot = slotArg ?? undefined;
       shopAction(() => engineBuyPotion(state.expedition!, index, slot), ['buyPotion', index, slot]);
     },
     buyGear(index: number) {

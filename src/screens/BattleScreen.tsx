@@ -38,7 +38,14 @@ export function BattleScreen() {
       // Con una ventana abierta (retirada, mazos…) los atajos no actúan por detrás; y Enter sobre un botón enfocado es de ese botón.
       if (document.querySelector('[aria-modal="true"]') && ev.key !== 'Escape') return;
       const interactive = (ev.target as HTMLElement | null)?.closest?.('button, input, textarea, select, [role="button"]');
-      if (interactive && (ev.key === 'Enter' || ev.key === ' ')) return;
+      if (interactive && (ev.key === 'Enter' || ev.key === ' ')) {
+        // Con una carta ya elegida, Enter sobre una carta de la mano la juega (y se evita que el clic nativo la deseleccione).
+        if (ev.key === 'Enter' && selected && interactive.closest('.hand')) {
+          ev.preventDefault();
+          game.playSelected();
+        }
+        return;
+      }
       if (ev.key === 'Escape') {
         game.selectCard(null);
         game.selectPotion(null);

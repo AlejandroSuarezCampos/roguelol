@@ -19,6 +19,7 @@ export function moveUnit(s: CombatState, unit: Unit, to: number): boolean {
 
 /** Motivo por el que no se puede intercambiar (null = se puede). */
 export function canSwap(s: CombatState, a: Pos, b: Pos): string | null {
+  if (!inBounds(a) || !inBounds(b)) return 'Posición no válida';
   if (Math.abs(a - b) !== 1) return 'No son adyacentes';
   if (s.swapUsed) return 'Ya intercambiaste este turno';
   if (s.energy < CONFIG.swapCost) return 'Energía insuficiente';

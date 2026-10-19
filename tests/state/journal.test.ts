@@ -166,8 +166,39 @@ describe('reanudar a mitad de un nodo', () => {
   });
 });
 
+describe('omitir recompensas también se reanuda', () => {
+  it('saltar la carta y el objeto del botín y recargar no pierde el combate', () => {
+    const store = mem();
+    const g = intoBattle(store);
+    for (let i = 0; i < 60 && g.getState().combat!.outcome === 'ongoing'; i++) if (!playSomething(g)) g.endTurn();
+    expect(g.getState().combat!.outcome).toBe('won');
+    g.concludeCombat();
+    g.claimCard(null);
+    if (g.getState().rewards!.gear) g.claimGear(null);
+    const reloaded = open(store);
+    reloaded.continueExpedition();
+    expect(reloaded.getState().screen).toBe('reward');
+    expect(reloaded.getState().cardClaimed).toBe(true);
+    expect(reloaded.getState().notice).toBeNull();
+    expect(economy(reloaded)).toBe(economy(g));
+  });
+
+  it('una jugada sin objetivo (null en el diario) también se reanuda', () => {
+    const store = mem();
+    const g = intoBattle(store);
+    const s = g.getState().combat!;
+    const inst = s.hand.find((c) => ['self', 'allEnemies', 'allAllies'].includes(cardOf(s, c).target) && cardOf(s, c).cost <= s.energy);
+    if (!inst) return;
+    g.playCard(inst.uid);
+    const reloaded = open(store);
+    reloaded.continueExpedition();
+    expect(reloaded.getState().screen).toBe('battle');
+    expect(shape(reloaded)).toBe(shape(g));
+  });
+});
+
 describe('diario dañado', () => {
-  it('un diario con acciones desconocidas se rechaza como guardado dañado', () => {
+  it('un diario ilegible se descarta pero se conserva el punto seguro (no se pierde la expedición)', () => {
     const store = mem();
     const g = intoBattle(store);
     playSomething(g);
@@ -175,8 +206,38 @@ describe('diario dañado', () => {
     raw.journal.push({ a: 'hacerTrampa', p: [] });
     store.setItem(SAVE_KEY, JSON.stringify(raw));
     const reloaded = open(store);
-    expect(reloaded.getState().saved).toBeNull();
-    expect(reloaded.getState().notice).toMatch(/dañada/);
+    expect(reloaded.getState().saved).not.toBeNull();
+    reloaded.continueExpedition();
+    expect(reloaded.getState().screen).toBe('map');
+    expect(reloaded.getState().expedition!.visited).toEqual([]);
+  });
+
+  it('un diario cuya huella no coincide (el estado se desvió) devuelve al punto seguro con aviso', () => {
+    const store = mem();
+    const g = intoBattle(store);
+    playSomething(g);
+    const raw = JSON.parse(store.data.get(SAVE_KEY)!);
+    raw.journal.at(-1).f = 'huella|falsa';
+    store.setItem(SAVE_KEY, JSON.stringify(raw));
+    const reloaded = open(store);
+    reloaded.continueExpedition();
+    expect(reloaded.getState().screen).toBe('map');
+    expect(reloaded.getState().notice).toMatch(/No se pudo reanudar/);
+  });
+
+  it('un guardado de la versión 4 (sin diario) se sigue cargando', () => {
+    const store = mem();
+    const g = open(store);
+    g.newExpedition(3);
+    g.startExpedition();
+    const raw = JSON.parse(store.data.get(SAVE_KEY)!);
+    raw.version = 4;
+    delete raw.journal;
+    store.setItem(SAVE_KEY, JSON.stringify(raw));
+    const reloaded = open(store);
+    expect(reloaded.getState().saved).not.toBeNull();
+    reloaded.continueExpedition();
+    expect(reloaded.getState().screen).toBe('map');
   });
 
   it('un diario que no se puede reproducir devuelve al mapa con un aviso, sin romper nada', () => {
