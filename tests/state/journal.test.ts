@@ -181,7 +181,7 @@ describe('diario dañado', () => {
 
   it('un diario que no se puede reproducir devuelve al mapa con un aviso, sin romper nada', () => {
     const store = mem();
-    const g = intoBattle(store);
+    intoBattle(store);
     const raw = JSON.parse(store.data.get(SAVE_KEY)!);
     raw.journal.push({ a: 'playCard', p: ['carta-que-no-existe', null] });
     store.setItem(SAVE_KEY, JSON.stringify(raw));

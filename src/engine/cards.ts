@@ -1,3 +1,4 @@
+import { applyUpgrade } from '../data/cards';
 import { CONFIG } from './config';
 import { computeDamage } from './damage';
 import { byPos, living, moveUnit } from './formation';
@@ -9,9 +10,7 @@ import type { CardDef, CardInstance, ChampionId, CombatState, Effect, Unit } fro
 /** Definición efectiva de una carta en mano: aplica su mejora si la instancia está mejorada. */
 export function cardOf(s: CombatState, inst: CardInstance): CardDef {
   const def = s.cards[inst.defId];
-  if (!inst.upgraded || !def.upgrade) return def;
-  const up = def.upgrade;
-  return { ...def, cost: up.cost ?? def.cost, effects: up.effects ?? def.effects, positionBonus: up.positionBonus ?? def.positionBonus, text: up.text };
+  return inst.upgraded ? applyUpgrade(def) : def;
 }
 
 /** Una carta es «de AP» si alguno de sus efectos de daño escala con AP. */

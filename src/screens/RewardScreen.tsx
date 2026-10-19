@@ -109,7 +109,7 @@ export function RewardScreen() {
                       {e.run.champions.map((ch) => {
                         const c = ch.id;
                         const d = compareGear(e, c, id);
-                        const sum = [...Object.entries(d.stats).map(([k, v]) => `${v > 0 ? '▲' : '▼'}${k}`), d.hp ? `${d.hp > 0 ? '▲' : '▼'}vida` : ''].filter(Boolean).join(' ');
+                        const sum = statLines(d.stats, d.hp).map((l) => `${l.raw > 0 ? '▲' : '▼'} ${l.label} ${l.value}`).join(' · ') || 'sin cambios';
                         return (
                           <button key={c} className="btn sm" onClick={() => { game.claimGear(id, c); setChoosingGear(false); }} title={sum}>
                             {CHAMPIONS[c].name}

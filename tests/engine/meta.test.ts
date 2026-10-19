@@ -36,6 +36,22 @@ describe('Esquirlas', () => {
   });
 });
 
+describe('Esquirlas: nada de granjearlas sin jugar', () => {
+  it('retirarse sin haber ganado un combate no da Esquirlas; perder sí (mínimo 5)', () => {
+    const r = createExpedition(1);
+    r.visited = [r.map.nodes[0].id];
+    retreat(r);
+    expect(shardsFor(r)).toBe(0);
+    const m = newMeta();
+    expect(recordRun(m, r).shards).toBe(0);
+    expect(m.history.retreats).toBe(1);
+    const d = createExpedition(1);
+    d.visited = [d.map.nodes[0].id];
+    d.status = 'defeat';
+    expect(shardsFor(d)).toBe(5);
+  });
+});
+
 describe('mejoras permanentes', () => {
   it('hay 4 mejoras de 3 niveles con costes crecientes', () => {
     expect(PERK_IDS).toHaveLength(4);

@@ -8,7 +8,6 @@ import type { Expedition } from '../../src/engine/expedition';
 import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, livingWounds, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
 import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
 import { compareGear, equip } from '../../src/engine/gear';
-import { GEAR } from '../../src/data/gear';
 import type { ChampionId } from '../../src/engine/types';
 import { POTIONS, usePotion, usePotionOnMap, whyCannotUse } from '../../src/engine/potions';
 import { buyCard, buyGear, buyPotion, openShop, treatWoundAtShop } from '../../src/engine/shop';
@@ -81,7 +80,8 @@ export function fight(s: CombatState, rng: Rng, maxTurns = 40): { outcome: Comba
     playTurn(s, rng);
     if (s.outcome === 'ongoing') endTeamTurn(s);
   }
-  return { outcome: s.outcome === 'ongoing' ? 'lost' : s.outcome, turns: s.turn };
+  if (s.outcome === 'ongoing') s.outcome = 'lost'; // tablas: se da por perdido para que finishCombat pueda cerrarlo
+  return { outcome: s.outcome, turns: s.turn };
 }
 
 export interface RunReport {

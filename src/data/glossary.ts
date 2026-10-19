@@ -39,7 +39,7 @@ export const STRESS_LABEL: Record<StressTier, string> = {
 
 export const NODE_INFO: Record<string, { name: string; icon: string; text: string }> = {
   combat: { name: 'Combate', icon: 'card', text: 'Un grupo de monstruos de las Islas de la Sombra.' },
-  elite: { name: 'Élite', icon: 'elite', text: 'Enemigo poderoso. Más niebla; siempre suelta reliquia y poción.' },
+  elite: { name: 'Élite', icon: 'elite', text: 'Enemigo poderoso. Sube más la niebla; siempre suelta reliquia y casi siempre una poción.' },
   boss: { name: 'Jefe', icon: 'boss', text: 'Viego, el Rey Arruinado. Vencerlo gana la expedición.' },
   rest: { name: 'Descanso', icon: 'rest', text: 'Cura a todos, calma el estrés o trata una herida.' },
   shop: { name: 'Comerciante', icon: 'shop', text: 'Compra cartas y pociones, trata heridas o elimina cartas del mazo con oro.' },
@@ -48,4 +48,3 @@ export const NODE_INFO: Record<string, { name: string; icon: string; text: strin
   shrine: { name: 'Santuario', icon: 'shrine', text: 'Próximamente.' },
 };
 
-export const POTION_ICON = 'potion';

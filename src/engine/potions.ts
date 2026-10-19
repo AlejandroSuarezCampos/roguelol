@@ -21,7 +21,9 @@ export function addPotion(belt: BeltSlot[], id: PotionId): boolean {
 
 /** Cinturón lleno: `'new'` descarta la poción nueva; un índice sustituye la de ese hueco. */
 export function resolveFullBelt(belt: BeltSlot[], id: PotionId, slot: number | 'new'): void {
-  if (slot !== 'new') belt[slot] = { id, spent: false };
+  if (slot === 'new') return;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= belt.length) throw new Error('Hueco del cinturón no válido');
+  belt[slot] = { id, spent: false };
 }
 
 /** Al empezar cada combate la Poción reutilizable se rellena. */

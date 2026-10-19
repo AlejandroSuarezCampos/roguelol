@@ -50,7 +50,13 @@
 .intent.danger .ii{border-color:var(--danger);box-shadow:0 0 0 3px rgba(255,140,58,.35),0 0 24px var(--danger)}
 .intent em{font:800 10.5px var(--fb);font-style:normal;color:#fff;background:var(--bad);padding:1px 7px;letter-spacing:.06em}
 .intent em.dg{background:var(--danger);color:#1a0b00}
+/* aturdido: su intención no se ejecuta este turno */
+.intent.skipped{opacity:.5;filter:grayscale(.7);animation:none}
+.intent em.sk{background:#ffe27a;color:#2a1f00}
 @keyframes bob{50%{transform:translateY(-4px)}}
+/* hueco de un campeón muerto, solo visible al intercambiar */
+.slotempty{align-self:flex-end;margin-bottom:90px;padding:10px 12px;border:2px dashed var(--block);color:var(--block);background:rgba(1,10,19,.6);font:700 12px var(--fb);display:flex;gap:6px;align-items:center}
+.slotempty:disabled{border-color:var(--bad);color:#ffb3b3;opacity:.7}
 /* objetivos: válido = halo verde + etiqueta; ilegal = apagado + motivo; derribado = grises e inclinado */
 .ftr .tg{position:absolute;top:34%;left:50%;transform:translateX(-50%);z-index:4;font:700 11px var(--fb);padding:3px 8px;max-width:190px;text-align:center;box-shadow:0 2px 6px #000;line-height:1.2}
 .ftr.legal{cursor:crosshair}.ftr.legal .tg{background:var(--ok);color:#06210d}

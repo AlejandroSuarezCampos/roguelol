@@ -9,7 +9,7 @@ import { emptyGear, equip, finalStatsFor, syncMaxHp, type ChampionGear } from '.
 import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { RELIC_LIST } from '../data/relics';
-import { runRelicNotes } from './relics';
+import { combatEndNotes } from './relics';
 import { NO_PERKS, type Perks } from './meta';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
@@ -269,7 +269,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
     return null;
   }
   const diff = DIFFICULTIES[e.difficulty];
-  const relicNotes = runRelicNotes(e, 'combatEnd', true); // antes de las heridas: los derribados no se curan
+  const relicNotes = combatEndNotes(e); // antes de las heridas: los derribados no se curan
   for (const c of [...e.run.champions]) {
     if (c.downed) diff.permadeath ? killChampion(e, c) : applyWound(e, c, true);
     else if (diff.permadeath && s.fallen.includes(c.id)) applyWound(e, c, false); // reanimado: sobrevive, pero herido
@@ -342,6 +342,14 @@ export function claimCard(e: Expedition, defId: string | null): void {
   e.deck.push(defId);
 }
 
+/** Cura una herida del campeón más herido y le devuelve esa parte de vida máxima. Lanza un error si nadie tiene heridas. */
+export function healWound(e: Expedition): void {
+  const worst = [...e.run.champions].sort((a, b) => e.wounds[b.id] - e.wounds[a.id])[0];
+  if (!worst || !e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
+  e.wounds[worst.id]--;
+  syncMaxHp(e, worst);
+}
+
 /** Heridas de los campeones que siguen vivos (las de un muerto ya no se pueden tratar). */
 export const livingWounds = (e: Expedition): number => e.run.champions.reduce((a, c) => a + e.wounds[c.id], 0);
 
@@ -372,10 +380,7 @@ export function rest(e: Expedition, action: RestAction, deckIndex?: number): voi
   } else if (action === 'calm') {
     for (const c of e.run.champions) c.stress = Math.max(0, c.stress - F.rest.stressRelief);
   } else {
-    const worst = [...e.run.champions].sort((a, b) => e.wounds[b.id] - e.wounds[a.id])[0];
-    if (!e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
-    e.wounds[worst.id]--;
-    syncMaxHp(e, worst);
+    healWound(e);
   }
   e.restUsed = true;
 }

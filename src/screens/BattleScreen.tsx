@@ -12,7 +12,7 @@ import { bonusActive, cardOf, forcedTarget } from '../engine/cards';
 import { CONFIG } from '../engine/config';
 import { byPos, canSwap, living } from '../engine/formation';
 import { POTIONS } from '../engine/potions';
-import type { CardInstance, Unit } from '../engine/types';
+import type { CardInstance, Pos, Unit } from '../engine/types';
 import { cardAvailability } from '../state/selectors';
 import { game, useGame } from '../state/gameStore';
 
@@ -35,6 +35,10 @@ export function BattleScreen() {
     if (!s) return;
     const onKey = (ev: KeyboardEvent) => {
       if (ev.ctrlKey || ev.metaKey || ev.altKey || over) return;
+      // Con una ventana abierta (retirada, mazos…) los atajos no actúan por detrás; y Enter sobre un botón enfocado es de ese botón.
+      if (document.querySelector('[aria-modal="true"]') && ev.key !== 'Escape') return;
+      const interactive = (ev.target as HTMLElement | null)?.closest?.('button, input, textarea, select, [role="button"]');
+      if (interactive && (ev.key === 'Enter' || ev.key === ' ')) return;
       if (ev.key === 'Escape') {
         game.selectCard(null);
         game.selectPotion(null);
@@ -65,7 +69,7 @@ export function BattleScreen() {
     game.selectCard(inst.uid);
   }
 
-  const allies = byPos(s.units.filter((u) => u.side === 'ally')).reverse(); // 4 → 1
+  const allies = byPos(s.units.filter((u) => u.side === 'ally'));
   const enemies = byPos(s.units.filter((u) => u.side === 'enemy'));
   const potionDef = selectedPotion !== null ? s.belt[selectedPotion] : null;
   const potionNeedsTarget = potionDef ? POTIONS[potionDef.id].target === 'ally' : false;
@@ -166,9 +170,22 @@ export function BattleScreen() {
       <main className="stage" aria-label="Escenario de combate">
         <div className="scene" aria-hidden />
         <div className="team">
-          {allies.map((u) => {
-            const m = unitMode(u);
-            return <Fighter key={u.id} unit={u} s={s} mode={m.mode} tag={m.tag} fx={fx.filter((f) => f.unitId === u.id)} onClick={() => clickUnit(u)} />;
+          {([4, 3, 2, 1] as Pos[]).map((p) => {
+            const u = allies.find((a) => a.pos === p);
+            if (u) {
+              const m = unitMode(u);
+              return <Fighter key={u.id} unit={u} s={s} mode={m.mode} tag={m.tag} fx={fx.filter((f) => f.unitId === u.id)} onClick={() => clickUnit(u)} />;
+            }
+            // Hueco dejado por un campeón muerto (Pesadilla): en modo intercambio se puede avanzar o retroceder a él.
+            const from = swapMode && swapFrom ? s.units.find((x) => x.id === swapFrom) : undefined;
+            if (!from || over) return null;
+            const why = canSwap(s, from.pos, p);
+            return (
+              <button key={`empty-${p}`} className={`ftr slotempty ${why ? 'illegal' : 'swap-legal'}`} disabled={!!why} onClick={() => { game.swap(from.pos, p); setSwapMode(false); setSwapFrom(null); }}
+                aria-label={`Posición ${p} vacía${why ? `: ${why}` : ': mover aquí'}`}>
+                <span className="pn" aria-hidden>{p}</span> {why ?? 'Mover aquí'}
+              </button>
+            );
           })}
         </div>
         <div className="team">

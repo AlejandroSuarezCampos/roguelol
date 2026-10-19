@@ -5,7 +5,6 @@ import { GEAR } from '../data/gear';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { CARDS, applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
-import { CONFIG } from '../engine/config';
 import { livingWounds } from '../engine/expedition';
 import { POTIONS } from '../engine/potions';
 import { minDeckFor, removalPrice, treatWoundPrice } from '../engine/shop';

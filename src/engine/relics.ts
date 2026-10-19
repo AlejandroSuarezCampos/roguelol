@@ -74,19 +74,16 @@ export function processRelics(s: CombatState): void {
 }
 
 /**
- * Reliquias de expedición con efecto puntual (fuera del combate). Devuelve el texto de lo que han hecho para enseñarlo en el botín.
- * (El alivio de niebla de la Lámpara no pasa por aquí: se resta de lo que sube al entrar, ver `mistGainFor`.)
+ * Reliquias de expedición que actúan al ganar un combate (hoy, curar a quien sigue en pie). Devuelve el texto de lo que han hecho para
+ * enseñarlo en el botín. (El alivio de niebla de la Lámpara no pasa por aquí: se resta de lo que sube al entrar, ver `mistGainFor`.)
  */
-export function runRelicNotes(e: Expedition, on: 'combatEnd' | 'nodeEntered', won: boolean): string[] {
+export function combatEndNotes(e: Expedition): string[] {
   const notes: string[] = [];
   for (const id of e.run.relics) {
-    const def = RELICS[id];
-    if (!def?.run || def.run.on !== on) continue;
-    if (on === 'combatEnd' && !won) continue;
-    if (def.run.healAll) {
-      for (const c of e.run.champions) if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + def.run.healAll);
-      notes.push(`${def.name}: +${def.run.healAll} de vida a cada campeón en pie`);
-    }
+    const run = RELICS[id]?.run;
+    if (run?.on !== 'combatEnd' || !run.healAll) continue;
+    for (const c of e.run.champions) if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + run.healAll);
+    notes.push(`${RELICS[id].name}: +${run.healAll} de vida a cada campeón en pie`);
   }
   return notes;
 }

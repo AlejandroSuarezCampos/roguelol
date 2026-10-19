@@ -76,7 +76,7 @@ export function ExpeditionMapScreen() {
                   const a = pos.get(n.id)!;
                   const b = pos.get(id)!;
                   const walked = e.visited.includes(n.id) && e.visited.includes(id);
-                  const ahead = (n.id === e.currentId || (e.currentId === null && n.floor === -1)) && avail.has(id);
+                  const ahead = n.id === e.currentId && avail.has(id);
                   return (
                     <line key={`${n.id}-${id}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={walked ? 'walked' : ahead ? 'ahead' : ''} vectorEffect="non-scaling-stroke" />
                   );

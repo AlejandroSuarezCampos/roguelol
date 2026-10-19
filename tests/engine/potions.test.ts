@@ -74,3 +74,13 @@ describe('cinturón de pociones', () => {
     expect(champ.hp).toBe(30);
   });
 });
+
+describe('hueco del cinturón no válido', () => {
+  it('un índice fuera de rango o no entero no hace crecer el cinturón', () => {
+    const belt = [{ id: 'iron' as const, spent: false }, { id: 'iron' as const, spent: false }, { id: 'iron' as const, spent: false }];
+    for (const bad of [5, -1, 1.5, Number.NaN]) {
+      expect(() => resolveFullBelt(belt, 'health', bad)).toThrow(/no válido/);
+    }
+    expect(belt).toHaveLength(3);
+  });
+});

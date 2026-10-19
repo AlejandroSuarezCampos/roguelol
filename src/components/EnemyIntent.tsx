@@ -24,13 +24,13 @@ export function EnemyIntent({ unit, s }: { unit: Unit; s: CombatState }) {
               ? `Gana ${v.value} de bloqueo`
               : `${k.verb}${v.intent.kind === 'attack' && v.intent.crit ? ' crítico' : ''} → ${v.target?.name ?? '—'}`;
         return (
-          <div key={i} className={`intent ${k.cls} ${v.danger ? 'danger' : ''}`} aria-label={`Intención de ${unit.name}: ${text}${v.value && v.intent.kind !== 'block' ? `, ${v.value}` : ''}${v.lethal ? ', letal' : ''}`}>
+          <div key={i} className={`intent ${k.cls} ${v.danger ? 'danger' : ''} ${v.skipped ? 'skipped' : ''}`} aria-label={`Intención de ${unit.name}: ${text}${v.value && v.intent.kind !== 'block' ? `, ${v.value}` : ''}${v.lethal ? ', letal' : ''}${v.skipped ? ', aturdido: no actúa este turno' : ''}`}>
             <span className="ii">
               <Icon name={k.icon} />
               {v.intent.kind !== 'reposition' && <b>{v.value}</b>}
             </span>
             <span className="it">{text}</span>
-            {v.lethal ? <em>¡LETAL!</em> : v.danger ? <em className="dg">Peligro</em> : null}
+            {v.skipped ? <em className="sk">Aturdido: no actúa</em> : v.lethal ? <em>¡LETAL!</em> : v.danger ? <em className="dg">Peligro</em> : null}
           </div>
         );
       })}

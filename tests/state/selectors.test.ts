@@ -72,6 +72,30 @@ describe('cardAvailability', () => {
   });
 });
 
+describe('intentView: aturdidos y golpes combinados', () => {
+  it('la intención de un enemigo aturdido no cuenta: ni letal ni peligrosa', () => {
+    const s = makeState();
+    s.intents = { e1: [{ kind: 'attack', amount: 80, target: 1 }], e2: [] };
+    u(s, 'leona').hp = 5;
+    u(s, 'e1').statuses.stun = 1;
+    const [v] = intentView(s, u(s, 'e1'));
+    expect(v.skipped).toBe(true);
+    expect(v.lethal).toBe(false);
+    expect(v.danger).toBe(false);
+  });
+
+  it('dos golpes que por separado no matan pero juntos sí marcan ambos como letales', () => {
+    const s = makeState();
+    s.intents = { e1: [{ kind: 'attack', amount: 8, target: 1 }], e2: [{ kind: 'attack', amount: 8, target: 1 }] };
+    const hit = intentView(s, u(s, 'e1'))[0].value;
+    u(s, 'leona').hp = hit + 2; // uno solo no mata, dos sí
+    expect(intentView(s, u(s, 'e1'))[0].lethal).toBe(true);
+    expect(intentView(s, u(s, 'e2'))[0].lethal).toBe(true);
+    u(s, 'e2').statuses.stun = 1; // si el otro está aturdido, vuelve a no ser letal
+    expect(intentView(s, u(s, 'e1'))[0].lethal).toBe(false);
+  });
+});
+
 describe('intentView', () => {
   it('resuelve el objetivo real, el valor y si es letal', () => {
     const s = makeState();

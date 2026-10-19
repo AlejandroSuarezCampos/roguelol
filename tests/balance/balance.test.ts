@@ -7,9 +7,11 @@ import { playExpedition, type RunReport } from './bot';
  * Guardarraíl de equilibrio con un bot mediocre (no es un jugador experto). Cotas anchas a propósito:
  * solo detectan que un cambio de datos deja el juego trivial o imposible. Para ver cifras: `npm run balance`.
  */
+const reports: RunReport[] = [];
+for (let i = 0; i < 80; i++) reports.push(playExpedition(createExpedition(1000 + i), 7 * i + 1));
+const normalWinRate = reports.filter((r) => r.status === 'victory').length / reports.length;
+
 describe('equilibrio con bot', () => {
-  const reports: RunReport[] = [];
-  for (let i = 0; i < 80; i++) reports.push(playExpedition(createExpedition(1000 + i), 7 * i + 1));
   const fights = (kind: string) => reports.flatMap((r) => r.fights.filter((f) => f.kind === kind));
   const rate = (kind: string) => fights(kind).filter((f) => f.won).length / fights(kind).length;
 
@@ -38,9 +40,8 @@ describe('Pesadilla con bot', () => {
   });
 
   it('es claramente más difícil que Normal', () => {
-    const normalWins = runs.length && Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i), 7 * i + 1)).filter((r) => r.status === 'victory').length;
-    const hardWins = runs.filter((x) => x.r.status === 'victory').length;
-    expect(hardWins).toBeLessThan(normalWins as number);
+    const hardWins = runs.filter((x) => x.r.status === 'victory').length / runs.length;
+    expect(hardWins).toBeLessThan(normalWinRate);
   });
 
   it('la muerte permanente se nota: de media muere más de un campeón por expedición', () => {
@@ -56,13 +57,10 @@ describe('Pesadilla con bot', () => {
 
 describe('mejoras permanentes con bot', () => {
   const maxPerks = { hp: PERKS.vigor.values[2], gold: PERKS.provisions.values[2], potions: PERKS.belt.values[2], upgradedCards: PERKS.mastery.values[2] };
-  const wins = (perks?: typeof maxPerks) =>
-    Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 'normal', perks), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
+  const maxed = Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 'normal', maxPerks), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
 
   it('con todo al máximo ayudan, pero no hacen trivial la expedición (spec §14)', () => {
-    const base = wins();
-    const maxed = wins(maxPerks);
-    expect(maxed).toBeGreaterThan(base);
+    expect(maxed).toBeGreaterThan(normalWinRate);
     expect(maxed).toBeLessThan(0.75);
   });
 });

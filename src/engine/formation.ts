@@ -22,18 +22,21 @@ export function canSwap(s: CombatState, a: Pos, b: Pos): string | null {
   if (Math.abs(a - b) !== 1) return 'No son adyacentes';
   if (s.swapUsed) return 'Ya intercambiaste este turno';
   if (s.energy < CONFIG.swapCost) return 'Energía insuficiente';
-  if (!unitAt(s, 'ally', a) || !unitAt(s, 'ally', b)) return 'Posición vacía';
+  if (!unitAt(s, 'ally', a) && !unitAt(s, 'ally', b)) return 'Posición vacía';
   return null;
 }
 
-/** Intercambio de dos aliados adyacentes: una vez por turno, por energía; no cuenta como carta. */
+/**
+ * Intercambio de dos posiciones adyacentes: una vez por turno, por energía; no cuenta como carta.
+ * Si una de las dos está vacía (un campeón murió en Pesadilla) el aliado simplemente se mueve a ella.
+ */
 export function swapAllies(s: CombatState, a: Pos, b: Pos): void {
   const why = canSwap(s, a, b);
   if (why) throw new Error(why);
-  const ua = unitAt(s, 'ally', a)!;
-  const ub = unitAt(s, 'ally', b)!;
-  ua.pos = b;
-  ub.pos = a;
+  const ua = unitAt(s, 'ally', a);
+  const ub = unitAt(s, 'ally', b);
+  if (ua) ua.pos = b;
+  if (ub) ub.pos = a;
   s.energy -= CONFIG.swapCost;
   s.swapUsed = true;
 }

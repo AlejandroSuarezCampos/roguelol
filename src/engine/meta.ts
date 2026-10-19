@@ -38,8 +38,12 @@ export const newMeta = (): MetaState => ({
 
 const M = CONFIG.meta;
 
-/** Esquirlas de una expedición: pisos, combates, élites y victoria (×1,5 en Pesadilla), mínimo 5. Retirarse no penaliza. */
+/**
+ * Esquirlas de una expedición: pisos, combates, élites y victoria (×1,5 en Pesadilla), mínimo 5. Retirarse no penaliza, salvo si no
+ * se ganó ni un combate: entrar y retirarse al instante no da nada (si no, se podrían sacar Esquirlas sin jugar).
+ */
 export function shardsFor(e: Expedition): number {
+  if (e.status === 'retreat' && e.stats.combats === 0) return 0;
   const base = M.perFloor * e.visited.length + M.perCombat * e.stats.combats + M.perElite * e.stats.elites + (e.status === 'victory' ? M.victoryBonus : 0);
   const mult = e.difficulty === 'nightmare' ? M.nightmareMultiplier : 1;
   return Math.max(M.minShards, Math.round(base * mult));
@@ -68,7 +72,6 @@ export function recordRun(meta: MetaState, e: Expedition): { shards: number } {
   return { shards };
 }
 
-export const perkLevel = (meta: MetaState, id: PerkId): number => meta.perks[id];
 export const perkCost = (meta: MetaState, id: PerkId): number | null => (meta.perks[id] >= 3 ? null : PERKS[id].costs[meta.perks[id]]);
 
 /** Compra el siguiente nivel de una mejora. Lanza un error con el motivo si no se puede. */

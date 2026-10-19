@@ -10,7 +10,7 @@ import { CHAMPIONS, CRISIS } from '../data/champions';
 import { SLOT_LABEL, type GearSlot } from '../data/gear';
 import { CRISIS_INFO } from '../data/glossary';
 import { compareGear, finalStatsFor } from '../engine/gear';
-import type { ChampionId } from '../engine/types';
+import type { ChampionId, Pos } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
 import { statLines } from '../ui/format';
 
@@ -87,6 +87,15 @@ export function TeamScreen() {
               </span>
               <p className="sub small">{crisis.text}</p>
               <span className="tag">Bonus de posición en {def.sweetSpot.join('–')}</span>
+              <div className="row" role="group" aria-label={`Posición de ${def.name}`}>
+                <span className="tag">Posición {c.pos}</span>
+                <button className="btn sm" disabled={c.pos === 1} onClick={() => game.reorderTeam(sel, (c.pos - 1) as Pos)}>
+                  Hacia el frente
+                </button>
+                <button className="btn sm" disabled={c.pos === 4} onClick={() => game.reorderTeam(sel, (c.pos + 1) as Pos)}>
+                  Hacia el fondo
+                </button>
+              </div>
             </div>
           </div>
           <h4 className="fd">Estadísticas finales</h4>

@@ -1,10 +1,9 @@
 import { deckCardDef } from '../data/cards';
 import { DIFFICULTIES } from '../data/difficulty';
-import { GEAR, GEAR_LIST } from '../data/gear';
+import { GEAR_LIST } from '../data/gear';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
-import { cardPool, claimPotion } from './expedition';
-import { syncMaxHp } from './gear';
+import { cardPool, claimPotion, healWound, livingWounds } from './expedition';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
@@ -87,11 +86,9 @@ export function buyGear(e: Expedition, index: number): void {
 export function treatWoundAtShop(e: Expedition): void {
   const s = stock(e);
   if (s.woundTreated) throw new Error('Vendido');
-  const worst = [...e.run.champions].sort((a, b) => e.wounds[b.id] - e.wounds[a.id])[0];
-  if (!e.wounds[worst.id]) throw new Error('Nadie tiene heridas');
+  if (livingWounds(e) === 0) throw new Error('Nadie tiene heridas');
   pay(e, treatWoundPrice(e));
-  e.wounds[worst.id]--;
-  syncMaxHp(e, worst);
+  healWound(e);
   s.woundTreated = true;
 }
 

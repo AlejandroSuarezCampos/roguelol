@@ -14,7 +14,7 @@ Que cada expedición, gane o pierda, deje algo: **Esquirlas** para mejoras perma
 
 ## Decisiones **[mi decisión]**
 
-1. **Esquirlas al acabar una expedición** (una sola vez): `3 × pisos alcanzados + 2 × combates ganados + 5 × élites + 40 si victoria`, ×1,5 en Pesadilla (redondeado), y un mínimo de 5. La retirada cuenta como cualquier otra salida: no se castiga el progreso.
+1. **Esquirlas al acabar una expedición** (una sola vez): `3 × pisos alcanzados + 2 × combates ganados + 5 × élites + 40 si victoria`, ×1,5 en Pesadilla (redondeado), y un mínimo de 5. La retirada cuenta como cualquier otra salida (no se castiga el progreso), **salvo si no se ganó ningún combate: entonces 0** (si no, entrar y retirarse al instante daría Esquirlas sin jugar).
 2. **Mejoras** (3 niveles; los efectos se aplican al empezar la expedición, no cambian reglas):
 
 | Mejora | Nivel 1 / 2 / 3 | Coste (Esquirlas) |

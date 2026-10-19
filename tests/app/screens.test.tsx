@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/app/App';
 import { cardOf } from '../../src/engine/cards';
 import { availableNodes } from '../../src/engine/expedition';
@@ -653,5 +653,75 @@ describe('metaprogresión en pantalla', () => {
     await user.click(screen.getByRole('button', { name: /Retirada/ }));
     await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Retirarme' }));
     expect(screen.getByText(/\+\d+ Esquirlas · total \d+/)).toBeInTheDocument();
+  });
+});
+
+describe('atajos de teclado con ventanas abiertas', () => {
+  it('con la confirmación de retirada abierta, «e» no termina el turno ni los dígitos eligen carta', async () => {
+    const user = userEvent.setup();
+    toBattle();
+    render(<App />);
+    const turn = game.getState().combat!.turn;
+    await user.click(screen.getByRole('button', { name: /Retirada/ }));
+    await user.keyboard('e');
+    await user.keyboard('1');
+    expect(game.getState().combat!.turn).toBe(turn);
+    expect(game.getState().selectedUid).toBeNull();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
+  it('Enter sobre «Terminar turno» no juega además la carta seleccionada', async () => {
+    const user = userEvent.setup();
+    toBattle();
+    render(<App />);
+    const s = game.getState().combat!;
+    const i = s.hand.findIndex((c) => ['self', 'allEnemies', 'allAllies'].includes(cardOf(s, c).target) && cardOf(s, c).cost <= s.energy);
+    if (i < 0) return;
+    await user.keyboard(String(i + 1));
+    const energy = s.energy;
+    screen.getByRole('button', { name: 'Terminar turno' }).focus();
+    await user.keyboard('{Enter}');
+    // Enter es del botón enfocado: termina el turno y no ejecuta además el atajo «jugar la carta seleccionada»
+    expect(game.getState().combat!.turn).toBe(2);
+    expect(game.getState().combat!.energy).toBeGreaterThanOrEqual(energy);
+  });
+});
+
+describe('posiciones tras una muerte', () => {
+  function nightmareWithGap() {
+    go(() => {
+      game.newExpedition(3, 'nightmare');
+      game.startExpedition();
+      const e = game.getState().expedition!;
+      e.dead.push('leona'); // la posición 1 queda vacía
+      e.run.champions = e.run.champions.filter((c) => c.id !== 'leona');
+      e.deck = e.deck.filter((id) => !id.startsWith('l'));
+      game.notify(null);
+    });
+  }
+
+  it('en Equipo se puede reordenar gratis, también hacia un hueco', async () => {
+    const user = userEvent.setup();
+    nightmareWithGap();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /^Equipo/ }));
+    await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
+    expect(screen.getByText('Posición 2')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Hacia el frente' }));
+    expect(game.getState().expedition!.run.champions.find((c) => c.id === 'yasuo')!.pos).toBe(1);
+    expect(screen.getByText('Posición 1')).toBeInTheDocument();
+  });
+
+  it('en combate, el modo intercambio ofrece mover un aliado al hueco', async () => {
+    const user = userEvent.setup();
+    nightmareWithGap();
+    go(() => game.chooseNode(availableNodes(game.getState().expedition!)[0].id));
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Intercambiar/ }));
+    await user.click(screen.getByRole('button', { name: /^Yasuo, posición 2/ }));
+    await user.click(screen.getByRole('button', { name: 'Posición 1 vacía: mover aquí' }));
+    expect(game.getState().combat!.units.find((u) => u.id === 'yasuo')!.pos).toBe(1);
+    expect(game.getState().combat!.energy).toBe(2);
   });
 });

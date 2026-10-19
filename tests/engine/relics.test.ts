@@ -5,7 +5,7 @@ import { startCombat } from '../../src/engine/combat';
 import { CONFIG } from '../../src/engine/config';
 import { createExpedition, combatFromExpedition, enterNode, availableNodes, finishCombat } from '../../src/engine/expedition';
 import { applyDamage } from '../../src/engine/units';
-import { newRelicState, processRelics, runRelicNotes } from '../../src/engine/relics';
+import { combatEndNotes, newRelicState, processRelics } from '../../src/engine/relics';
 import { CARDS, ENEMIES, give, makeState, u } from './fixtures';
 import type { CombatState } from '../../src/engine/types';
 
@@ -254,11 +254,13 @@ describe('reliquias de la expedición', () => {
     expect(e.run.mist).toBe(CONFIG.mist.node - 3);
   });
 
-  it('las notas de reliquias de expedición salen de runRelicNotes', () => {
+  it('combatEndNotes cura y devuelve una nota por reliquia de expedición que actúe', () => {
     const e = createExpedition(2);
-    e.run.relics.push('heart');
-    expect(runRelicNotes(e, 'combatEnd', true)).toHaveLength(1);
-    expect(runRelicNotes(e, 'combatEnd', false)).toHaveLength(0);
+    expect(combatEndNotes(e)).toEqual([]);
+    e.run.relics.push('heart', 'lamp');
+    e.run.champions[0].hp = 10;
+    expect(combatEndNotes(e)).toHaveLength(1); // la Lámpara no actúa aquí
+    expect(e.run.champions[0].hp).toBe(16);
   });
 });
 

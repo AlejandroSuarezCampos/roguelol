@@ -51,3 +51,29 @@ describe('intercambio de aliados', () => {
     expect(u(s, 'leona').pos).toBe(2);
   });
 });
+
+describe('huecos tras una muerte permanente', () => {
+  const withGap = () => {
+    const s = makeState();
+    s.units = s.units.filter((x) => x.id !== 'leona'); // la posición 1 queda vacía
+    return s;
+  };
+
+  it('un aliado puede avanzar a una posición vacía adyacente (cuesta energía y cuenta como el intercambio del turno)', () => {
+    const s = withGap();
+    expect(canSwap(s, 1, 2)).toBeNull();
+    swapAllies(s, 1, 2);
+    expect(u(s, 'yasuo').pos).toBe(1);
+    expect(unitAt(s, 'ally', 2)).toBeUndefined();
+    expect(s.energy).toBe(2);
+    expect(canSwap(s, 2, 3)).toMatch(/intercambiaste/);
+  });
+
+  it('dos posiciones vacías no se pueden intercambiar, y seguirían sin ser adyacentes si no lo son', () => {
+    const s = makeState();
+    s.units = s.units.filter((x) => x.id !== 'leona' && x.id !== 'yasuo'); // 1 y 2 vacías
+    expect(canSwap(s, 1, 2)).toBe('Posición vacía');
+    s.units = s.units.filter((x) => x.id !== 'lux');
+    expect(canSwap(s, 1, 3)).toBe('No son adyacentes');
+  });
+});

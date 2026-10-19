@@ -471,6 +471,7 @@ describe('metaprogresión en el store', () => {
     const g = createGameStore({ save: createSaveManager(store), meta: createMetaManager(store) });
     g.newExpedition(5);
     g.startExpedition();
+    g.getState().expedition!.stats.combats = 1; // ha ganado un combate: retirarse sin haber ganado ninguno no da nada
     g.retreat();
     const shards = g.getState().lastShards!;
     expect(shards).toBeGreaterThanOrEqual(5);
