@@ -15,6 +15,16 @@ Abre http://localhost:5188. La barra inferior «PROTOTIPO» salta entre pantalla
 
 Arte de campeones, objetos y monstruos © Riot Games (Data Dragon / CommunityDragon), enlazado, no incluido. Fondos e iconos: arte original.
 
+## Motor de reglas (TypeScript)
+
+Motor de combate y expedición sin interfaz en `src/engine/` (datos en `src/data/`, balance en `src/engine/config.ts`), con tests en `tests/engine/`. Implementa la spec [`docs/superpowers/specs/2026-10-19-reglas-nucleo-design.md`](docs/superpowers/specs/2026-10-19-reglas-nucleo-design.md).
+
+    npm install
+    npm test
+    npm run typecheck
+
+Todo el azar usa un RNG con semilla guardado en el estado, así que cualquier combate se puede reproducir.
+
 ## Requisitos para tenerlo igual en otro PC
 
 | Herramienta | Versión usada | Para qué | ¿Obligatorio? |
