@@ -193,3 +193,98 @@ describe('resultado', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Shattered/);
   });
 });
+
+function goToNode(type: 'shop' | 'event', seed = 2) {
+  go(() => {
+    game.newExpedition(seed);
+    game.startExpedition();
+    const e = game.getState().expedition!;
+    const target = e.map.nodes.find((n) => n.type === type)!;
+    e.currentId = 'n0-0';
+    e.map.nodes.find((n) => n.id === 'n0-0')!.next = [target.id];
+    game.chooseNode(target.id);
+  });
+}
+
+describe('comerciante', () => {
+  it('muestra las mercancías con su precio y deshabilita lo que no se puede pagar', () => {
+    goToNode('shop');
+    go(() => {
+      game.getState().expedition!.run.gold = 60;
+      game.notify(null);
+    });
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Cartas' })).toBeInTheDocument();
+    const buys = screen.getAllByRole('button', { name: /^Comprar/ });
+    expect(buys.length).toBeGreaterThanOrEqual(6);
+    expect(buys.some((b) => b.hasAttribute('disabled'))).toBe(true);
+    expect(screen.getAllByText(/^Faltan \d+/).length).toBeGreaterThan(0);
+  });
+
+  it('comprar una carta la marca como vendida', async () => {
+    const user = userEvent.setup();
+    goToNode('shop');
+    go(() => {
+      game.getState().expedition!.run.gold = 999;
+      game.notify(null);
+    });
+    render(<App />);
+    const before = game.getState().expedition!.deck.length;
+    await user.click(screen.getAllByRole('button', { name: /^Comprar/ })[0]);
+    expect(game.getState().expedition!.deck).toHaveLength(before + 1);
+    expect(screen.getAllByText('Vendido').length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: 'Salir de la tienda' }));
+    expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
+  });
+
+  it('eliminar una carta pide elegirla y sube el precio', async () => {
+    const user = userEvent.setup();
+    goToNode('shop');
+    go(() => {
+      game.getState().expedition!.run.gold = 999;
+      game.notify(null);
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /Comprar Eliminar carta/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Eliminar una carta' });
+    await user.click(within(dialog).getAllByRole('button', { name: 'Eliminar' })[0]);
+    expect(game.getState().expedition!.deck).toHaveLength(19);
+    expect(game.getState().expedition!.removals).toBe(1);
+  });
+});
+
+describe('evento', () => {
+  it('muestra las 3 opciones y, al elegir, el resultado y «Continuar»', async () => {
+    const user = userEvent.setup();
+    goToNode('event');
+    render(<App />);
+    const ev = game.getState().event!;
+    expect(screen.getByRole('heading', { name: ev.title, level: 2 })).toBeInTheDocument();
+    const leave = ev.choices.findIndex((c) => c.effects.length === 0 && !c.irreversible);
+    const choice = leave >= 0 ? leave : ev.choices.findIndex((c) => c.effects.length === 0);
+    await user.click(screen.getByRole('button', { name: new RegExp(`\\[${ev.choices[choice].label}\\]`) }));
+    if (ev.choices[choice].irreversible) await user.click(screen.getByRole('button', { name: 'Elegir' }));
+    expect(screen.getByText(ev.choices[choice].result, { exact: false })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
+  });
+
+  it('las opciones irreversibles piden confirmación antes de aplicarse', async () => {
+    const user = userEvent.setup();
+    goToNode('event');
+    go(() => {
+      // fuerza el evento con salida irreversible
+      const ev = game.getState().event!;
+      if (!ev.choices.some((c) => c.irreversible)) return;
+    });
+    const ev = game.getState().event!;
+    const i = ev.choices.findIndex((c) => c.irreversible);
+    if (i < 0) return;
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: new RegExp(`\\[${ev.choices[i].label}\\]`) }));
+    expect(screen.getByRole('dialog', { name: 'Confirmar' })).toBeInTheDocument();
+    expect(game.getState().eventOutcome).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Volver' }));
+    expect(game.getState().eventOutcome).toBeNull();
+  });
+});

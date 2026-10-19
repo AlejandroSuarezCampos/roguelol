@@ -226,3 +226,65 @@ describe('efectos flotantes del turno enemigo', () => {
     expect(g.getState().fx.some((f) => f.kind === 'damage' && f.unitId === front.id)).toBe(false);
   });
 });
+
+describe('comerciante y eventos', () => {
+  /** Lleva la run a un nodo del tipo dado reescribiendo la conexión del piso anterior (atajo de test). */
+  function atNode(type: 'shop' | 'event', seed = 2) {
+    const g = createGameStore();
+    g.newExpedition(seed);
+    g.startExpedition();
+    const e = g.getState().expedition!;
+    const target = e.map.nodes.find((n) => n.type === type)!;
+    e.currentId = 'n0-0';
+    e.map.nodes.find((n) => n.id === 'n0-0')!.next = [target.id];
+    g.chooseNode(target.id);
+    return g;
+  }
+
+  it('entrar en un comerciante abre la tienda y comprar resta oro', () => {
+    const g = atNode('shop');
+    expect(g.getState().screen).toBe('shop');
+    const e = g.getState().expedition!;
+    e.run.gold = 500;
+    const price = e.shop!.cards[0].price;
+    g.buyCard(0);
+    expect(e.run.gold).toBe(500 - price);
+    expect(e.deck).toHaveLength(21);
+    g.leaveShop();
+    expect(g.getState().screen).toBe('map');
+    expect(e.shop).not.toBeNull();
+  });
+
+  it('comprar sin oro deja un aviso', () => {
+    const g = atNode('shop');
+    g.getState().expedition!.run.gold = 0;
+    g.buyCard(0);
+    expect(g.getState().hint).toMatch(/oro/i);
+  });
+
+  it('un evento se resuelve una sola vez y se puede salir después', () => {
+    const g = atNode('event');
+    expect(g.getState().screen).toBe('event');
+    const ev = g.getState().event!;
+    const leave = ev.choices.findIndex((c) => c.effects.length === 0);
+    g.chooseEventOption(leave);
+    expect(g.getState().eventOutcome!.result).toBe(ev.choices[leave].result);
+    g.chooseEventOption(0);
+    expect(g.getState().eventOutcome!.result).toBe(ev.choices[leave].result);
+    g.leaveEvent();
+    expect(g.getState().screen).toBe('map');
+    expect(g.getState().event).toBeNull();
+  });
+
+  it('una opción con requisito de oro no se puede elegir sin oro', () => {
+    const g = atNode('event', 3);
+    const ev = g.getState().event!;
+    const i = ev.choices.findIndex((c) => c.requiresGold);
+    if (i < 0) return;
+    g.getState().expedition!.run.gold = 0;
+    expect(g.eventBlocked(i)).toMatch(/oro/i);
+    g.chooseEventOption(i);
+    expect(g.getState().eventOutcome).toBeNull();
+    expect(g.getState().hint).toMatch(/oro/i);
+  });
+});

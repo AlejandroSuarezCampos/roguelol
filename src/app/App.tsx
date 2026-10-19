@@ -1,6 +1,8 @@
 import { BattleScreen } from '../screens/BattleScreen';
+import { EventScreen } from '../screens/EventScreen';
 import { ExpeditionMapScreen } from '../screens/ExpeditionMapScreen';
 import { MainMenuScreen } from '../screens/MainMenuScreen';
+import { MerchantScreen } from '../screens/MerchantScreen';
 import { PartySetupScreen } from '../screens/PartySetupScreen';
 import { RewardScreen } from '../screens/RewardScreen';
 import { RestScreen } from '../screens/RestScreen';
@@ -18,6 +20,8 @@ export function App() {
       {screen === 'battle' && <BattleScreen />}
       {screen === 'reward' && <RewardScreen />}
       {screen === 'rest' && <RestScreen />}
+      {screen === 'shop' && <MerchantScreen />}
+      {screen === 'event' && <EventScreen />}
     </div>
   );
 }

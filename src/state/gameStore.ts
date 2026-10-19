@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import type { EventDef } from '../data/events';
 import type { EncounterKind } from '../data/enemies';
 import { cardOf, forcedTarget, playCard as enginePlayCard } from '../engine/cards';
 import { endTeamTurn } from '../engine/combat';
@@ -6,13 +7,15 @@ import {
   claimCard as engineClaimCard, claimPotion as engineClaimPotion, claimRewards, combatFromExpedition, createExpedition, encounterKind,
   enterNode, finishCombat, rest as engineRest, retreat as engineRetreat, type Expedition, type ExpeditionRewards, type RestAction,
 } from '../engine/expedition';
+import { choiceBlocked, pickEvent, resolveChoice, type EventOutcome } from '../engine/events';
 import { swapAllies } from '../engine/formation';
 import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions';
 import { reorder } from '../engine/run';
+import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, openShop, removeCard as engineRemoveCard, treatWoundAtShop } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
 import { intentView } from './selectors';
 
-export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'result';
+export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'result';
 
 /** Número flotante sobre una unidad tras una acción (daño, curación, bloqueo o estrés). */
 export interface FxEvent {
@@ -30,6 +33,9 @@ export interface GameState {
   rewards: ExpeditionRewards | null;
   cardClaimed: boolean;
   potionClaimed: boolean;
+  event: EventDef | null;
+  /** Resultado de la opción elegida (null = aún sin elegir). */
+  eventOutcome: EventOutcome | null;
   /** uid de la carta seleccionada en la mano. */
   selectedUid: string | null;
   /** Hueco del cinturón seleccionado para usar. */
@@ -46,7 +52,7 @@ const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { h
 
 const initial = (): GameState => ({
   screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false,
-  selectedUid: null, selectedPotion: null, hint: null, fx: [], version: 0,
+  event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], version: 0,
 });
 
 export function createGameStore() {
@@ -91,6 +97,17 @@ export function createGameStore() {
 
   const fail = (message: string) => emit({ hint: message });
 
+  /** Compra o servicio del comerciante: el error de regla se convierte en aviso y el estado se republica. */
+  function shopAction(fn: () => void): void {
+    if (!state.expedition) return;
+    try {
+      fn();
+      emit({ hint: null });
+    } catch (err) {
+      fail((err as Error).message);
+    }
+  }
+
   const api = {
     getState: () => state,
     subscribe(l: () => void) {
@@ -129,6 +146,11 @@ export function createGameStore() {
       try {
         const node = enterNode(e, id);
         const kind = encounterKind(node.type);
+        if (node.type === 'shop') {
+          openShop(e);
+          return emit({ screen: 'shop', hint: null });
+        }
+        if (node.type === 'event') return emit({ screen: 'event', event: pickEvent(e), eventOutcome: null, hint: null });
         if (kind) emit({ screen: 'battle', combat: combatFromExpedition(e, kind), combatKind: kind, hint: null, fx: [], selectedUid: null, selectedPotion: null });
         else emit({ screen: 'rest', hint: null });
       } catch {
@@ -245,6 +267,43 @@ export function createGameStore() {
     },
     leaveRest() {
       emit({ screen: 'map', hint: null });
+    },
+
+    // ——— comerciante ———
+    buyCard(index: number) {
+      shopAction(() => engineBuyCard(state.expedition!, index));
+    },
+    buyPotion(index: number, slot?: number) {
+      shopAction(() => engineBuyPotion(state.expedition!, index, slot));
+    },
+    treatWound() {
+      shopAction(() => treatWoundAtShop(state.expedition!));
+    },
+    removeCard(deckIndex: number) {
+      shopAction(() => engineRemoveCard(state.expedition!, deckIndex));
+    },
+    leaveShop() {
+      emit({ screen: 'map', hint: null });
+    },
+
+    // ——— eventos ———
+    chooseEventOption(index: number) {
+      const e = state.expedition;
+      const ev = state.event;
+      if (!e || !ev || state.eventOutcome) return;
+      try {
+        emit({ eventOutcome: resolveChoice(e, ev, index), hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
+    },
+    eventBlocked(index: number): string | null {
+      const e = state.expedition;
+      const c = state.event?.choices[index];
+      return e && c ? choiceBlocked(e, c) : null;
+    },
+    leaveEvent() {
+      emit({ screen: 'map', event: null, eventOutcome: null, hint: null });
     },
   };
   return api;

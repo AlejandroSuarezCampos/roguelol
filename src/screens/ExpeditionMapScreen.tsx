@@ -137,13 +137,13 @@ export function ExpeditionMapScreen() {
               <Icon name="book" /> Leyenda
             </h3>
             <ul>
-              {(['combat', 'elite', 'rest', 'boss'] as const).map((t) => (
+              {(['combat', 'elite', 'rest', 'shop', 'event', 'boss'] as const).map((t) => (
                 <li key={t}>
                   <Icon name={NODE_INFO[t].icon} /> <b>{NODE_INFO[t].name}</b>
                 </li>
               ))}
             </ul>
-            <p className="sub">Comerciante, eventos, tesoros y santuarios llegarán más adelante.</p>
+            <p className="sub">Tesoros y santuarios llegarán más adelante.</p>
           </section>
         </aside>
       </div>

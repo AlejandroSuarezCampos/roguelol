@@ -42,8 +42,8 @@ export const NODE_INFO: Record<string, { name: string; icon: string; text: strin
   elite: { name: 'Élite', icon: 'elite', text: 'Enemigo poderoso. Más niebla; siempre suelta reliquia y poción.' },
   boss: { name: 'Jefe', icon: 'boss', text: 'Viego, el Rey Arruinado. Vencerlo gana la expedición.' },
   rest: { name: 'Descanso', icon: 'rest', text: 'Cura a todos, calma el estrés o trata una herida.' },
-  shop: { name: 'Comerciante', icon: 'shop', text: 'Próximamente.' },
-  event: { name: 'Evento', icon: 'event', text: 'Próximamente.' },
+  shop: { name: 'Comerciante', icon: 'shop', text: 'Compra cartas y pociones, trata heridas o elimina cartas del mazo con oro.' },
+  event: { name: 'Evento', icon: 'event', text: 'Una decisión con ganancia y coste. Algunas opciones no se pueden deshacer.' },
   chest: { name: 'Tesoro', icon: 'chest', text: 'Próximamente.' },
   shrine: { name: 'Santuario', icon: 'shrine', text: 'Próximamente.' },
 };
