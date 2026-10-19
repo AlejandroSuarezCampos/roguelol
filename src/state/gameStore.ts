@@ -19,7 +19,7 @@ import type { ChampionId, CombatState, Pos } from '../engine/types';
 import { buyPerk as engineBuyPerk, newMeta, perksFor, recordRun, type MetaState } from '../engine/meta';
 import type { PerkId } from '../data/perks';
 import { createMetaManager, type MetaManager } from '../save/metaManager';
-import { browserStorage, createSaveManager, type SaveManager, type SaveSummary } from '../save/saveManager';
+import { browserStorage, cloneExpedition, createSaveManager, type JournalEntry, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
 
 export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'team' | 'result' | 'upgrades' | 'archive' | 'roster';
@@ -61,8 +61,6 @@ export interface GameState {
   fx: FxEvent[];
   /** Reliquias que se activaron en la última acción (para que su orbe pulse). */
   activeRelics: string[];
-  /** Solo para que React detecte cambios aunque el motor mute en sitio. */
-  version: number;
 }
 
 type Snap = Map<string, { hp: number; block: number; stress: number }>;
@@ -70,7 +68,7 @@ const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { h
 
 const initial = (meta: MetaState, saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
   screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false,
-  meta, lastShards: null, saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [], version: 0,
+  meta, lastShards: null, saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [],
 });
 
 export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager } = {}) {
@@ -86,17 +84,24 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
   let state = initial(meta, inspected?.summary ?? null, notices.length ? `${notices.join(' ')} Se conserva una copia.` : null);
   let fxKey = 0;
   const listeners = new Set<() => void>();
+  // Punto seguro (el mapa) y acciones desde entonces: se guardan juntos para que recargar a mitad de un nodo lo reanude tal cual.
+  let checkpoint: Expedition | null = null;
+  let journal: JournalEntry[] = [];
+  let replaying = false;
+  let replayFailed = false;
 
   const emit = (patch: Partial<GameState> = {}) => {
-    state = { ...state, ...patch, version: state.version + 1 };
-    // Autoguardado en los puntos seguros: al volver al mapa. Al terminar la expedición se borra.
-    if (save && state.expedition) {
-      if (state.screen === 'map' && state.expedition.status === 'active') {
-        state = { ...state, saved: save.save(state.expedition) ?? state.saved };
-      } else if (state.screen === 'result') {
-        save.clear();
-        state = { ...state, saved: null };
-      }
+    state = { ...state, ...patch };
+    // Punto seguro: mapa y pantalla de Equipo (no hay ningún nodo a medias). Al terminar la expedición se borra el guardado.
+    if (state.expedition && (state.screen === 'map' || state.screen === 'team') && state.expedition.status === 'active') {
+      checkpoint = cloneExpedition(state.expedition);
+      journal = [];
+      if (save && !replaying) state = { ...state, saved: save.save(state.expedition) ?? state.saved };
+    } else if (save && state.expedition && state.screen === 'result') {
+      save.clear();
+      checkpoint = null;
+      journal = [];
+      state = { ...state, saved: null };
     }
     // Al terminar la expedición se suma una sola vez al progreso permanente.
     if (state.screen === 'result' && state.expedition && !state.expedition.recorded) {
@@ -116,7 +121,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     try {
       fn(s);
     } catch (e) {
-      emit({ hint: (e as Error).message });
+      fail((e as Error).message);
       return false;
     }
     const fx: FxEvent[] = [];
@@ -138,14 +143,26 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     return true;
   }
 
-  const fail = (message: string) => emit({ hint: message });
+  /** Un error de regla se enseña como aviso. Si ocurre al reproducir un guardado, la reproducción se da por fallida. */
+  const fail = (message: string) => {
+    if (replaying) replayFailed = true;
+    emit({ hint: message });
+  };
+
+  /** Apunta una acción hecha dentro de un nodo y la guarda junto al punto seguro. */
+  function record(a: JournalEntry['a'], ...p: unknown[]): void {
+    if (replaying || !save || !checkpoint) return;
+    journal.push({ a, p });
+    save.save(checkpoint, journal);
+  }
 
   /** Compra o servicio del comerciante: el error de regla se convierte en aviso y el estado se republica. */
-  function shopAction(fn: () => void): void {
+  function shopAction(fn: () => void, entry?: [JournalEntry['a'], ...unknown[]]): void {
     if (!state.expedition) return;
     try {
       fn();
       emit({ hint: null });
+      if (entry && state.screen === 'shop') record(...entry);
     } catch (err) {
       fail((err as Error).message);
     }
@@ -178,7 +195,27 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       const r = save.load();
       if (r.status === 'ok') {
         state = initial(meta, state.saved);
-        emit({ screen: 'map', expedition: r.expedition });
+        replaying = true;
+        replayFailed = false;
+        emit({ screen: 'map', expedition: r.expedition }); // fija el punto seguro (sin guardar: aún falta reproducir)
+        for (const { a, p } of r.journal) {
+          try {
+            (api as unknown as Record<string, (...args: unknown[]) => void>)[a](...p.map((x) => (x === null ? undefined : x)));
+          } catch {
+            replayFailed = true;
+          }
+          if (replayFailed) break;
+        }
+        replaying = false;
+        if (replayFailed && checkpoint) {
+          // Algo no cuadra: se vuelve al mapa tal y como estaba antes de entrar en el nodo.
+          state = initial(meta, state.saved, 'No se pudo reanudar lo que estabas haciendo; vuelves al mapa.');
+          emit({ screen: 'map', expedition: cloneExpedition(checkpoint) });
+        } else if (r.journal.length && checkpoint) {
+          journal = r.journal;
+          save.save(checkpoint, journal);
+          emit({ saved: save.summary() });
+        } else emit({ saved: save.summary() });
       } else if (r.status === 'corrupt') {
         emit({ saved: null, notice: `El guardado estaba dañado (${r.reason}) y se ha descartado. Se conserva una copia.` });
       } else emit({ saved: null });
@@ -238,15 +275,14 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         const kind = encounterKind(node.type);
         if (node.type === 'shop') {
           openShop(e);
-          return emit({ screen: 'shop', hint: null });
-        }
-        if (node.type === 'event') return emit({ screen: 'event', event: pickEvent(e), eventOutcome: null, hint: null });
-        if (kind) {
+          emit({ screen: 'shop', hint: null });
+        } else if (node.type === 'event') emit({ screen: 'event', event: pickEvent(e), eventOutcome: null, hint: null });
+        else if (kind) {
           const combat = combatFromExpedition(e, kind);
           const activeRelics = [...new Set(combat.relicLog.map((l) => l.relic))]; // las del primer turno pulsan al empezar
           emit({ screen: 'battle', combat, combatKind: kind, hint: null, fx: [], activeRelics, selectedUid: null, selectedPotion: null });
-        }
-        else emit({ screen: 'rest', hint: null });
+        } else emit({ screen: 'rest', hint: null });
+        record('chooseNode', id);
       } catch (err) {
         fail((err as Error).message); // el nodo ya se ha pisado: se enseña el error real, no uno engañoso
       }
@@ -264,7 +300,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       emit({ selectedPotion: slot === state.selectedPotion ? null : slot, selectedUid: null, hint: null });
     },
     playCard(uid: string, targetId?: string) {
-      act((s) => enginePlayCard(s, uid, targetId));
+      if (act((s) => enginePlayCard(s, uid, targetId))) record('playCard', uid, targetId);
     },
     /** Clic en una unidad: juega la carta seleccionada o usa la poción seleccionada sobre ella. */
     clickUnit(unitId: string) {
@@ -285,10 +321,10 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       api.playCard(inst.uid, forced?.id);
     },
     swap(a: Pos, b: Pos) {
-      act((s) => swapAllies(s, a, b));
+      if (act((s) => swapAllies(s, a, b))) record('swap', a, b);
     },
     usePotion(slot: number, targetId?: string) {
-      act((s) => engineUsePotion(s, slot, targetId));
+      if (act((s) => engineUsePotion(s, slot, targetId))) record('usePotion', slot, targetId);
     },
     /** Fuera de combate: bebe la poción seleccionada (solo curativas) sobre un campeón. */
     drinkPotion(championId: ChampionId) {
@@ -304,7 +340,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       }
     },
     endTurn() {
-      act(
+      const ok = act(
         (s) => endTeamTurn(s),
         {},
         (s) => {
@@ -314,6 +350,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
           return hits;
         },
       );
+      if (ok) record('endTurn');
     },
 
     // ——— botín ———
@@ -326,6 +363,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (!rewards) return emit({ screen: 'result', combat: null, hint: null });
       claimRewards(e, rewards);
       emit({ screen: 'reward', combat: null, rewards, cardClaimed: false, potionClaimed: false, gearClaimed: false, hint: null, fx: [] });
+      record('concludeCombat');
     },
     claimCard(defId: string | null) {
       const e = state.expedition;
@@ -335,6 +373,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       try {
         engineClaimCard(e, defId);
         emit({ cardClaimed: true, hint: null });
+        record('claimCard', defId);
       } catch (err) {
         fail((err as Error).message);
       }
@@ -348,6 +387,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       try {
         engineClaimGear(e, gearId, equipOn); // atómico: si no se puede equipar, no se recoge
         emit({ gearClaimed: true, hint: null });
+        record('claimGear', gearId, equipOn);
       } catch (err) {
         fail((err as Error).message);
       }
@@ -360,6 +400,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         const r = engineClaimPotion(e, potion, slot);
         if (r === 'full') return fail('Cinturón lleno: elige qué poción sustituir');
         emit({ potionClaimed: true, hint: null });
+        record('claimPotion', slot);
       } catch (err) {
         fail((err as Error).message);
       }
@@ -391,6 +432,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       try {
         engineRest(e, action, deckIndex);
         emit({ hint: null });
+        record('restAction', action, deckIndex);
       } catch (err) {
         fail((err as Error).message);
       }
@@ -401,19 +443,19 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
 
     // ——— comerciante ———
     buyCard(index: number) {
-      shopAction(() => engineBuyCard(state.expedition!, index));
+      shopAction(() => engineBuyCard(state.expedition!, index), ['buyCard', index]);
     },
     buyPotion(index: number, slot?: number) {
-      shopAction(() => engineBuyPotion(state.expedition!, index, slot));
+      shopAction(() => engineBuyPotion(state.expedition!, index, slot), ['buyPotion', index, slot]);
     },
     buyGear(index: number) {
-      shopAction(() => engineBuyGear(state.expedition!, index));
+      shopAction(() => engineBuyGear(state.expedition!, index), ['buyGear', index]);
     },
     treatWound() {
-      shopAction(() => treatWoundAtShop(state.expedition!));
+      shopAction(() => treatWoundAtShop(state.expedition!), ['treatWound']);
     },
     removeCard(deckIndex: number) {
-      shopAction(() => engineRemoveCard(state.expedition!, deckIndex));
+      shopAction(() => engineRemoveCard(state.expedition!, deckIndex), ['removeCard', deckIndex]);
     },
     leaveShop() {
       if (state.expedition) state.expedition.shop = null;
@@ -427,6 +469,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (!e || !ev || state.eventOutcome) return;
       try {
         emit({ eventOutcome: resolveChoice(e, ev, index), hint: null });
+        record('chooseEventOption', index);
       } catch (err) {
         fail((err as Error).message);
       }

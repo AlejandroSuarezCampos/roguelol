@@ -10,7 +10,7 @@ import { OMENS } from '../engine/run';
 import { POTIONS } from '../engine/potions';
 
 /** Versión del formato. Súbela (y añade una migración) si cambia la forma de lo que se guarda. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const SAVE_KEY = 'shattered-runeterra:run';
 export const CORRUPT_KEY = 'shattered-runeterra:run.corrupt';
 
@@ -20,7 +20,24 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
-export type LoadResult = { status: 'none' } | { status: 'ok'; expedition: Expedition } | { status: 'corrupt'; reason: string };
+/**
+ * Acción de la jugadora desde el último punto seguro (el mapa). Se guarda junto al punto seguro y, al cargar, se reproduce
+ * con el mismo motor determinista: así recargar a mitad de un nodo no deshace ni repite nada (ni la muerte permanente).
+ */
+export interface JournalEntry {
+  a: string;
+  p: unknown[];
+}
+export const JOURNAL_ACTIONS = [
+  'chooseNode', 'playCard', 'swap', 'usePotion', 'endTurn', 'concludeCombat', 'claimCard', 'claimGear', 'claimPotion',
+  'restAction', 'buyCard', 'buyPotion', 'buyGear', 'treatWound', 'removeCard', 'chooseEventOption',
+] as const;
+const MAX_JOURNAL = 4000;
+
+export type LoadResult =
+  | { status: 'none' }
+  | { status: 'ok'; expedition: Expedition; journal: JournalEntry[] }
+  | { status: 'corrupt'; reason: string };
 
 export interface SaveSummary {
   /** Piso actual (1 = primer piso; 0 si aún no ha entrado en ninguno). */
@@ -86,9 +103,21 @@ function problem(x: any): string | null {
   return null;
 }
 
+function journalProblem(j: unknown): string | null {
+  if (j === undefined) return null;
+  if (!Array.isArray(j) || j.length > MAX_JOURNAL) return 'diario';
+  for (const x of j) if (!isObj(x) || !(JOURNAL_ACTIONS as readonly string[]).includes(x.a) || !Array.isArray(x.p)) return 'diario';
+  return null;
+}
+
 function summaryOf(e: any, savedAt: number): SaveSummary {
   const cur = e.currentId ? e.map.nodes.find((n: any) => n.id === e.currentId) : null;
   return { floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt };
+}
+
+/** Copia profunda de una expedición (el RNG se reconstruye con su estado). Es el «punto seguro» al que se vuelve si falla la reproducción. */
+export function cloneExpedition(e: Expedition): Expedition {
+  return revive(JSON.parse(JSON.stringify(e)));
 }
 
 /** El RNG se guarda como un número (`state`) y se reconstruye al cargar; lo demás son datos planos. */
@@ -120,16 +149,16 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
       return { raw, error: 'JSON inválido' };
     }
     if (!isObj(data) || data.version !== SAVE_VERSION) return { raw, error: `versión ${isObj(data) ? data.version : '?'} no soportada` };
-    const why = problem(data.expedition);
+    const why = problem(data.expedition) ?? journalProblem(data.journal);
     return why ? { raw, error: why } : { raw, data };
   }
 
   return {
     /** Guarda la expedición y devuelve su resumen (calculado en memoria: no hace falta releer lo guardado). */
-    save(e: Expedition): SaveSummary | null {
+    save(e: Expedition, journal: JournalEntry[] = []): SaveSummary | null {
       if (e.status !== 'active') return null;
       const savedAt = now();
-      const payload = { version: SAVE_VERSION, savedAt, expedition: { ...e, shop: null } };
+      const payload = { version: SAVE_VERSION, savedAt, expedition: { ...e, shop: null }, journal };
       const ok = safe((s) => (s.setItem(SAVE_KEY, JSON.stringify(payload)), true), false);
       if (!ok) return null;
       return summaryOf(e, savedAt);
@@ -142,7 +171,7 @@ export function createSaveManager(storage: StorageLike | null, now: () => number
         safe((s) => (s.setItem(CORRUPT_KEY, r.raw), s.removeItem(SAVE_KEY)), undefined);
         return { status: 'corrupt', reason: r.error };
       }
-      return { status: 'ok', expedition: revive(r.data.expedition) };
+      return { status: 'ok', expedition: revive(r.data.expedition), journal: (r.data.journal ?? []) as JournalEntry[] };
     },
     /**
      * Mira el guardado (para el menú): su resumen, o —si está dañado— lo aparta con copia de seguridad y dice por qué.
