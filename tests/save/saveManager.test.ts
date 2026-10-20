@@ -40,7 +40,7 @@ describe('guardar y cargar', () => {
     expect(r.expedition.run.champions[1].hp).toBe(12);
     expect(r.expedition.wounds.lux).toBe(2);
     expect(r.expedition.deck).toEqual(e.deck);
-    expect(r.expedition.gear.yasuo.weapon).toBe('infinity');
+    expect(r.expedition.gear.yasuo[0]).toBe('infinity');
     expect(r.expedition.inventory).toEqual(['warmog']);
     expect(r.expedition.run.relics).toEqual(['stone']);
     expect(r.expedition.inCombat).toBe(false);
@@ -117,7 +117,8 @@ describe('datos corruptos', () => {
     ['un presagio inventado', (r: any) => (r.expedition.run.omen = 'nada')],
     ['un RNG que no es número', (r: any) => (r.expedition.run.rng.state = 'x')],
     ['un objeto de inventario inexistente', (r: any) => r.expedition.inventory.push('nope')],
-    ['un arma en el slot de armadura', (r: any) => (r.expedition.gear.lux.armor = 'rabadon')],
+    ['un objeto equipado inexistente', (r: any) => (r.expedition.gear.lux[3] = 'nope')],
+    ['huecos de gear de menos', (r: any) => r.expedition.gear.lux.pop()],
     ['una reliquia inexistente', (r: any) => r.expedition.run.relics.push('nope')],
     ['una reliquia repetida', (r: any) => r.expedition.run.relics.push('heart', 'heart')],
     ['una dificultad inventada', (r: any) => (r.expedition.difficulty = 'facil')],

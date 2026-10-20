@@ -5,7 +5,7 @@ import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
 import { BASE_GOLD, ENCOUNTERS, ENEMIES, type EncounterKind } from '../data/enemies';
 import { alliesAfter, startCombat } from './combat';
 import { CONFIG } from './config';
-import { emptyGear, equip, finalStatsFor, syncMaxHp, type ChampionGear } from './gear';
+import { emptyGear, equip, finalStatsFor, freeSlot, syncMaxHp, type ChampionGear } from './gear';
 import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { RELIC_LIST } from '../data/relics';
@@ -254,11 +254,8 @@ function applyWound(e: Expedition, c: RunChampion, recover: boolean): void {
 function killChampion(e: Expedition, c: RunChampion): void {
   e.run.champions = e.run.champions.filter((x) => x !== c);
   e.dead.push(c.id);
-  for (const slot of ['weapon', 'armor'] as const) {
-    const g = e.gear[c.id][slot];
-    if (g) e.inventory.push(g);
-    e.gear[c.id][slot] = null;
-  }
+  e.inventory.push(...e.gear[c.id].filter((g): g is string => !!g));
+  e.gear[c.id] = e.gear[c.id].map(() => null);
   e.deck = e.deck.filter((id) => deckCardDef(id).owner !== c.id);
 }
 
@@ -325,6 +322,7 @@ export function claimGear(e: Expedition, gearId: string | null, equipOn?: Champi
   if (!GEAR[gearId]) throw new Error(`Objeto desconocido: ${gearId}`);
   if (equipOn && !e.run.champions.some((c) => c.id === equipOn)) throw new Error('Ese campeón ha muerto');
   if (equipOn && e.inCombat) throw new Error('No se puede cambiar el equipo en combate');
+  if (equipOn && freeSlot(e, equipOn) === null) throw new Error('Sin huecos libres: equípalo desde Equipo');
   e.inventory.push(gearId);
   if (equipOn) equip(e, equipOn, gearId);
 }

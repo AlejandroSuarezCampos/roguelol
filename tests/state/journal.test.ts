@@ -225,13 +225,12 @@ describe('diario dañado', () => {
     expect(reloaded.getState().notice).toMatch(/No se pudo reanudar/);
   });
 
-  it('un guardado de la versión 4 (sin diario) se sigue cargando', () => {
+  it('un guardado sin diario se carga con el diario vacío', () => {
     const store = mem();
     const g = open(store);
     g.newExpedition(3);
     g.startExpedition();
     const raw = JSON.parse(store.data.get(SAVE_KEY)!);
-    raw.version = 4;
     delete raw.journal;
     store.setItem(SAVE_KEY, JSON.stringify(raw));
     const reloaded = open(store);

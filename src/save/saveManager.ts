@@ -10,9 +10,12 @@ import { OMENS } from '../engine/run';
 import { POTIONS } from '../engine/potions';
 
 /** Versión del formato. Súbela (y añade una migración) si cambia la forma de lo que se guarda. */
-export const SAVE_VERSION = 5;
-/** Versiones que se pueden cargar. La 4 es igual que la 5 sin diario (se carga con el diario vacío). */
-const LOADABLE_VERSIONS = [4, 5];
+export const SAVE_VERSION = 6;
+/**
+ * Versiones que se pueden cargar. La 6 cambió el mapa (15 pisos), el gear (6 huecos) y la dificultad: las anteriores no se migran
+ * (son de antes de publicar nada) y se apartan como dañadas.
+ */
+const LOADABLE_VERSIONS = [6];
 export const SAVE_KEY = 'shattered-runeterra:run';
 export const CORRUPT_KEY = 'shattered-runeterra:run.corrupt';
 
@@ -93,8 +96,8 @@ function problem(x: any): string | null {
   if (!isObj(x.gear)) return 'gear';
   for (const id of CHAMPION_IDS) {
     const g = x.gear[id];
-    if (!isObj(g)) return 'gear de campeón';
-    for (const slot of ['weapon', 'armor'] as const) if (g[slot] !== null && !(typeof g[slot] === 'string' && GEAR[g[slot]]?.slot === slot)) return 'gear equipado';
+    if (!Array.isArray(g) || g.length !== CONFIG.gear.slots) return 'gear de campeón';
+    if (!g.every((s: unknown) => s === null || (typeof s === 'string' && s in GEAR))) return 'gear equipado';
   }
   if (x.currentId !== null && !ids.has(x.currentId)) return 'nodo actual';
   if (!Array.isArray(x.visited) || !x.visited.every((id: unknown) => typeof id === 'string' && ids.has(id))) return 'visitados';

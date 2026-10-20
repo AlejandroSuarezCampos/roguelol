@@ -7,19 +7,19 @@ import { Icon } from '../components/Icon';
 import { HpBar, StressMeter } from '../components/Meters';
 import { applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
 import { CHAMPIONS, CRISIS } from '../data/champions';
-import { SLOT_LABEL, type GearSlot } from '../data/gear';
+import { GEAR } from '../data/gear';
 import { CRISIS_INFO } from '../data/glossary';
-import { compareGear, finalStatsFor } from '../engine/gear';
+import { compareGear, finalStatsFor, freeSlot } from '../engine/gear';
 import type { ChampionId, Pos } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
 import { statLines } from '../ui/format';
-
-const SLOTS: GearSlot[] = ['weapon', 'armor'];
 
 /** Equipo: ficha del campeón con sus estadísticas finales, gear (equipar/quitar con comparación) y el mazo. */
 export function TeamScreen() {
   const { expedition: e, hint } = useGame();
   const [selected, setSel] = useState<ChampionId>('leona');
+  /** Objeto del inventario esperando hueco (el campeón tiene los 6 llenos). */
+  const [replacing, setReplacing] = useState<string | null>(null);
   const deck = useMemo(() => {
     if (!e) return [];
     const m = new Map<string, number>();
@@ -113,33 +113,42 @@ export function TeamScreen() {
           <h3>
             <Icon name="relic" /> Gear
           </h3>
+          {replacing && (
+            <p className="sub" role="status">
+              Huecos llenos: elige qué objeto sustituir por <b>{GEAR[replacing].name}</b>.{' '}
+              <button className="btn sm" onClick={() => setReplacing(null)}>Cancelar</button>
+            </p>
+          )}
           <div className="slots">
-            {SLOTS.map((slot) => {
-              const id = e.gear[sel][slot];
-              return (
-                <div key={slot} className="gslot">
-                  <small className="sub">{SLOT_LABEL[slot]}</small>
-                  {id ? (
-                    <>
-                      <GearItem id={id} />
+            {e.gear[sel].map((id, slot) => (
+              <div key={slot} className="gslot">
+                <small className="sub">Hueco {slot + 1}</small>
+                {id ? (
+                  <>
+                    <GearItem id={id} compact />
+                    {replacing ? (
+                      <button className="btn sm pri" onClick={() => { game.equipGear(sel, replacing, slot); setReplacing(null); }}>
+                        Sustituir
+                      </button>
+                    ) : (
                       <button className="btn sm" onClick={() => game.unequipGear(sel, slot)}>
                         Quitar
                       </button>
-                    </>
-                  ) : (
-                    <p className="empty sub">Vacío</p>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </>
+                ) : (
+                  <p className="empty sub">Vacío</p>
+                )}
+              </div>
+            ))}
           </div>
           <h4 className="fd">Inventario ({e.inventory.length})</h4>
-          {e.inventory.length === 0 && <p className="sub">Sin objetos. Los sueltan élites y jefes, y se compran en el comerciante.</p>}
+          {e.inventory.length === 0 && <p className="sub">Sin objetos. Los sueltan los combates, las élites y los jefes.</p>}
           <ul className="inv">
             {e.inventory.map((id, i) => (
               <li key={`${id}-${i}`}>
                 <GearItem id={id} delta={compareGear(e, sel, id)} />
-                <button className="btn sm" onClick={() => game.equipGear(sel, id)}>
+                <button className="btn sm" onClick={() => (freeSlot(e, sel) === null ? setReplacing(id) : game.equipGear(sel, id))}>
                   Equipar en {def.name}
                 </button>
               </li>

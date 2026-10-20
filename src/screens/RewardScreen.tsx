@@ -6,7 +6,7 @@ import { GearItem } from '../components/GearItem';
 import { RelicList } from '../components/RelicBar';
 import { CARDS } from '../data/cards';
 import { CHAMPIONS } from '../data/champions';
-import { compareGear } from '../engine/gear';
+import { compareGear, freeSlot } from '../engine/gear';
 import { CONFIG } from '../engine/config';
 import { POTIONS } from '../engine/potions';
 import { game, useGame } from '../state/gameStore';
@@ -111,7 +111,7 @@ export function RewardScreen() {
                         const d = compareGear(e, c, id);
                         const sum = statLines(d.stats, d.hp).map((l) => `${l.raw > 0 ? '▲' : '▼'} ${l.label} ${l.value}`).join(' · ') || 'sin cambios';
                         return (
-                          <button key={c} className="btn sm" onClick={() => { game.claimGear(id, c); setChoosingGear(false); }} title={sum}>
+                          <button key={c} className="btn sm" disabled={freeSlot(e, c) === null} onClick={() => { game.claimGear(id, c); setChoosingGear(false); }} title={freeSlot(e, c) === null ? 'Sin huecos libres: equípalo desde Equipo' : sum}>
                             {CHAMPIONS[c].name}
                           </button>
                         );

@@ -3,18 +3,17 @@ import { GEAR, GEAR_LIST } from '../../src/data/gear';
 import { CHAMPIONS } from '../../src/data/champions';
 import { CONFIG } from '../../src/engine/config';
 import { combatFromExpedition, createExpedition, claimGear, finishCombat } from '../../src/engine/expedition';
-import { equip, finalStatsFor, maxHpFor, syncMaxHp, unequip } from '../../src/engine/gear';
+import { equip, finalStatsFor, freeSlot, maxHpFor, syncMaxHp, unequip } from '../../src/engine/gear';
 import { DEFAULT_STATS } from '../../src/engine/stats';
 import type { StatBlock } from '../../src/engine/types';
 
 const champ = (e: ReturnType<typeof createExpedition>, id: string) => e.run.champions.find((c) => c.id === id)!;
 
 describe('datos de gear', () => {
-  it('hay 12 objetos únicos con slot, rareza y alguna ventaja', () => {
-    expect(GEAR_LIST).toHaveLength(12);
-    expect(new Set(GEAR_LIST.map((g) => g.id)).size).toBe(12);
-    expect(GEAR_LIST.filter((g) => g.slot === 'weapon').length).toBeGreaterThanOrEqual(4);
-    expect(GEAR_LIST.filter((g) => g.slot === 'armor').length).toBeGreaterThanOrEqual(4);
+  it('hay al menos 24 objetos únicos con rareza y alguna ventaja', () => {
+    expect(GEAR_LIST.length).toBeGreaterThanOrEqual(24);
+    expect(new Set(GEAR_LIST.map((g) => g.id)).size).toBe(GEAR_LIST.length);
+    for (const r of ['common', 'rare', 'legendary']) expect(GEAR_LIST.filter((g) => g.rarity === r).length, r).toBeGreaterThanOrEqual(5);
     for (const g of GEAR_LIST) {
       expect(['common', 'rare', 'legendary']).toContain(g.rarity);
       for (const k of Object.keys(g.stats)) expect(k in DEFAULT_STATS, `${g.id}.${k}`).toBe(true);
@@ -25,15 +24,22 @@ describe('datos de gear', () => {
 });
 
 describe('equipar', () => {
-  it('equipar saca el objeto del inventario, lo coloca en su slot y devuelve el anterior', () => {
+  it('6 huecos como en el LoL: equipar llena el primero libre; con todo lleno hay que elegir cuál sustituir', () => {
     const e = createExpedition(1);
+    expect(e.gear.yasuo).toEqual([null, null, null, null, null, null]);
     e.inventory.push('infinity', 'guinsoo');
     equip(e, 'yasuo', 'infinity');
-    expect(e.gear.yasuo.weapon).toBe('infinity');
-    expect(e.inventory).toEqual(['guinsoo']);
     equip(e, 'yasuo', 'guinsoo');
-    expect(e.gear.yasuo.weapon).toBe('guinsoo');
-    expect(e.inventory).toEqual(['infinity']);
+    expect(e.gear.yasuo.slice(0, 2)).toEqual(['infinity', 'guinsoo']);
+    expect(e.inventory).toEqual([]);
+    e.inventory.push('blade', 'blade', 'blade', 'blade', 'titanic');
+    for (let i = 0; i < 4; i++) equip(e, 'yasuo', 'blade');
+    expect(freeSlot(e, 'yasuo')).toBeNull();
+    expect(() => equip(e, 'yasuo', 'titanic')).toThrow(/huecos/i);
+    equip(e, 'yasuo', 'titanic', 1);
+    expect(e.gear.yasuo[1]).toBe('titanic');
+    expect(e.inventory).toEqual(['guinsoo']);
+    expect(() => equip(e, 'yasuo', 'guinsoo', 6)).toThrow(/hueco/i);
   });
 
   it('rechaza lo que no está en el inventario', () => {
@@ -46,10 +52,10 @@ describe('equipar', () => {
     const e = createExpedition(1);
     e.inventory.push('rabadon');
     equip(e, 'lux', 'rabadon');
-    unequip(e, 'lux', 'weapon');
-    expect(e.gear.lux.weapon).toBeNull();
+    unequip(e, 'lux', 0);
+    expect(e.gear.lux[0]).toBeNull();
     expect(e.inventory).toEqual(['rabadon']);
-    expect(() => unequip(e, 'lux', 'weapon')).toThrow(/nada/i);
+    expect(() => unequip(e, 'lux', 0)).toThrow(/nada/i);
   });
 
   it('no se puede equipar ni desequipar en combate', () => {
@@ -99,7 +105,7 @@ describe('vida máxima', () => {
     equip(e, 'leona', 'warmog');
     expect(champ(e, 'leona').hp).toBe(50 + GEAR.warmog.hp!);
     champ(e, 'leona').hp = champ(e, 'leona').maxHp;
-    unequip(e, 'leona', 'armor');
+    unequip(e, 'leona', 0);
     expect(champ(e, 'leona').maxHp).toBe(CHAMPIONS.leona.maxHp);
     expect(champ(e, 'leona').hp).toBe(CHAMPIONS.leona.maxHp);
   });
@@ -109,8 +115,8 @@ describe('vida máxima', () => {
     e.inventory.push('warmog');
     equip(e, 'soraka', 'warmog');
     champ(e, 'soraka').hp = 5; // quitarlo restaría 60: quedaría en −55
-    expect(() => unequip(e, 'soraka', 'armor')).toThrow(/sin vida/);
-    expect(e.gear.soraka.armor).toBe('warmog');
+    expect(() => unequip(e, 'soraka', 0)).toThrow(/sin vida/);
+    expect(e.gear.soraka[0]).toBe('warmog');
     expect(e.inventory).toEqual([]);
     expect(champ(e, 'soraka').hp).toBe(5);
     expect(champ(e, 'soraka').maxHp).toBe(maxHpFor(e, 'soraka'));
@@ -122,17 +128,17 @@ describe('vida máxima', () => {
     champ(e, 'leona').hp = 3;
     equip(e, 'leona', 'blade');
     expect(champ(e, 'leona').hp).toBe(18);
-    unequip(e, 'leona', 'weapon');
+    unequip(e, 'leona', 0);
     expect(champ(e, 'leona').hp).toBe(3);
   });
 
   it('cambiar un objeto por otro con menos vida se rechaza si dejaría a 0', () => {
     const e = createExpedition(1);
-    e.inventory.push('titanic', 'ring'); // +30 y +10 de vida en el slot de arma
+    e.inventory.push('titanic', 'ring'); // +30 y +10 de vida en el mismo hueco
     equip(e, 'yasuo', 'titanic');
     champ(e, 'yasuo').hp = 10;
-    expect(() => equip(e, 'yasuo', 'ring')).toThrow(/sin vida/);
-    expect(e.gear.yasuo.weapon).toBe('titanic');
+    expect(() => equip(e, 'yasuo', 'ring', 0)).toThrow(/sin vida/);
+    expect(e.gear.yasuo[0]).toBe('titanic');
     expect(e.inventory).toEqual(['ring']);
   });
 
@@ -142,7 +148,7 @@ describe('vida máxima', () => {
     e.inventory.push('blade');
     for (let i = 0; i < 6; i++) {
       equip(e, 'leona', 'blade');
-      unequip(e, 'leona', 'weapon');
+      unequip(e, 'leona', 0);
     }
     expect(champ(e, 'leona').hp).toBe(5);
     expect(champ(e, 'leona').maxHp).toBe(CHAMPIONS.leona.maxHp);
@@ -150,12 +156,12 @@ describe('vida máxima', () => {
 
   it('cambiar un objeto de vida por otro mueve la vida actual por la diferencia', () => {
     const e = createExpedition(1);
-    e.inventory.push('blade', 'titanic'); // +15 y +30 de vida, los dos en el slot de arma
+    e.inventory.push('blade', 'titanic'); // +15 y +30 de vida, en el mismo hueco
     equip(e, 'leona', 'blade');
     const hp = champ(e, 'leona').hp;
-    equip(e, 'leona', 'titanic');
+    equip(e, 'leona', 'titanic', 0);
     expect(champ(e, 'leona').hp).toBe(hp + 15);
-    equip(e, 'leona', 'blade');
+    equip(e, 'leona', 'blade', 0);
     expect(champ(e, 'leona').hp).toBe(hp);
   });
 
@@ -194,11 +200,11 @@ describe('botín de gear', () => {
     }
   });
 
-  it('un combate normal ofrece gear solo a veces (~20 %)', () => {
+  it('un combate normal ofrece gear a menudo, pero no siempre (~45 %)', () => {
     let n = 0;
     for (let i = 0; i < 300; i++) if (won(i, 'combat').r.gear) n++;
-    expect(n).toBeGreaterThan(30);
-    expect(n).toBeLessThan(100);
+    expect(n).toBeGreaterThan(100);
+    expect(n).toBeLessThan(170);
   });
 
   it('claimGear añade al inventario y acepta omitir', () => {

@@ -41,8 +41,10 @@ export const CONFIG = {
   /** Metaprogresión (spec §14): Esquirlas por expedición. */
   meta: { perFloor: 3, perCombat: 2, perElite: 5, victoryBonus: 40, nightmareMultiplier: 1.5, minShards: 5 },
   gear: {
+    /** Huecos de objeto por campeón, como en el LoL. */
+    slots: 6,
     options: 3,
-    dropChance: { combat: 0.2, elite: 1, boss: 1 },
+    dropChance: { combat: 0.45, elite: 1, boss: 1 },
     rarityWeights: {
       combat: { common: 0.7, rare: 0.3, legendary: 0 },
       elite: { common: 0.2, rare: 0.6, legendary: 0.2 },

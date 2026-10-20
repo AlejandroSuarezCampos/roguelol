@@ -1,20 +1,23 @@
-import { GEAR, type GearSlot } from '../data/gear';
+import { GEAR } from '../data/gear';
 import { CHAMPIONS } from '../data/champions';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
 import { getFinalStats } from './stats';
 import type { ChampionId, StatBlock } from './types';
 
-export type ChampionGear = Record<GearSlot, string | null>;
+/** Huecos de objeto de un campeón (como en el LoL: 6, cualquier objeto en cualquier hueco). */
+export type ChampionGear = (string | null)[];
 
-export const emptyGear = (): Record<ChampionId, ChampionGear> => ({
-  leona: { weapon: null, armor: null },
-  yasuo: { weapon: null, armor: null },
-  lux: { weapon: null, armor: null },
-  soraka: { weapon: null, armor: null },
-});
+const noItems = (): ChampionGear => Array.from({ length: CONFIG.gear.slots }, () => null);
+export const emptyGear = (): Record<ChampionId, ChampionGear> => ({ leona: noItems(), yasuo: noItems(), lux: noItems(), soraka: noItems() });
 
-const equipped = (e: Expedition, id: ChampionId) => Object.values(e.gear[id]).filter((g): g is string => !!g).map((g) => GEAR[g]);
+const equipped = (e: Expedition, id: ChampionId) => e.gear[id].filter((g): g is string => !!g).map((g) => GEAR[g]);
+
+/** Primer hueco libre del campeón, o null si los tiene todos ocupados. */
+export function freeSlot(e: Expedition, id: ChampionId): number | null {
+  const i = e.gear[id].indexOf(null);
+  return i < 0 ? null : i;
+}
 
 /** Estadísticas finales de un campeón (spec §6.3): base + gear plano. La UI y el combate usan este mismo resultado. */
 export function finalStatsFor(e: Expedition, id: ChampionId): StatBlock {
@@ -55,33 +58,40 @@ function changeGear(e: Expedition, id: ChampionId, mutate: () => void, undo: () 
   if (!c.downed) c.hp = Math.min(next, c.hp + delta);
 }
 
-/** Equipa un objeto del inventario en su slot; el que hubiera vuelve al inventario. Equipar vida sube también la vida actual. */
-export function equip(e: Expedition, id: ChampionId, gearId: string): void {
+/**
+ * Equipa un objeto del inventario en el hueco `slot` (por defecto, el primero libre); el que hubiera vuelve al inventario. Con todos
+ * los huecos ocupados hay que decir cuál sustituir. Equipar vida sube también la vida actual.
+ */
+export function equip(e: Expedition, id: ChampionId, gearId: string, slotArg?: number): void {
   assertFree(e);
   const def = GEAR[gearId];
   const at = e.inventory.indexOf(gearId);
   if (!def || at < 0) throw new Error('Ese objeto no está en el inventario');
-  const old = e.gear[id][def.slot];
+  if (!e.gear[id]) throw new Error('Ese campeón ha muerto');
+  const slot = slotArg ?? freeSlot(e, id);
+  if (slot === null) throw new Error('Sin huecos libres: elige qué objeto sustituir');
+  if (!Number.isInteger(slot) || slot < 0 || slot >= CONFIG.gear.slots) throw new Error('Ese hueco no existe');
+  const old = e.gear[id][slot];
   changeGear(
     e,
     id,
     () => {
       e.inventory.splice(at, 1);
       if (old) e.inventory.push(old);
-      e.gear[id][def.slot] = gearId;
+      e.gear[id][slot] = gearId;
     },
     () => {
       if (old) e.inventory.pop();
       e.inventory.splice(at, 0, gearId);
-      e.gear[id][def.slot] = old;
+      e.gear[id][slot] = old;
     },
   );
 }
 
-export function unequip(e: Expedition, id: ChampionId, slot: GearSlot): void {
+export function unequip(e: Expedition, id: ChampionId, slot: number): void {
   assertFree(e);
-  const old = e.gear[id][slot];
-  if (!old) throw new Error('No hay nada equipado en ese slot');
+  const old = e.gear[id]?.[slot];
+  if (!old) throw new Error('No hay nada equipado en ese hueco');
   changeGear(
     e,
     id,
@@ -96,10 +106,14 @@ export function unequip(e: Expedition, id: ChampionId, slot: GearSlot): void {
   );
 }
 
-/** Diferencia de estadísticas y vida si `gearId` sustituyera a lo que lleva el campeón en ese slot (para la comparación). */
-export function compareGear(e: Expedition, id: ChampionId, gearId: string): { stats: Partial<StatBlock>; hp: number } {
+/**
+ * Diferencia de estadísticas y vida si `gearId` entrara en el hueco `slot` (por defecto, el primero libre; con todo lleno, sin hueco
+ * se compara contra nada: lo que aportaría por sí solo).
+ */
+export function compareGear(e: Expedition, id: ChampionId, gearId: string, slot?: number): { stats: Partial<StatBlock>; hp: number } {
   const def = GEAR[gearId];
-  const cur = e.gear[id][def.slot] ? GEAR[e.gear[id][def.slot]!] : null;
+  const curId = slot === undefined ? null : e.gear[id][slot];
+  const cur = curId ? GEAR[curId] : null;
   const stats: Partial<StatBlock> = {};
   for (const k of new Set([...Object.keys(def.stats), ...Object.keys(cur?.stats ?? {})]) as Set<keyof StatBlock>) {
     const d = (def.stats[k] ?? 0) - (cur?.stats[k] ?? 0);

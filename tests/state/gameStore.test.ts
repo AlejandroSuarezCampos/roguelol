@@ -356,7 +356,7 @@ describe('gear y equipo', () => {
     const e = g.getState().expedition!;
     g.getState().rewards!.gear = ['rabadon', 'infinity', 'warmog'];
     g.claimGear('rabadon', 'lux');
-    expect(e.gear.lux.weapon).toBe('rabadon');
+    expect(e.gear.lux[0]).toBe('rabadon');
     expect(g.getState().gearClaimed).toBe(true);
     g.claimGear('infinity');
     expect(g.getState().hint).toMatch(/Ya elegiste/);
@@ -382,10 +382,10 @@ describe('gear y equipo', () => {
     g.openTeam();
     expect(g.getState().screen).toBe('team');
     g.equipGear('leona', 'warmog');
-    expect(e.gear.leona.armor).toBe('warmog');
-    g.unequipGear('leona', 'armor');
+    expect(e.gear.leona[0]).toBe('warmog');
+    g.unequipGear('leona', 0);
     expect(e.inventory).toEqual(['warmog']);
-    g.unequipGear('leona', 'armor');
+    g.unequipGear('leona', 0);
     expect(g.getState().hint).toMatch(/nada/i);
     g.closeTeam();
     expect(g.getState().screen).toBe('map');
@@ -397,7 +397,7 @@ describe('gear y equipo', () => {
     e.inventory.push('warmog');
     g.equipGear('leona', 'warmog');
     expect(g.getState().hint).toMatch(/combate/);
-    expect(e.gear.leona.armor).toBeNull();
+    expect(e.gear.leona[0]).toBeNull();
   });
 });
 
@@ -545,7 +545,7 @@ describe('robustez de las acciones de botín', () => {
     expect(g.getState().gearClaimed).toBe(false);
     expect(g.getState().hint).toMatch(/muerto/);
     g.claimGear('rabadon', 'leona');
-    expect(e.gear.leona.weapon).toBe('rabadon');
+    expect(e.gear.leona[0]).toBe('rabadon');
     expect(g.getState().gearClaimed).toBe(true);
   });
 

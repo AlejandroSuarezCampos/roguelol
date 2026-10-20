@@ -367,10 +367,10 @@ describe('gear y pantalla de equipo', () => {
     expect(screen.getByRole('heading', { name: /Leona · Tanque/ })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
     await user.click(screen.getAllByRole('button', { name: 'Equipar en Yasuo' })[0]);
-    expect(game.getState().expedition!.gear.yasuo.weapon).toBe('infinity');
+    expect(game.getState().expedition!.gear.yasuo[0]).toBe('infinity');
     expect(screen.getByText('Filo infinito')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Quitar' }));
-    expect(game.getState().expedition!.gear.yasuo.weapon).toBeNull();
+    expect(game.getState().expedition!.gear.yasuo[0]).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Volver al mapa' }));
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
   });
@@ -392,7 +392,7 @@ describe('gear y pantalla de equipo', () => {
     await user.click(within(dialog).getByRole('button', { name: /Sombrero mortal de Rabadon/ }));
     expect(within(dialog).getAllByText(/AP \+45/).length).toBeGreaterThan(0);
     await user.click(within(dialog).getByRole('button', { name: 'Lux' }));
-    expect(game.getState().expedition!.gear.lux.weapon).toBe('rabadon');
+    expect(game.getState().expedition!.gear.lux[0]).toBe('rabadon');
     expect(screen.getByText('Elegido')).toBeInTheDocument();
   });
 });

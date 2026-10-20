@@ -182,8 +182,8 @@
 .statrow{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(120,90,40,.4);padding:3px 0}
 .statrow dd{font-weight:700;margin:0}
 .teamscreen h4{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin:12px 0 6px}
-.slots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.gslot{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line2);background:rgba(1,10,19,.5);min-height:100px}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.gslot{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line2);background:rgba(1,10,19,.5);min-height:84px}
 .gslot .empty{margin:auto}
 .inv{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
 .inv li{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line2);background:rgba(1,10,19,.5)}

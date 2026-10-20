@@ -9,7 +9,6 @@ import {
   enterNode, finishCombat, rest as engineRest, retreat as engineRetreat, type Expedition, type ExpeditionRewards, type RestAction,
 } from '../engine/expedition';
 import { equip as engineEquip, unequip as engineUnequip } from '../engine/gear';
-import type { GearSlot } from '../data/gear';
 import { openChest, takeChestOffer as engineTakeChestOffer } from '../engine/chest';
 import { choiceBlocked, pickEvent, resolveChoice, type EventOutcome } from '../engine/events';
 import { swapAllies } from '../engine/formation';
@@ -447,10 +446,10 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     closeTeam() {
       emit({ screen: 'map', hint: null });
     },
-    equipGear(championId: ChampionId, gearId: string) {
-      shopAction(() => engineEquip(state.expedition!, championId, gearId));
+    equipGear(championId: ChampionId, gearId: string, slot?: number) {
+      shopAction(() => engineEquip(state.expedition!, championId, gearId, slot));
     },
-    unequipGear(championId: ChampionId, slot: GearSlot) {
+    unequipGear(championId: ChampionId, slot: number) {
       shopAction(() => engineUnequip(state.expedition!, championId, slot));
     },
 
