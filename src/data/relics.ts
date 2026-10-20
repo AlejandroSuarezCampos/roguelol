@@ -50,7 +50,7 @@ export const RELIC_LIST: RelicDef[] = [
     on: 'turnStart', limit: 'turn', when: (s) => s.units.some((u) => u.side === 'ally' && !u.downed && u.stress >= 75), effects: [{ type: 'stress', amount: -5, to: 'allies' }] },
   { id: 'fang', name: 'Colmillo del lobo', rarity: 'common', text: 'Cuando un aliado cae, los demás ganan 8 de bloqueo (una vez por turno).',
     on: 'championDowned', limit: 'turn', effects: [{ type: 'block', amount: 8, to: 'others' }] },
-  { id: 'lamp', name: 'Lámpara de la Niebla', rarity: 'common', text: 'Al entrar en un nodo, la Niebla sube 3 menos.', run: { on: 'nodeEntered', mist: -3 } },
+  { id: 'lamp', name: 'Lámpara de la Niebla', rarity: 'common', text: 'Al entrar en un nodo, la Niebla sube 2 menos.', run: { on: 'nodeEntered', mist: -2 } },
 ];
 
 export const RELICS: Record<string, RelicDef> = Object.fromEntries(RELIC_LIST.map((r) => [r.id, r]));

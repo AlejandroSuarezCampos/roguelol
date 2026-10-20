@@ -166,7 +166,12 @@ const aliveIds = (e: Expedition): ChampionId[] => e.run.champions.map((c) => c.i
 function equipBest(e: Expedition): void {
   for (const id of [...e.inventory]) {
     const best = aliveIds(e).map((c) => ({ c, s: gearScore(e, c, id) })).sort((a, b) => b.s - a.s)[0];
-    if (best && best.s > 0) equip(e, best.c, id);
+    if (!best || best.s <= 0) continue;
+    try {
+      equip(e, best.c, id);
+    } catch {
+      /* quitarle vida lo dejaría a 0: lo equipa más tarde */
+    }
   }
 }
 

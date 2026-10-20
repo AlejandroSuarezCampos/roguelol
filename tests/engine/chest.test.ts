@@ -7,25 +7,20 @@ import { openChest, takeChestOffer } from '../../src/engine/chest';
 import { Rng } from '../../src/engine/rng';
 
 describe('mapa con tesoro y santuario', () => {
-  it('como mucho uno de cada, y solo en sus pisos', () => {
-    let chests = 0;
+  it('el piso del tesoro (a mitad de mapa) es entero de cofres y no hay otros; santuarios raros fuera de ese piso', () => {
+    const mid = CONFIG.expedition.chestFloor;
     let shrines = 0;
     for (let seed = 1; seed <= 300; seed++) {
       const m = generateMap(new Rng(seed));
-      const c = m.nodes.filter((n) => n.type === 'chest');
+      expect(m.nodes.filter((n) => n.floor === mid).every((n) => n.type === 'chest'), `tesoro ${seed}`).toBe(true);
+      expect(m.nodes.filter((n) => n.type === 'chest').every((n) => n.floor === mid)).toBe(true);
       const s = m.nodes.filter((n) => n.type === 'shrine');
-      expect(c.length, `tesoros ${seed}`).toBeLessThanOrEqual(1);
-      expect(s.length, `santuarios ${seed}`).toBeLessThanOrEqual(1);
-      for (const n of c) expect(n.floor).toBeGreaterThanOrEqual(3), expect(n.floor).toBeLessThanOrEqual(5);
-      for (const n of s) expect(n.floor).toBeGreaterThanOrEqual(2), expect(n.floor).toBeLessThanOrEqual(4);
-      chests += c.length;
+      expect(s.length, `santuarios ${seed}`).toBeLessThanOrEqual(2);
+      for (const n of s) expect(n.floor).toBeGreaterThanOrEqual(2), expect(n.floor).toBeLessThanOrEqual(12);
       shrines += s.length;
     }
-    // aparecen a veces, pero no siempre
-    expect(chests).toBeGreaterThan(20);
-    expect(chests).toBeLessThan(250);
-    expect(shrines).toBeGreaterThan(20);
-    expect(shrines).toBeLessThan(250);
+    expect(shrines).toBeGreaterThan(60);
+    expect(shrines).toBeLessThan(450);
   });
 
   it('siguen garantizados el comerciante y el evento', () => {

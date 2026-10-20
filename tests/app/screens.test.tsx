@@ -457,7 +457,7 @@ describe('reliquias en pantalla', () => {
     });
     render(<App />);
     expect(screen.getByText(/Reliquias \(1\)/)).toBeInTheDocument();
-    expect(screen.getByText(/la Niebla sube 3 menos/)).toBeInTheDocument();
+    expect(screen.getByText(/la Niebla sube 2 menos/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^Equipo/ }));
     expect(screen.getByText(/Reliquias \(1\)/)).toBeInTheDocument();
   });

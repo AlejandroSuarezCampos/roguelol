@@ -13,9 +13,9 @@ export const CONFIG = {
   virtue: { blockPerTurn: 4 },
   omen: { lamentStress: 6, weightCost: 1, bleedDamage: 4 },
   mist: {
-    node: 8,
-    elite: 15,
-    stoke: -15,
+    node: 5,
+    elite: 9,
+    stoke: -10,
     tiers: { mist: 30, dense: 60, ruin: 90 },
     intentStressBonus: 3,
     shadowMarkStress: 2,
@@ -27,7 +27,10 @@ export const CONFIG = {
     bossExtraIntentAt: 60,
   },
   expedition: {
-    floors: 8,
+    floors: 15,
+    /** Piso (0-based) entero de tesoros, a mitad de mapa como en Slay the Spire. */
+    chestFloor: 7,
+    maxShrines: 2,
     rest: { healFraction: 0.3, stressRelief: 20 },
     /** Normal (§12): un campeón derribado sobrevive a la victoria con una herida grave. */
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },

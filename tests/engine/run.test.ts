@@ -30,14 +30,14 @@ describe('run y Presagio', () => {
 });
 
 describe('Niebla Negra', () => {
-  it('+8 por nodo, +15 por élite, −15 al avivar la hoguera, limitada a 0–100', () => {
+  it('+5 por nodo, +9 por élite, −10 al avivar la hoguera, limitada a 0–100', () => {
     const run = createRun(1, team());
     enterNode(run, 'combat');
-    expect(run.mist).toBe(8);
+    expect(run.mist).toBe(5);
     enterNode(run, 'elite');
-    expect(run.mist).toBe(23);
+    expect(run.mist).toBe(14);
     stokeFire(run);
-    expect(run.mist).toBe(8);
+    expect(run.mist).toBe(4);
     stokeFire(run);
     expect(run.mist).toBe(0);
     run.mist = 95;
@@ -60,7 +60,7 @@ describe('Niebla Negra', () => {
   it('la vista previa de un nodo muestra la niebla resultante y la probabilidad de reliquia', () => {
     const run = createRun(1, team());
     run.mist = 85;
-    expect(previewNode(run, 'combat')).toEqual({ mistAfter: 93, tier: 'ruin', relicChance: 0.1 });
+    expect(previewNode(run, 'combat')).toEqual({ mistAfter: 90, tier: 'ruin', relicChance: 0.1 });
     expect(previewNode(run, 'elite').relicChance).toBe(1);
   });
 });

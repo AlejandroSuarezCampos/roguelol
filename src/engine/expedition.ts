@@ -93,19 +93,20 @@ export type RestAction = 'heal' | 'calm' | 'treat' | 'upgrade' | 'stoke';
 const F = CONFIG.expedition;
 
 /**
- * Mapa de 8 pisos de 2–3 nodos: combates; élites desde el piso 2; descansos entre 2 y 4; comerciantes en 2–5 (uno por piso como
- * mucho); eventos en 1–5; descanso previo al jefe. Siempre hay al menos un comerciante (2–4) y un evento (1–4).
+ * Mapa de 15 pisos de 2–4 nodos (como un acto de Slay the Spire): el primero de combates, el del medio entero de tesoros, el
+ * penúltimo de descanso y el último, el jefe. Élites desde el piso 4; descansos, comerciantes (uno por piso como mucho), eventos y
+ * santuarios repartidos por el resto. Siempre hay un comerciante en 2–6, otro en 8–12 y un evento en 1–6.
  */
 export function generateMap(rng: Rng, restWeight = 1): ExpeditionMap {
   const nodes: MapNode[] = [];
   const byFloor: MapNode[][] = [];
-  const used = new Set<NodeType>(); // tesoro y santuario: como mucho uno de cada
+  let shrines = 0;
   for (let f = 0; f < F.floors; f++) {
-    const count = f === F.floors - 1 ? 1 : 2 + rng.int(2);
+    const count = f === F.floors - 1 ? 1 : 2 + rng.int(3);
     const row: MapNode[] = [];
     for (let i = 0; i < count; i++) {
-      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight, used);
-      used.add(type);
+      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight, shrines < F.maxShrines);
+      if (type === 'shrine') shrines++;
       row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
     }
     byFloor.push(row);
@@ -126,12 +127,13 @@ export function generateMap(rng: Rng, restWeight = 1): ExpeditionMap {
       src.next.push(t.id);
     }
   }
-  ensureType(nodes, rng, 'shop', 2, 4);
-  ensureType(nodes, rng, 'event', 1, 4);
+  ensureType(nodes, rng, 'shop', 2, 6);
+  ensureType(nodes, rng, 'shop', 8, 12);
+  ensureType(nodes, rng, 'event', 1, 6);
   return { nodes };
 }
 
-/** Si el mapa no tiene ningún nodo de ese tipo en los pisos dados, convierte un combate al azar. */
+/** Si el mapa no tiene ningún nodo de ese tipo en los pisos dados, convierte un combate al azar (sin dejar dos tiendas en un piso). */
 function ensureType(nodes: MapNode[], rng: Rng, type: NodeType, from: number, to: number): void {
   const inRange = nodes.filter((n) => n.floor >= from && n.floor <= to);
   if (inRange.some((n) => n.type === type)) return;
@@ -139,19 +141,18 @@ function ensureType(nodes: MapNode[], rng: Rng, type: NodeType, from: number, to
   if (candidates.length) rng.pick(candidates).type = type;
 }
 
-function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number, used: Set<NodeType>): NodeType {
+function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number, shrineLeft: boolean): NodeType {
   if (floor === F.floors - 1) return 'boss';
   if (floor === F.floors - 2) return 'rest';
+  if (floor === F.chestFloor) return 'chest';
   if (floor === 0) return 'combat';
+  const late = floor <= F.floors - 3; // nada especial justo antes del descanso final
   const r = rng.next();
-  if (floor >= 2 && r < 0.14) return 'elite';
-  if (floor >= 2 && floor <= F.floors - 4 && r < 0.14 + 0.18 * restWeight) return 'rest';
-  if (floor >= 2 && floor <= F.floors - 3 && !shopInFloor && r < 0.44) return 'shop';
-  if (floor <= F.floors - 3 && r < 0.6) return 'event';
-  // Tesoro (pisos 3–5) y santuario (2–4): raros, como mucho uno de cada por mapa. Solo se tira si el nodo iba a ser un combate.
-  const r2 = rng.next();
-  if (floor >= 3 && floor <= 5 && !used.has('chest') && r2 < 0.1) return 'chest';
-  if (floor >= 2 && floor <= 4 && !used.has('shrine') && r2 >= 0.1 && r2 < 0.18) return 'shrine';
+  if (floor >= 4 && r < 0.13) return 'elite';
+  if (floor >= 4 && late && r < 0.13 + 0.13 * restWeight) return 'rest';
+  if (floor >= 2 && late && !shopInFloor && r < 0.34) return 'shop';
+  if (late && r < 0.56) return 'event';
+  if (floor >= 2 && late && shrineLeft && r < 0.6) return 'shrine';
   return 'combat';
 }
 

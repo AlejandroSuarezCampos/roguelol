@@ -247,11 +247,11 @@ describe('reliquias de la expedición', () => {
     expect(r.relicNotes?.join(' ')).toMatch(/Corazón incandescente/);
   });
 
-  it('Lámpara de la Niebla: entrar en un nodo cuesta 3 de niebla menos', () => {
+  it('Lámpara de la Niebla: entrar en un nodo cuesta 2 de niebla menos', () => {
     const e = createExpedition(2);
     e.run.relics.push('lamp');
     enterNode(e, availableNodes(e)[0].id);
-    expect(e.run.mist).toBe(CONFIG.mist.node - 3);
+    expect(e.run.mist).toBe(CONFIG.mist.node - 2);
   });
 
   it('combatEndNotes cura y devuelve una nota por reliquia de expedición que actúe', () => {
@@ -298,17 +298,17 @@ describe('botín de reliquias', () => {
 });
 
 describe('Lámpara de la Niebla: resta de lo que sube, no después del tope', () => {
-  it('a mucha niebla sigue subiendo 3 menos que sin lámpara, y la vista previa coincide', async () => {
+  it('a mucha niebla sigue subiendo 2 menos que sin lámpara, y la vista previa coincide', async () => {
     const { previewNode } = await import('../../src/engine/run');
     const without = createExpedition(2);
     without.run.mist = 50;
     const withLamp = createExpedition(2);
     withLamp.run.relics.push('lamp');
     withLamp.run.mist = 50;
-    expect(previewNode(without.run, 'combat').mistAfter).toBe(58);
-    expect(previewNode(withLamp.run, 'combat').mistAfter).toBe(55);
+    expect(previewNode(without.run, 'combat').mistAfter).toBe(55);
+    expect(previewNode(withLamp.run, 'combat').mistAfter).toBe(53);
     enterNode(withLamp, availableNodes(withLamp)[0].id);
-    expect(withLamp.run.mist).toBe(55);
+    expect(withLamp.run.mist).toBe(53);
     const edge = createExpedition(2);
     edge.run.relics.push('lamp');
     edge.run.mist = 98;

@@ -35,7 +35,7 @@ describe('mapa', () => {
     expect(generateMap(new Rng(8))).not.toEqual(map);
   });
 
-  it('tiene 8 pisos con un único jefe al final', () => {
+  it('tiene 15 pisos con un único jefe al final', () => {
     expect(Math.max(...map.nodes.map((n) => n.floor))).toBe(CONFIG.expedition.floors - 1);
     const top = map.nodes.filter((n) => n.floor === CONFIG.expedition.floors - 1);
     expect(top).toHaveLength(1);
@@ -56,20 +56,23 @@ describe('mapa', () => {
     expect(map.nodes.filter((n) => n.floor === CONFIG.expedition.floors - 2).every((n) => n.type === 'rest')).toBe(true);
   });
 
-  it('siempre hay un comerciante (pisos 2–4) y un evento (pisos 1–4), y como mucho un comerciante por piso', () => {
+  it('reparto por todo el mapa: dos comerciantes (uno en 2–6 y otro en 8–12), un evento pronto y nada especial justo antes del jefe', () => {
     for (let seed = 1; seed <= 60; seed++) {
       const m = generateMap(new Rng(seed));
-      expect(m.nodes.some((n) => n.type === 'shop' && n.floor >= 2 && n.floor <= 4), `shop ${seed}`).toBe(true);
-      expect(m.nodes.some((n) => n.type === 'event' && n.floor >= 1 && n.floor <= 4), `event ${seed}`).toBe(true);
+      const has = (type: string, from: number, to: number) => m.nodes.some((n) => n.type === type && n.floor >= from && n.floor <= to);
+      expect(has('shop', 2, 6), `shop pronto ${seed}`).toBe(true);
+      expect(has('shop', 8, 12), `shop tarde ${seed}`).toBe(true);
+      expect(has('event', 1, 6), `event ${seed}`).toBe(true);
       for (let f = 0; f < CONFIG.expedition.floors; f++) expect(m.nodes.filter((n) => n.floor === f && n.type === 'shop').length).toBeLessThanOrEqual(1);
+      expect(m.nodes.filter((n) => n.type === 'elite').every((n) => n.floor >= 4), `élites ${seed}`).toBe(true);
     }
   });
 
-  it('cada piso tiene 2–3 nodos salvo el jefe', () => {
+  it('cada piso tiene 2–4 nodos salvo el jefe', () => {
     for (let f = 0; f < CONFIG.expedition.floors - 1; f++) {
       const count = map.nodes.filter((n) => n.floor === f).length;
       expect(count).toBeGreaterThanOrEqual(2);
-      expect(count).toBeLessThanOrEqual(3);
+      expect(count).toBeLessThanOrEqual(4);
     }
   });
 });
