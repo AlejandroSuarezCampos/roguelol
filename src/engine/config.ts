@@ -57,7 +57,7 @@ export const CONFIG = {
     /** Como en Slay the Spire: 6 cartas, 3 reliquias, 3 pociones y eliminar cartas. */
     cards: 6,
     relics: 3,
-    relicPrice: { common: 120, rare: 170, legendary: 230 },
+    relicPrice: { common: 120, rare: 170, legendary: 230, boss: 300 },
     cardPrice: { common: 50, rare: 80, epic: 120 },
     potionPrice: { health: 35, refillable: 40, iron: 50, sorcery: 45 },
     removeCard: 75,

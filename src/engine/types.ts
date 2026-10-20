@@ -134,7 +134,9 @@ export type RelicEvent =
   /** Un campeón ha hecho un crítico con una carta. */
   | { type: 'criticalHit'; owner: ChampionId; target: string }
   /** Un enemigo ha golpeado a un campeón (aunque el bloqueo lo absorba). */
-  | { type: 'allyHit'; unit: ChampionId; attacker: string; crit: boolean };
+  | { type: 'allyHit'; unit: ChampionId; attacker: string; crit: boolean }
+  /** El estrés de un campeón acaba de cruzar hacia arriba los 50 (agobiado) o los 75 (al límite). */
+  | { type: 'stressThreshold'; unit: ChampionId; tier: 'overwhelmed' | 'edge' };
 
 export interface RelicState {
   attacksThisTurn: number;

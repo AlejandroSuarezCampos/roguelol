@@ -354,8 +354,9 @@ export function claimPotion(e: Expedition, id: PotionId, slot?: number | 'new'):
 export const cardPool = (e: Expedition) =>
   CARD_LIST.filter((c) => e.run.champions.some((ch) => ch.id === c.owner) && !e.locked.cards.includes(c.id));
 
-/** Reliquias que pueden salir (botín, tienda, tesoro, eventos): ni las que ya se tienen ni las aún bloqueadas. */
-export const relicPool = (e: Expedition) => RELIC_LIST.filter((r) => !e.run.relics.includes(r.id) && !e.locked.relics.includes(r.id));
+/** Reliquias que pueden salir (botín, tienda, tesoro, eventos): ni las de jefe, ni las que ya se tienen, ni las aún bloqueadas. */
+export const relicPool = (e: Expedition) =>
+  RELIC_LIST.filter((r) => r.rarity !== 'boss' && !e.run.relics.includes(r.id) && !e.locked.relics.includes(r.id));
 
 export function claimRewards(e: Expedition, r: Rewards & { relicIds?: string[] }): void {
   e.run.gold += r.gold;

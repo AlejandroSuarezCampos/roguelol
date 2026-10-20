@@ -1,5 +1,5 @@
 import { CONFIG } from './config';
-import type { CombatState, Unit } from './types';
+import type { ChampionId, CombatState, Unit } from './types';
 
 export type StressTier = 'calm' | 'uneasy' | 'overwhelmed' | 'edge' | 'crisis';
 
@@ -30,4 +30,6 @@ export function addStress(s: CombatState, u: Unit, delta: number): void {
     }
   }
   if (u.crisisActive && u.stress < CONFIG.stress.max) u.crisisActive = false;
+  for (const [at, tier] of [[50, 'overwhelmed'], [75, 'edge']] as const)
+    if (before < at && u.stress >= at) s.relicQueue.push({ type: 'stressThreshold', unit: u.id as ChampionId, tier });
 }

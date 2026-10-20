@@ -16,12 +16,14 @@ const turnStart = (s: CombatState) => {
 };
 
 describe('datos', () => {
-  it('hay 9 reliquias con texto, rareza y un disparador', () => {
-    expect(RELIC_LIST).toHaveLength(9);
-    expect(new Set(RELIC_LIST.map((r) => r.id)).size).toBe(9);
+  it('hay al menos 16 reliquias normales y 5 de jefe, con texto y algún disparador', () => {
+    expect(RELIC_LIST.filter((r) => r.rarity !== 'boss').length).toBeGreaterThanOrEqual(16);
+    expect(RELIC_LIST.filter((r) => r.rarity === 'boss').length).toBeGreaterThanOrEqual(5);
+    expect(new Set(RELIC_LIST.map((r) => r.id)).size).toBe(RELIC_LIST.length);
     for (const r of RELIC_LIST) {
       expect(r.text.length, r.id).toBeGreaterThan(10);
-      expect(Boolean(r.on) !== Boolean(r.run), `${r.id} es de combate o de expedición, no ambas`).toBe(true);
+      expect(Boolean(r.on) || Boolean(r.run), r.id).toBe(true);
+      if (r.rarity !== 'boss') expect(Boolean(r.on) !== Boolean(r.run), `${r.id} es de combate o de expedición, no ambas`).toBe(true);
     }
   });
 });
@@ -315,5 +317,55 @@ describe('Lámpara de la Niebla: resta de lo que sube, no después del tope', ()
     expect(previewNode(edge.run, 'combat').mistAfter).toBe(100);
     enterNode(edge, availableNodes(edge)[0].id);
     expect(edge.run.mist).toBe(100);
+  });
+});
+
+describe('reliquias nuevas', () => {
+  it('Destello hextech roba 1 carta al empezar el combate', () => {
+    const s = withRelics(['flash']);
+    s.drawPile = [{ uid: 'd1', defId: 'strike' }];
+    turnStart(s);
+    expect(s.hand.map((c) => c.uid)).toEqual(['d1']);
+  });
+
+  it('Fajín de mercurio: al cruzar los 75 de estrés quita 15, una vez por combate', async () => {
+    const { addStress } = await import('../../src/engine/stress');
+    const s = withRelics(['quicksilver']);
+    addStress(s, u(s, 'lux'), 80);
+    processRelics(s);
+    expect(u(s, 'lux').stress).toBe(65);
+    addStress(s, u(s, 'leona'), 80);
+    processRelics(s);
+    expect(u(s, 'leona').stress).toBe(80);
+  });
+
+  it('Chaleco de zarzas responde solo a golpes críticos', () => {
+    const s = withRelics(['bramble']);
+    s.relicQueue.push({ type: 'allyHit', unit: 'leona', attacker: 'e1', crit: false });
+    processRelics(s);
+    expect(u(s, 'e1').hp).toBe(30);
+    s.relicQueue.push({ type: 'allyHit', unit: 'leona', attacker: 'e1', crit: true });
+    processRelics(s);
+    expect(u(s, 'e1').hp).toBe(24);
+  });
+
+  it('Égida de fuego solar quema a todos los enemigos cada turno', () => {
+    const s = withRelics(['sunfire']);
+    turnStart(s);
+    expect(u(s, 'e1').statuses.burn).toBe(1);
+    expect(u(s, 'e2').statuses.burn).toBe(1);
+  });
+
+  it('las reliquias de jefe nunca salen en botín, tienda ni tesoros', async () => {
+    const { createExpedition, relicPool } = await import('../../src/engine/expedition');
+    expect(relicPool(createExpedition(1)).some((r) => r.rarity === 'boss')).toBe(false);
+  });
+
+  it('la Corona de la Niebla da energía y cobra niebla al entrar en un nodo', async () => {
+    const { createRun, enterNode } = await import('../../src/engine/run');
+    const run = createRun(1, []);
+    run.relics.push('mistcrown');
+    enterNode(run, 'combat');
+    expect(run.mist).toBe(5 + 3);
   });
 });

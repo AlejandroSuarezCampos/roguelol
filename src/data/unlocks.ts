@@ -30,6 +30,8 @@ export const UNLOCKS: UnlockDef[] = [
   u('relic', 'emblem', 60),
   u('relic', 'bowl', 60),
   u('relic', 'voidshard', 90),
+  u('relic', 'essence', 60),
+  u('relic', 'sunfire', 90),
 ];
 
 export const UNLOCK_BY_ID: Record<string, UnlockDef> = Object.fromEntries(UNLOCKS.map((x) => [x.id, x]));

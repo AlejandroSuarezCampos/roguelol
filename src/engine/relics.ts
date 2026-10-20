@@ -3,6 +3,7 @@ import { RELICS, type AllyTarget, type EnemyTarget, type RelicDef, type RelicEff
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
 import { byPos, living } from './formation';
+import { drawCards } from './cards';
 import { addStress } from './stress';
 import { applyDamage, gainBlock, heal, revive } from './units';
 import type { ChampionId, CombatState, RelicEvent, RelicState, Unit } from './types';
@@ -18,6 +19,7 @@ function protagonist(ev: RelicEvent): string | undefined {
       return ev.owner;
     case 'championDowned':
     case 'allyHit':
+    case 'stressThreshold':
       return ev.unit;
     default:
       return undefined;
@@ -72,6 +74,9 @@ function apply(s: CombatState, fx: RelicEffect, ev: RelicEvent, wearer?: Unit): 
       break;
     case 'energy':
       s.energy += fx.amount;
+      break;
+    case 'draw':
+      drawCards(s, fx.amount);
       break;
     case 'emit':
       s.relicQueue.push(fx.event);

@@ -107,8 +107,9 @@ describe('reliquias en venta', () => {
 
   it('no ofrece reliquias que ya se tienen, y con pocas libres ofrece menos', () => {
     const e = createExpedition(11);
-    e.run.relics = RELIC_LIST.slice(0, RELIC_LIST.length - 1).map((r) => r.id);
+    const normal = RELIC_LIST.filter((r) => r.rarity !== 'boss');
+    e.run.relics = normal.slice(0, normal.length - 1).map((r) => r.id);
     openShop(e);
-    expect(e.shop!.relics.map((r) => r.id)).toEqual([RELIC_LIST.at(-1)!.id]);
+    expect(e.shop!.relics.map((r) => r.id)).toEqual([normal.at(-1)!.id]);
   });
 });
