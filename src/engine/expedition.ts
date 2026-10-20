@@ -58,6 +58,10 @@ export interface Expedition {
   status: ExpeditionStatus;
   /** Pasivas de gear «una vez por expedición» ya usadas (`campeón:objeto:p`). */
   spentGear: string[];
+  /** Acto actual (0, 1 o 2). Cada acto tiene su mapa; `visited` acumula los nodos de todos. */
+  act: number;
+  /** Se ha vencido al jefe de un acto que no es el último: al salir del botín empieza el siguiente. */
+  actCleared: boolean;
   /** Gear equipado por campeón y objetos sin equipar (sin límite). */
   gear: Record<ChampionId, ChampionGear>;
   inventory: string[];
@@ -87,6 +91,8 @@ export interface ExpeditionRewards extends Rewards {
   gear?: string[];
   /** Reliquias nuevas (no repetidas) que ha soltado el combate; `claimRewards` las añade a la run. */
   relicIds?: string[];
+  /** Reliquias de jefe para elegir una (jefes de los actos 1 y 2). */
+  bossRelics?: string[];
   /** Lo que han hecho las reliquias de expedición al terminar el combate. */
   relicNotes?: string[];
   /** Poción que suelta el combate, si hay (ver `CONFIG.potions.drop`). */
@@ -102,7 +108,8 @@ const F = CONFIG.expedition;
  * penúltimo de descanso y el último, el jefe. Élites desde el piso 4; descansos, comerciantes (uno por piso como mucho), eventos y
  * santuarios repartidos por el resto. Siempre hay un comerciante en 2–6, otro en 8–12 y un evento en 1–6.
  */
-export function generateMap(rng: Rng, restWeight = 1, eliteWeight = 1): ExpeditionMap {
+export function generateMap(rng: Rng, restWeight = 1, eliteWeight = 1, act = 0): ExpeditionMap {
+  const prefix = act ? `a${act}` : '';
   const nodes: MapNode[] = [];
   const byFloor: MapNode[][] = [];
   let shrines = 0;
@@ -112,7 +119,7 @@ export function generateMap(rng: Rng, restWeight = 1, eliteWeight = 1): Expediti
     for (let i = 0; i < count; i++) {
       const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight, eliteWeight, shrines < F.maxShrines);
       if (type === 'shrine') shrines++;
-      row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
+      row.push({ id: `${prefix}n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
     }
     byFloor.push(row);
     nodes.push(...row);
@@ -162,6 +169,9 @@ function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: num
   return 'combat';
 }
 
+/** El mapa de cada acto sale de una semilla derivada para que no consuma tiradas de la run. */
+const mapRng = (seed: number, act: number) => new Rng((seed ^ 0x9e3779b9 ^ Math.imul(act, 0x85ebca6b)) >>> 0 || 1);
+
 /** Modificadores de la Ascensión de la expedición. */
 export const modsOf = (e: Pick<Expedition, 'ascension'>): AscensionMods => ascensionMods(e.ascension);
 
@@ -173,10 +183,10 @@ export function createExpedition(seed: number, ascension = 0, setup: RunSetup = 
   const run = createRun(seed, champions);
   const deck = [...STARTER_DECK];
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
-  const map = generateMap(new Rng(seed ^ 0x9e3779b9), mods.restWeight, mods.eliteWeight);
+  const map = generateMap(mapRng(seed, 0), mods.restWeight, mods.eliteWeight, 0);
   const e: Expedition = {
     bonusHp: 0, locked: { cards: [...setup.locked.cards], relics: [...setup.locked.relics] }, recorded: false, encounters: {}, seed, ascension, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
-    gear: emptyGear(), spentGear: [], inventory: [], inCombat: false,
+    act: 0, actCleared: false, gear: emptyGear(), spentGear: [], inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
   // Objetos iniciales elegidos en el menú: se equipan en el primer hueco (y suben la vida si dan vida).
@@ -232,7 +242,9 @@ export const encounterKind = (type: NodeType): EncounterKind | null =>
 export function combatFromExpedition(e: Expedition, kind: EncounterKind): CombatState {
   const { run } = e;
   e.inCombat = true;
-  const encounter = run.rng.pick(ENCOUNTERS[kind]);
+  const encounter = kind === 'boss' ? ENCOUNTERS.boss[Math.min(e.act, ENCOUNTERS.boss.length - 1)] : run.rng.pick(ENCOUNTERS[kind]);
+  const actHp = F.actScaling.hp[e.act] ?? 1;
+  const actAttack = F.actScaling.attack[e.act] ?? 1;
   const diff = modsOf(e);
   const mods = combatMods(run.mist, kind === 'boss');
   for (const en of encounter) (e.encounters[en.defId] ??= { seen: 0, defeated: 0 }).seen++;
@@ -244,9 +256,9 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
     enemies: encounter.map((en, i) => ({ uid: `e${i + 1}`, defId: en.defId, pos: en.pos, boss: kind === 'boss' && i === 0 })),
     deck: e.deck,
     cards: CARDS,
-    enemyDefs: scaleEnemies(ENEMIES, diff.enemyAttack[kind]),
+    enemyDefs: scaleEnemies(ENEMIES, diff.enemyAttack[kind] * actAttack),
     omen: run.omen,
-    mods: { ...mods, hpMultiplier: mods.hpMultiplier * diff.enemyHp[kind] },
+    mods: { ...mods, hpMultiplier: mods.hpMultiplier * diff.enemyHp[kind] * actHp },
     belt: run.belt,
     relics: run.relics,
     gear: run.champions.flatMap((c) => e.gear[c.id].filter((g): g is string => !!g).map((gearId) => ({ wearer: c.id, gearId }))),
@@ -304,15 +316,21 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   for (const defId of Object.values(s.enemyOf)) (e.encounters[defId] ??= { seen: 0, defeated: 0 }).defeated++;
   e.stats.combats++;
   if (kind === 'elite') e.stats.elites++;
-  if (kind === 'boss') e.status = 'victory';
+  const lastAct = e.act >= F.acts - 1;
+  if (kind === 'boss') {
+    if (lastAct) e.status = 'victory';
+    else e.actCleared = true;
+  }
   const base = rollRewards(e.run, kind, BASE_GOLD[kind]);
-  base.gold = Math.round(base.gold * diff.gold);
+  base.gold = Math.round(base.gold * diff.gold * (F.actScaling.gold[e.act] ?? 1));
   const pool = e.run.rng.shuffle(cardPool(e).map((c) => c.id));
   const potion = e.run.rng.next() < CONFIG.potions.drop[kind] * diff.potionDrop ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
   const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
   const fresh = e.run.rng.shuffle(relicPool(e).map((r) => r.id));
   const relicIds = fresh.slice(0, base.relics);
-  return { ...base, cards: pool.slice(0, base.cardOptions), potion, gear, relicIds, relicNotes };
+  const bossRelics =
+    kind === 'boss' && !lastAct ? e.run.rng.shuffle(RELIC_LIST.filter((r) => r.rarity === 'boss' && !e.run.relics.includes(r.id)).map((r) => r.id)).slice(0, 3) : undefined;
+  return { ...base, cards: pool.slice(0, base.cardOptions), potion, gear, relicIds, relicNotes, bossRelics };
 }
 
 /** `count` objetos distintos con probabilidad ponderada por rareza (sin reposición). */
@@ -412,6 +430,39 @@ export function rest(e: Expedition, action: RestAction, deckIndex?: number): voi
     healWound(e);
   }
   e.restUsed = true;
+}
+
+/** Elige la reliquia de jefe (`null` = ninguna). Solo vale una de las ofrecidas. */
+export function claimBossRelic(e: Expedition, offered: string[], id: string | null): void {
+  if (id === null) return;
+  if (!offered.includes(id)) throw new Error('Esa reliquia no está en el botín');
+  if (e.run.relics.includes(id)) throw new Error('Ya tienes esa reliquia');
+  e.run.relics.push(id);
+}
+
+/**
+ * Empieza el siguiente acto tras vencer a su jefe: mapa nuevo, toda la vida perdida curada (los derribados se levantan con una herida
+ * ya puesta al acabar el combate), algo menos de estrés y la Niebla al nivel de partida del acto.
+ */
+export function advanceAct(e: Expedition): void {
+  if (!e.actCleared) throw new Error('Aún no has vencido al jefe de este acto');
+  e.act++;
+  e.actCleared = false;
+  const mods = modsOf(e);
+  e.map = generateMap(mapRng(e.seed, e.act), mods.restWeight, mods.eliteWeight, e.act);
+  e.currentId = null;
+  e.run.mist = F.actStartMist[e.act] ?? 0;
+  for (const c of e.run.champions) {
+    c.downed = false;
+    c.hp = c.maxHp;
+    c.stress = Math.max(0, c.stress - F.actCalm);
+  }
+}
+
+/** Piso alcanzado contando los actos anteriores (1 = primer piso del primer acto). */
+export function floorReached(e: Expedition): number {
+  const here = e.visited.map((id) => e.map.nodes.find((n) => n.id === id)?.floor ?? -1);
+  return e.act * F.floors + Math.max(-1, ...here) + 1;
 }
 
 /** Retirada: acaba la expedición y conserva solo parte del oro. */

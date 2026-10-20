@@ -4,8 +4,9 @@ import { CHAMPIONS } from '../../src/data/champions';
 import { CONFIG } from '../../src/engine/config';
 import {
   availableNodes, claimCard, claimPotion, claimRewards, combatFromExpedition, createExpedition, enterNode, finishCombat,
-  generateMap, rest, retreat, upgradeCard, type Expedition,
+  generateMap, rest, retreat, upgradeCard, advanceAct, claimBossRelic, type Expedition,
 } from '../../src/engine/expedition';
+import { RELICS } from '../../src/data/relics';
 import { Rng } from '../../src/engine/rng';
 
 const firstOfType = (e: Expedition, type: string) => e.map.nodes.find((n) => n.type === type)!;
@@ -192,10 +193,49 @@ describe('fin de combate', () => {
     expect(e.status).toBe('defeat');
   });
 
-  it('vencer al jefe es la victoria de la expedición', () => {
+  it('el jefe de los actos 1 y 2 ofrece una reliquia de jefe y abre el siguiente acto; vencer al del 3 es la victoria', () => {
     const e = createExpedition(2);
+    expect(combatFromExpedition(e, 'boss').enemyOf.e1).toBe('baron');
+    e.inCombat = false;
+    const r = finishCombat(e, won(e, 'boss'), 'boss')!;
+    expect(e.status).toBe('active');
+    expect(e.actCleared).toBe(true);
+    expect(r.bossRelics).toHaveLength(3);
+    expect(r.bossRelics!.every((id) => RELICS[id].rarity === 'boss')).toBe(true);
+    expect(() => claimBossRelic(e, r.bossRelics!, 'heart')).toThrow(/botín/);
+    claimBossRelic(e, r.bossRelics!, r.bossRelics![0]);
+    expect(e.run.relics).toContain(r.bossRelics![0]);
+    const visited = e.visited.length;
+    e.run.champions[0].hp = 5;
+    e.run.mist = 80;
+    advanceAct(e);
+    expect(e.act).toBe(1);
+    expect(e.actCleared).toBe(false);
+    expect(e.currentId).toBeNull();
+    expect(e.map.nodes[0].id.startsWith('a1n')).toBe(true);
+    expect(e.run.champions[0].hp).toBe(e.run.champions[0].maxHp);
+    expect(e.run.mist).toBe(CONFIG.expedition.actStartMist[1]);
+    expect(e.visited).toHaveLength(visited);
+    expect(() => advanceAct(e)).toThrow(/jefe/);
+    expect(combatFromExpedition(e, 'boss').enemyOf.e1).toBe('elder');
+    e.inCombat = false;
     finishCombat(e, won(e, 'boss'), 'boss');
+    advanceAct(e);
+    expect(combatFromExpedition(e, 'boss').enemyOf.e1).toBe('viego');
+    e.inCombat = false;
+    const last = finishCombat(e, won(e, 'boss'), 'boss')!;
     expect(e.status).toBe('victory');
+    expect(last.bossRelics).toBeUndefined();
+  });
+
+  it('los enemigos de los actos 2 y 3 son más duros', () => {
+    const hp = (x: Expedition) => combatFromExpedition(x, 'combat').units.filter((u) => u.side === 'enemy').map((u) => u.maxHp);
+    const a1 = hp(createExpedition(9));
+    const f = createExpedition(9);
+    f.act = 2;
+    const a3 = hp(f);
+    expect(a3.length).toBe(a1.length);
+    a3.forEach((v, i) => expect(v).toBeGreaterThan(a1[i]));
   });
 
   it('el botín añade oro, y la carta elegida va al mazo (o se omite)', () => {

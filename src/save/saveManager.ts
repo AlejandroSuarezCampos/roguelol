@@ -37,7 +37,7 @@ export interface JournalEntry {
 }
 export const JOURNAL_ACTIONS = [
   'chooseNode', 'playCard', 'swap', 'usePotion', 'endTurn', 'concludeCombat', 'claimCard', 'claimGear', 'claimPotion',
-  'restAction', 'buyCard', 'buyPotion', 'buyRelic', 'removeCard', 'chooseEventOption', 'takeChestOffer',
+  'restAction', 'buyCard', 'buyPotion', 'buyRelic', 'removeCard', 'chooseEventOption', 'takeChestOffer', 'claimBossRelic',
 ] as const;
 const MAX_JOURNAL = 20000;
 
@@ -100,7 +100,9 @@ function problem(x: any): string | null {
     if (!g.every((s: unknown) => s === null || (typeof s === 'string' && s in GEAR))) return 'gear equipado';
   }
   if (x.currentId !== null && !ids.has(x.currentId)) return 'nodo actual';
-  if (!Array.isArray(x.visited) || !x.visited.every((id: unknown) => typeof id === 'string' && ids.has(id))) return 'visitados';
+  // `visited` acumula los nodos de los actos anteriores (con prefijo `aN`), que ya no están en el mapa.
+  if (!Array.isArray(x.visited) || !x.visited.every((id: unknown) => typeof id === 'string' && (ids.has(id) || /^a\d+n\d+-\d+$|^n\d+-\d+$/.test(id)))) return 'visitados';
+  if (!Number.isInteger(x.act) || x.act < 0 || x.act >= CONFIG.expedition.acts || typeof x.actCleared !== 'boolean') return 'acto';
   if (x.status !== 'active') return 'estado';
   if (!isObj(x.wounds) || !CHAMPION_IDS.every((id) => isNum(x.wounds[id]) && x.wounds[id] >= 0 && x.wounds[id] <= CONFIG.expedition.wound.cap)) return 'heridas';
   if (!isNum(x.bonusHp) || x.bonusHp < 0) return 'vida extra';

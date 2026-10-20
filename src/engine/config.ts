@@ -29,6 +29,13 @@ export const CONFIG = {
     bossExtraIntentAt: 60,
   },
   expedition: {
+    /** Tres actos como en Slay the Spire, cada uno con su mapa y su jefe (Barón, Anciano, Viego). */
+    acts: 3,
+    /** Escalado de los enemigos y del oro por acto (índice = acto). */
+    actScaling: { hp: [1, 1.3, 1.6], attack: [1, 1.2, 1.4], gold: [1, 1.25, 1.5] },
+    /** Niebla con la que empieza cada acto; al cambiar de acto se cura toda la vida perdida y se calma algo de estrés. */
+    actStartMist: [0, 10, 20],
+    actCalm: 20,
     floors: 15,
     /** Piso (0-based) entero de tesoros, a mitad de mapa como en Slay the Spire. */
     chestFloor: 7,

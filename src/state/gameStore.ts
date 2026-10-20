@@ -5,7 +5,7 @@ import { cardOf, forcedTarget, playCard as enginePlayCard } from '../engine/card
 import { endTeamTurn } from '../engine/combat';
 import {
   claimCard as engineClaimCard, claimGear as engineClaimGear, claimPotion as engineClaimPotion, claimRewards, combatFromExpedition, createExpedition, encounterKind,
-  enterNode, finishCombat, rest as engineRest, retreat as engineRetreat, type Expedition, type ExpeditionRewards, type RestAction,
+  advanceAct, claimBossRelic as engineClaimBossRelic, enterNode, finishCombat, rest as engineRest, retreat as engineRetreat, type Expedition, type ExpeditionRewards, type RestAction,
 } from '../engine/expedition';
 import { equip as engineEquip, unequip as engineUnequip } from '../engine/gear';
 import { openChest, takeChestOffer as engineTakeChestOffer } from '../engine/chest';
@@ -39,6 +39,7 @@ export interface GameState {
   cardClaimed: boolean;
   potionClaimed: boolean;
   gearClaimed: boolean;
+  bossRelicClaimed: boolean;
   /** Progreso permanente: Esquirlas, mejoras, bestiario e historial. */
   meta: MetaState;
   /** Esquirlas ganadas por la expedición que acaba de terminar (null si no procede). */
@@ -65,7 +66,7 @@ type Snap = Map<string, { hp: number; block: number; stress: number }>;
 const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { hp: u.hp, block: u.block, stress: u.stress }]));
 
 const initial = (meta: MetaState, saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
-  screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false,
+  screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false, bossRelicClaimed: false,
   meta, lastShards: null, saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [],
 });
 
@@ -398,7 +399,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       const rewards = finishCombat(e, s, state.combatKind);
       if (!rewards) return emit({ screen: 'result', combat: null, hint: null });
       claimRewards(e, rewards);
-      emit({ screen: 'reward', combat: null, rewards, cardClaimed: false, potionClaimed: false, gearClaimed: false, hint: null, fx: [] });
+      emit({ screen: 'reward', combat: null, rewards, cardClaimed: false, potionClaimed: false, gearClaimed: false, bossRelicClaimed: false, hint: null, fx: [] });
       record('concludeCombat');
     },
     claimCard(defId: string | null) {
@@ -442,9 +443,23 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         fail((err as Error).message);
       }
     },
+    /** Elige la reliquia de jefe del botín (`null` = ninguna). */
+    claimBossRelic(id: string | null) {
+      const e = state.expedition;
+      if (!e || !state.rewards?.bossRelics) return;
+      if (state.bossRelicClaimed) return fail('Ya elegiste una reliquia de jefe');
+      try {
+        engineClaimBossRelic(e, state.rewards.bossRelics, id);
+        emit({ bossRelicClaimed: true, hint: null });
+        record('claimBossRelic', id);
+      } catch (err) {
+        fail((err as Error).message);
+      }
+    },
     finishRewards() {
       const e = state.expedition;
       if (!e) return;
+      if (e.actCleared) advanceAct(e); // jefe de un acto que no es el último: empieza el siguiente
       emit({ screen: e.status === 'victory' ? 'result' : 'map', rewards: null, combat: null, combatKind: null, hint: null });
     },
 

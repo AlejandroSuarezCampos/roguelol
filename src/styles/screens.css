@@ -248,3 +248,6 @@
 .gst.neg{color:var(--bad)}
 .gpass{font-size:12px;color:var(--gold);line-height:1.35}
 .gdraw{font-size:12px;color:var(--bad);font-weight:600;line-height:1.35}
+.bossrelics{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:stretch}
+.bossrelic{flex-direction:column;align-items:flex-start;text-align:left;max-width:260px;text-transform:none;letter-spacing:0;gap:4px;padding:10px 12px}
+.bossrelic small{font-weight:400;color:var(--ink2);font-size:12px;line-height:1.35}

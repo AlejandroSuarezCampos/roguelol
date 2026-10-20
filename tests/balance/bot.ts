@@ -5,7 +5,7 @@ import { living } from '../../src/engine/formation';
 import { Rng } from '../../src/engine/rng';
 import type { CardDef, CombatState, Unit } from '../../src/engine/types';
 import type { Expedition } from '../../src/engine/expedition';
-import { availableNodes, claimCard, claimGear, claimPotion, claimRewards, livingWounds, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
+import { advanceAct, availableNodes, claimBossRelic, claimCard, claimGear, claimPotion, claimRewards, livingWounds, combatFromExpedition, encounterKind, enterNode, finishCombat, rest } from '../../src/engine/expedition';
 import { openChest, takeChestOffer } from '../../src/engine/chest';
 import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events';
 import { compareGear, equip } from '../../src/engine/gear';
@@ -102,7 +102,7 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
     if (!options.length) break;
     const node = rng.pick(options);
     enterNode(e, node.id);
-    report.floorReached = node.floor;
+    report.floorReached = e.act * 15 + node.floor;
     const kind = encounterKind(node.type);
     drinkOnMap(e);
     if (kind) {
@@ -118,6 +118,8 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
           claimGear(e, bestGear(e, rewards.gear));
           equipBest(e);
         }
+        if (rewards.bossRelics?.length) claimBossRelic(e, rewards.bossRelics, rng.pick(rewards.bossRelics));
+        if (e.actCleared) advanceAct(e);
       }
     } else if (node.type === 'shop') {
       visitShop(e, rng);

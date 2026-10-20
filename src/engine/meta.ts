@@ -1,6 +1,6 @@
 import { GEAR } from '../data/gear';
 import { UNLOCKS, UNLOCK_BY_ID, type RunSetup } from '../data/unlocks';
-import type { Expedition } from './expedition';
+import { floorReached, type Expedition } from './expedition';
 import type { ChampionId } from './types';
 import { CONFIG } from './config';
 import { MAX_ASCENSION } from '../data/ascension';
@@ -65,8 +65,7 @@ export function recordRun(meta: MetaState, e: Expedition): { shards: number } {
   h.combatsWon += e.stats.combats;
   h.deaths += e.dead.length;
   if (e.status === 'victory' && e.ascension >= meta.maxAscension && meta.maxAscension < MAX_ASCENSION) meta.maxAscension = e.ascension + 1;
-  const floors = e.visited.map((id) => e.map.nodes.find((n) => n.id === id)!.floor + 1);
-  h.bestFloor = Math.max(h.bestFloor, ...floors, 0);
+  h.bestFloor = Math.max(h.bestFloor, floorReached(e));
   for (const [id, c] of Object.entries(e.encounters)) {
     const b = (meta.bestiary[id] ??= { seen: 0, defeated: 0 });
     b.seen += c.seen;

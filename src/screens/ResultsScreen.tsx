@@ -3,6 +3,7 @@ import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { HpBar } from '../components/Meters';
 import { CHAMPIONS } from '../data/champions';
+import { CONFIG } from '../engine/config';
 import { game, useGame } from '../state/gameStore';
 
 const BANNER = {
@@ -62,6 +63,7 @@ export function ResultsScreen() {
             <Icon name="book" /> Estadísticas
           </h3>
           <dl className="stats">
+            <dt>Acto alcanzado</dt><dd>{e.act + 1} de {CONFIG.expedition.acts}</dd>
             <dt>Nodos recorridos</dt><dd>{floors}</dd>
             <dt>Combates ganados</dt><dd>{e.stats.combats}</dd>
             <dt>Élites vencidas</dt><dd>{e.stats.elites}</dd>

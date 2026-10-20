@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { GearItem } from '../components/GearItem';
 import { RelicList } from '../components/RelicBar';
 import { CARDS } from '../data/cards';
+import { RELICS } from '../data/relics';
 import { CHAMPIONS } from '../data/champions';
 import { compareGear, freeSlot } from '../engine/gear';
 import { CONFIG } from '../engine/config';
@@ -14,7 +15,7 @@ import { statLines } from '../ui/format';
 
 /** Botín en un único panel, como Slay the Spire: oro, carta (elige 1 de N o salta) y poción. */
 export function RewardScreen() {
-  const { expedition: e, rewards: r, cardClaimed, potionClaimed, gearClaimed, hint, combatKind } = useGame();
+  const { expedition: e, rewards: r, cardClaimed, potionClaimed, gearClaimed, bossRelicClaimed, hint, combatKind } = useGame();
   const [choosing, setChoosing] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const [choosingGear, setChoosingGear] = useState(false);
@@ -22,10 +23,11 @@ export function RewardScreen() {
   if (!e || !r) return null;
   const potion = r.potion ? POTIONS[r.potion] : null;
   const beltFull = !e.run.belt.includes(null);
-  const last = combatKind === 'boss';
+  const boss = combatKind === 'boss';
+  const last = e.status === 'victory';
   return (
     <div className="screen reward scene-bg">
-      <Hud icon="chest" title="Botín" subtitle={last ? 'Jefe vencido' : 'Combate ganado'} e={e} />
+      <Hud icon="chest" title="Botín" subtitle={boss ? 'Jefe vencido' : 'Combate ganado'} e={e} />
       <div className="reward-body">
         <section className="panel rewardlist">
           <h3>
@@ -47,6 +49,26 @@ export function RewardScreen() {
                   {r.relicNotes?.map((n, i) => <p key={i} className="sub">{n}</p>)}
                 </div>
                 <span className="tag ok">Recogida</span>
+              </li>
+            ) : null}
+            {r.bossRelics?.length ? (
+              <li className={bossRelicClaimed ? 'done' : ''}>
+                <Icon name="relic" />
+                <div className="grow">
+                  <b>Reliquia de jefe</b> <small className="sub">elige 1 de {r.bossRelics.length} (o salta)</small>
+                  {!bossRelicClaimed && (
+                    <div className="bossrelics">
+                      {r.bossRelics.map((id) => (
+                        <button key={id} className="btn bossrelic" onClick={() => game.claimBossRelic(id)}>
+                          <b>{RELICS[id].name}</b>
+                          <small>{RELICS[id].text}</small>
+                        </button>
+                      ))}
+                      <button className="btn sm" onClick={() => game.claimBossRelic(null)}>Saltar</button>
+                    </div>
+                  )}
+                </div>
+                {bossRelicClaimed && <span className="tag ok">Elegida</span>}
               </li>
             ) : null}
             {r.gear && (
@@ -80,7 +102,7 @@ export function RewardScreen() {
           {(!cardClaimed || (r.gear && !gearClaimed)) && <p className="warnbox"><Icon name="warn" /> <span>Si continúas sin elegir, pierdes lo que dejes sin recoger.</span></p>}
           <div className="row end">
             <button className="btn pri" onClick={() => game.finishRewards()}>
-              {last ? 'Ver resultado' : 'Continuar'}
+              {last ? 'Ver resultado' : e.actCleared ? `Ir al acto ${e.act + 2}` : 'Continuar'}
             </button>
           </div>
         </section>

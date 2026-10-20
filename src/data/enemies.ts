@@ -28,7 +28,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     script: [{ kind: 'block', amount: 50 }, { kind: 'attack', amount: 52, target: 1 }, { kind: 'stress', amount: 12, target: 2 }] },
   drake_air: { id: 'drake_air', name: 'Dragón de nube', maxHp: 165, idealPositions: [3, 4], positionBonus: 3, stats: { armor: 15, mr: 15 },
     script: [{ kind: 'attack', amount: 30, target: 1 }, { kind: 'attack', amount: 30, target: 4 }, { kind: 'attack', amount: 28, target: 2, crit: true }, { kind: 'stress', amount: 8, target: 3 }] },
-  // Jefes: Viego, el Dragón anciano y el Barón Nashor (dónde va cada uno, por decidir; de momento se sortean).
+  // Jefes de los actos 1, 2 y 3: el Barón Nashor, el Dragón anciano y Viego.
   elder: { id: 'elder', name: 'Dragón anciano', maxHp: 350, stats: { armor: 25, mr: 30 },
     script: [{ kind: 'attack', amount: 52, target: 1, damageType: 'magic' }, { kind: 'stress', amount: 18, target: 2 }, { kind: 'block', amount: 50 }, { kind: 'attack', amount: 46, target: 2, crit: true }] },
   baron: { id: 'baron', name: 'Barón Nashor', maxHp: 360, idealPositions: [1], positionBonus: 5, stats: { armor: 30, mr: 30 },
@@ -51,10 +51,11 @@ export const ENCOUNTERS: Record<EncounterKind, EncounterEnemy[][]> = {
     [{ defId: 'drake_earth', pos: 1 }],
     [{ defId: 'drake_air', pos: 2 }, { defId: 'scuttler', pos: 4 }],
   ],
+  /** Un jefe por acto, en orden: Barón Nashor, Dragón anciano y Viego. */
   boss: [
-    [{ defId: 'viego', pos: 1 }, { defId: 'scuttler', pos: 4 }],
-    [{ defId: 'elder', pos: 1 }, { defId: 'scuttler', pos: 3 }],
     [{ defId: 'baron', pos: 1 }, { defId: 'scuttler', pos: 4 }],
+    [{ defId: 'elder', pos: 1 }, { defId: 'scuttler', pos: 3 }],
+    [{ defId: 'viego', pos: 1 }, { defId: 'scuttler', pos: 4 }],
   ],
 };
 

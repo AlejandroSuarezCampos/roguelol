@@ -57,7 +57,7 @@ export function ExpeditionMapScreen() {
     n.id === e.currentId ? 'current' : e.visited.includes(n.id) ? 'visited' : avail.has(n.id) ? 'available' : 'locked';
   const sel = picked && avail.has(picked) ? e.map.nodes.find((n) => n.id === picked)! : null;
   const prev = sel ? previewNode(e.run, sel.type) : null;
-  const floorLabel = currentFloor < 0 ? 'Entrada' : `Piso ${currentFloor + 1} de ${CONFIG.expedition.floors}`;
+  const floorLabel = `Acto ${e.act + 1} de ${CONFIG.expedition.acts} · ${currentFloor < 0 ? 'Entrada' : `Piso ${currentFloor + 1} de ${CONFIG.expedition.floors}`}`;
 
   return (
     <div className="screen mapscreen">
