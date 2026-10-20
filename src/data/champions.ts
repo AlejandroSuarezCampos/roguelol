@@ -6,9 +6,14 @@ export const CRISIS: Record<ChampionId, CrisisKind> = {
   yasuo: 'selfish',
   lux: 'panic',
   soraka: 'despair',
+  lulu: 'panic',
 };
 
-export const CHAMPION_IDS: ChampionId[] = ['leona', 'yasuo', 'lux', 'soraka'];
+/** Todos los campeones del juego. Una expedición lleva 4 (`Expedition.party`). */
+export const CHAMPION_IDS: ChampionId[] = ['leona', 'yasuo', 'lux', 'soraka', 'lulu'];
+/** Equipo por defecto (los 4 disponibles desde el principio). Lulu se desbloquea con Esquirlas. */
+export const DEFAULT_PARTY: ChampionId[] = ['leona', 'yasuo', 'lux', 'soraka'];
+export const PARTY_SIZE = 4;
 
 export interface ChampionDef {
   id: ChampionId;
@@ -38,5 +43,7 @@ export const CHAMPIONS: Record<ChampionId, ChampionDef> = {
     color: '#f4e58a', bg: '#4a3a9c', stats: { ap: 70, mr: 15 }, ddragon: 'Lux' },
   soraka: { id: 'soraka', name: 'Soraka', role: 'Curación / Apoyo', traits: ['Curación', 'Estrés'], maxHp: 50, startPos: 4, sweetSpot: [3, 4],
     color: '#c9a3ff', bg: '#2c2a6e', stats: { ap: 50, mr: 20 }, ddragon: 'Soraka' },
+  lulu: { id: 'lulu', name: 'Lulu', role: 'Apoyo / Control', traits: ['Vulnerable', 'Protección', 'Robo de cartas'], maxHp: 48, startPos: 3, sweetSpot: [3, 4],
+    color: '#d9a6ff', bg: '#4a2a6e', stats: { ap: 60, mr: 15 }, ddragon: 'Lulu' },
 };
 

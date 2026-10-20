@@ -1,7 +1,7 @@
 import { CARD_LIST, CARDS, STARTER_DECK, baseCardId, deckCardDef, isUpgradedId, upgradedId } from '../data/cards';
 import { GEAR, GEAR_LIST } from '../data/gear';
 import { ascensionMods, type AscensionMods } from '../data/ascension';
-import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
+import { CHAMPION_IDS, CHAMPIONS, CRISIS, DEFAULT_PARTY, PARTY_SIZE } from '../data/champions';
 import { BASE_GOLD, ENCOUNTERS, ENEMIES, type EncounterKind } from '../data/enemies';
 import { alliesAfter, startCombat } from './combat';
 import { CONFIG } from './config';
@@ -16,7 +16,7 @@ import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
 import type { ChestState } from './chest';
 import type { ShopState } from './shop';
-import type { ChampionId, CombatState, EnemyDef, PotionId } from './types';
+import type { ChampionId, CombatState, EnemyDef, Pos, PotionId } from './types';
 
 export interface MapNode {
   id: string;
@@ -46,6 +46,8 @@ export interface Expedition {
   seed: number;
   /** Nivel de Ascensión (0 = sin Ascensión). Sus modificadores salen de `modsOf`. */
   ascension: number;
+  /** Los 4 campeones con los que empezó la expedición (vivos o muertos). */
+  party: ChampionId[];
   /** Campeones muertos para siempre (Ascensión 10). Ya no están en `run.champions`. */
   dead: ChampionId[];
   run: RunState;
@@ -177,17 +179,22 @@ export const modsOf = (e: Pick<Expedition, 'ascension'>): AscensionMods => ascen
 
 export function createExpedition(seed: number, ascension = 0, setup: RunSetup = OPEN_SETUP): Expedition {
   const mods = ascensionMods(ascension);
-  const champions: RunChampion[] = CHAMPION_IDS.map((id) => ({
-    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp, maxHp: CHAMPIONS[id].maxHp, stress: mods.startStress, downed: false,
+  const party = setup.party ?? DEFAULT_PARTY;
+  if (party.length !== PARTY_SIZE || new Set(party).size !== PARTY_SIZE || !party.every((id) => CHAMPION_IDS.includes(id)))
+    throw new Error(`El equipo debe tener ${PARTY_SIZE} campeones distintos`);
+  // Posiciones 1–4 por orden de posición de partida de cada campeón (con el equipo de siempre, Leona 1 … Soraka 4).
+  const ordered = [...party].sort((a, b) => CHAMPIONS[a].startPos - CHAMPIONS[b].startPos || CHAMPION_IDS.indexOf(a) - CHAMPION_IDS.indexOf(b));
+  const champions: RunChampion[] = ordered.map((id, i) => ({
+    id, name: CHAMPIONS[id].name, pos: (i + 1) as Pos, hp: CHAMPIONS[id].maxHp, maxHp: CHAMPIONS[id].maxHp, stress: mods.startStress, downed: false,
   }));
   const run = createRun(seed, champions);
-  const deck = [...STARTER_DECK];
+  const deck = STARTER_DECK.filter((id) => party.includes(CARDS[id].owner));
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
   const map = generateMap(mapRng(seed, 0), mods.restWeight, mods.eliteWeight, 0);
   const e: Expedition = {
-    bonusHp: 0, locked: { cards: [...setup.locked.cards], relics: [...setup.locked.relics] }, recorded: false, encounters: {}, seed, ascension, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
+    bonusHp: 0, locked: { cards: [...setup.locked.cards], relics: [...setup.locked.relics] }, recorded: false, encounters: {}, seed, ascension, party: [...party], dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
     act: 0, actCleared: false, gear: emptyGear(), spentGear: [], inventory: [], inCombat: false,
-    wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
+    wounds: Object.fromEntries(CHAMPION_IDS.map((id) => [id, 0])) as Record<ChampionId, number>, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
   // Objetos iniciales elegidos en el menú: se equipan en el primer hueco (y suben la vida si dan vida).
   for (const [id, gearId] of Object.entries(setup.starters) as [ChampionId, string][]) {

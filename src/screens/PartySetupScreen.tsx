@@ -2,18 +2,30 @@ import { ChampionPortrait } from '../components/ChampionPortrait';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { HpBar, StressMeter } from '../components/Meters';
-import { CHAMPIONS } from '../data/champions';
+import { useState } from 'react';
+import { CHAMPIONS, CHAMPION_IDS, PARTY_SIZE } from '../data/champions';
+import { championAvailable } from '../engine/meta';
 import { CRISIS_INFO, OMEN_INFO } from '../data/glossary';
 import { CRISIS } from '../data/champions';
 import { ASCENSION_LEVELS } from '../data/ascension';
 import { CONFIG } from '../engine/config';
 import { modsOf } from '../engine/expedition';
-import type { Pos } from '../engine/types';
+import type { ChampionId, Pos } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
 
 export function PartySetupScreen() {
-  const { expedition: e, meta } = useGame();
+  const { expedition: e, meta, hint } = useGame();
+  const [draft, setDraft] = useState<ChampionId[] | null>(null);
   if (!e) return null;
+  const available = CHAMPION_IDS.filter((id) => championAvailable(meta, id));
+  const picked = draft ?? e.party;
+  const toggle = (id: ChampionId) => {
+    const next = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
+    if (next.length === PARTY_SIZE) {
+      setDraft(null);
+      game.setParty(next);
+    } else setDraft(next.length > PARTY_SIZE ? picked : next);
+  };
   const order = [...e.run.champions].sort((a, b) => b.pos - a.pos); // 4 → 1: el frente mira al centro
   const omen = OMEN_INFO[e.run.omen];
   return (
@@ -32,6 +44,17 @@ export function PartySetupScreen() {
           <h3>
             <Icon name="team" /> Orden de combate
           </h3>
+          {available.length > PARTY_SIZE && (
+            <div className="partypick" role="group" aria-label="Campeones de la expedición">
+              <small className="sub">Elige {PARTY_SIZE} campeones ({picked.length}/{PARTY_SIZE}):</small>
+              {available.map((id) => (
+                <button key={id} className={`btn sm ${picked.includes(id) ? 'pri' : ''}`} aria-pressed={picked.includes(id)} onClick={() => toggle(id)}>
+                  {CHAMPIONS[id].name}
+                </button>
+              ))}
+              {hint && <small className="hint-msg" role="status">{hint}</small>}
+            </div>
+          )}
           <p className="sub">Reordena libremente y gratis. Las cartas ganan su bonus en el punto fuerte de cada campeón.</p>
           <div className="lineup" role="list">
             {order.map((c, i) => {

@@ -1,5 +1,5 @@
 import { GEAR } from '../data/gear';
-import { CHAMPIONS } from '../data/champions';
+import { CHAMPIONS, CHAMPION_IDS } from '../data/champions';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
 import { getFinalStats } from './stats';
@@ -9,7 +9,7 @@ import type { ChampionId, StatBlock } from './types';
 export type ChampionGear = (string | null)[];
 
 const noItems = (): ChampionGear => Array.from({ length: CONFIG.gear.slots }, () => null);
-export const emptyGear = (): Record<ChampionId, ChampionGear> => ({ leona: noItems(), yasuo: noItems(), lux: noItems(), soraka: noItems() });
+export const emptyGear = (): Record<ChampionId, ChampionGear> => Object.fromEntries(CHAMPION_IDS.map((id) => [id, noItems()])) as Record<ChampionId, ChampionGear>;
 
 const equipped = (e: Expedition, id: ChampionId) => e.gear[id].filter((g): g is string => !!g).map((g) => GEAR[g]);
 

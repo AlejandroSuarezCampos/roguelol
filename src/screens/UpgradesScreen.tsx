@@ -4,13 +4,29 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { GearItem } from '../components/GearItem';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
+import { ChampionPortrait } from '../components/ChampionPortrait';
 import { CARDS } from '../data/cards';
+import { CHAMPIONS } from '../data/champions';
+import type { ChampionId } from '../engine/types';
 import { GEAR } from '../data/gear';
 import { RELICS, RELIC_RARITY_LABEL } from '../data/relics';
 import { UNLOCKS, UNLOCK_KIND_LABEL, type UnlockDef, type UnlockKind } from '../data/unlocks';
 import { game, useGame } from '../state/gameStore';
 
 function Content({ u }: { u: UnlockDef }) {
+  if (u.kind === 'champion') {
+    const c = CHAMPIONS[u.ref as ChampionId];
+    return (
+      <div className="row">
+        <ChampionPortrait id={c.id} className="mini" />
+        <div className="col">
+          <b>{c.name}</b>
+          <small className="sub">{c.role} · {c.traits.join(' · ')}</small>
+          <small className="sub">Se añade a los campeones que puedes llevar (eliges 4 en la preparación).</small>
+        </div>
+      </div>
+    );
+  }
   if (u.kind === 'starter') return <GearItem id={u.ref} />;
   if (u.kind === 'card') return <Card card={CARDS[u.ref]} cost={CARDS[u.ref].cost} />;
   const r = RELICS[u.ref];
@@ -23,7 +39,8 @@ function Content({ u }: { u: UnlockDef }) {
   );
 }
 
-const nameOf = (u: UnlockDef) => (u.kind === 'card' ? CARDS[u.ref].name : u.kind === 'relic' ? RELICS[u.ref].name : GEAR[u.ref].name);
+const nameOf = (u: UnlockDef) =>
+  u.kind === 'champion' ? CHAMPIONS[u.ref as ChampionId].name : u.kind === 'card' ? CARDS[u.ref].name : u.kind === 'relic' ? RELICS[u.ref].name : GEAR[u.ref].name;
 
 /** Desbloqueos permanentes: se compran con Esquirlas. Los objetos iniciales se eligen luego en Equipo. */
 export function UpgradesScreen() {
@@ -44,7 +61,7 @@ export function UpgradesScreen() {
           Las Esquirlas se ganan al terminar cada expedición (ganes o pierdas). Desbloquean contenido nuevo, no estadísticas. Los objetos iniciales
           desbloqueados se eligen para cada campeón en Equipo.
         </p>
-        {(['starter', 'card', 'relic'] as UnlockKind[]).map((kind) => (
+        {(['champion', 'starter', 'card', 'relic'] as UnlockKind[]).map((kind) => (
           <section key={kind}>
             <h3 className="fd">{UNLOCK_KIND_LABEL[kind]}</h3>
             <div className="perklist">

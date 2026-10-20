@@ -15,7 +15,7 @@ import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions'
 import { reorder } from '../engine/run';
 import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, buyRelic as engineBuyRelic, openShop, removeCard as engineRemoveCard } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
-import { buyUnlock as engineBuyUnlock, newMeta, recordRun, setStarter as engineSetStarter, setupFor, type MetaState } from '../engine/meta';
+import { buyUnlock as engineBuyUnlock, newMeta, recordRun, setParty as engineSetParty, setStarter as engineSetStarter, setupFor, type MetaState } from '../engine/meta';
 import { createMetaManager, type MetaManager } from '../save/metaManager';
 import { browserStorage, cloneExpedition, createSaveManager, type JournalEntry, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
@@ -203,6 +203,18 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       const fresh = createExpedition(e.seed, level, setupFor(meta));
       for (const [id, pos] of order) fresh.run.champions.find((c) => c.id === id)!.pos = pos;
       emit({ expedition: fresh });
+    },
+    /** Cambia el equipo en la preparación (4 de los campeones disponibles). Se recuerda para la próxima expedición. */
+    setParty(party: ChampionId[]) {
+      const e = state.expedition;
+      if (!e || state.screen !== 'prep') return;
+      try {
+        engineSetParty(meta, party);
+        metaStore?.save(meta);
+        emit({ expedition: createExpedition(e.seed, e.ascension, setupFor(meta)), hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
     },
     /** Retoma la expedición guardada en el mapa. Un guardado dañado se descarta con un aviso. */
     continueExpedition() {

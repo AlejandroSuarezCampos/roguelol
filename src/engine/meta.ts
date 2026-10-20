@@ -1,3 +1,4 @@
+import { CHAMPION_IDS, DEFAULT_PARTY, PARTY_SIZE } from '../data/champions';
 import { GEAR } from '../data/gear';
 import { UNLOCKS, UNLOCK_BY_ID, type RunSetup } from '../data/unlocks';
 import { floorReached, type Expedition } from './expedition';
@@ -25,6 +26,8 @@ export interface MetaState {
   unlocked: string[];
   /** Objeto inicial elegido para cada campeón (debe estar desbloqueado). */
   loadout: Partial<Record<ChampionId, string>>;
+  /** Último equipo elegido (4 campeones disponibles). */
+  party: ChampionId[];
   bestiary: Record<string, { seen: number; defeated: number }>;
   history: MetaHistory;
 }
@@ -34,6 +37,7 @@ export const newMeta = (): MetaState => ({
   maxAscension: 0,
   unlocked: [],
   loadout: {},
+  party: [...DEFAULT_PARTY],
   bestiary: {},
   history: { runs: 0, victories: 0, defeats: 0, retreats: 0, bestFloor: 0, combatsWon: 0, deaths: 0 },
 });
@@ -95,8 +99,24 @@ export function setStarter(meta: MetaState, champion: ChampionId, gearId: string
   meta.loadout[champion] = gearId;
 }
 
-/** Lo que el progreso aporta a una expedición nueva: lo que sigue bloqueado y los objetos iniciales elegidos. */
+/** Un campeón está disponible si no tiene desbloqueo o si ya se compró. */
+export const championAvailable = (meta: MetaState, id: ChampionId): boolean => {
+  const u = UNLOCKS.find((x) => x.kind === 'champion' && x.ref === id);
+  return !u || meta.unlocked.includes(u.id);
+};
+
+/** Elige el equipo de la próxima expedición: 4 campeones distintos y disponibles. */
+export function setParty(meta: MetaState, party: ChampionId[]): void {
+  if (party.length !== PARTY_SIZE || new Set(party).size !== PARTY_SIZE) throw new Error(`Elige ${PARTY_SIZE} campeones distintos`);
+  if (!party.every((id) => CHAMPION_IDS.includes(id))) throw new Error('Campeón desconocido');
+  const locked = party.find((id) => !championAvailable(meta, id));
+  if (locked) throw new Error('Ese campeón aún está bloqueado');
+  meta.party = [...party];
+}
+
+/** Lo que el progreso aporta a una expedición nueva: equipo, lo que sigue bloqueado y los objetos iniciales elegidos. */
 export function setupFor(meta: MetaState): RunSetup {
   const lockedOf = (kind: 'card' | 'relic') => UNLOCKS.filter((u) => u.kind === kind && !meta.unlocked.includes(u.id)).map((u) => u.ref);
-  return { locked: { cards: lockedOf('card'), relics: lockedOf('relic') }, starters: { ...meta.loadout } };
+  const party = meta.party.length === PARTY_SIZE && meta.party.every((id) => championAvailable(meta, id)) ? meta.party : DEFAULT_PARTY;
+  return { locked: { cards: lockedOf('card'), relics: lockedOf('relic') }, starters: { ...meta.loadout }, party: [...party] };
 }

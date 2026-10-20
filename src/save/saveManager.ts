@@ -70,11 +70,13 @@ function problem(x: any): string | null {
   if (!Array.isArray(r.belt) || r.belt.length !== CONFIG.potions.beltSize) return 'cinturón';
   for (const p of r.belt) if (p !== null && !(isObj(p) && p.id in POTIONS && typeof p.spent === 'boolean')) return 'poción';
   const champs = r.champions;
-  if (!Array.isArray(champs) || champs.length < 1 || champs.length > CHAMPION_IDS.length) return 'campeones';
+  if (!Array.isArray(x.party) || x.party.length !== 4 || new Set(x.party).size !== 4 || !x.party.every((id: unknown) => CHAMPION_IDS.includes(id as never))) return 'equipo';
+  if (!Array.isArray(champs) || champs.length < 1 || champs.length > x.party.length) return 'campeones';
   if (!isAscension(x.ascension)) return 'Ascensión';
   if (!isNum(x.seed)) return 'semilla';
-  if (!Array.isArray(x.dead) || !x.dead.every((id: unknown) => CHAMPION_IDS.includes(id as never))) return 'muertos';
-  if (new Set([...champs.map((c: any) => c?.id), ...x.dead]).size !== CHAMPION_IDS.length || champs.length + x.dead.length !== CHAMPION_IDS.length) return 'campeones vivos y muertos';
+  if (!Array.isArray(x.dead) || !x.dead.every((id: unknown) => x.party.includes(id))) return 'muertos';
+  const all = new Set([...champs.map((c: any) => c?.id), ...x.dead]);
+  if (all.size !== x.party.length || champs.length + x.dead.length !== x.party.length || !x.party.every((id: string) => all.has(id))) return 'campeones vivos y muertos';
   if (x.dead.length && !ascensionMods(x.ascension).permadeath) return 'muertos sin muerte permanente';
   if (new Set(champs.map((c: any) => c?.id)).size !== champs.length || !champs.every((c: any) => CHAMPION_IDS.includes(c?.id))) return 'campeón repetido o desconocido';
   if (new Set(champs.map((c: any) => c.pos)).size !== champs.length || !champs.every((c: any) => [1, 2, 3, 4].includes(c.pos))) return 'posiciones';

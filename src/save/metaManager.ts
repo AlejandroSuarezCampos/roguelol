@@ -18,6 +18,7 @@ function problem(m: any): string | null {
   if (!Array.isArray(m.unlocked) || !m.unlocked.every((id: unknown) => typeof id === 'string' && id in UNLOCK_BY_ID) || new Set(m.unlocked).size !== m.unlocked.length) return 'desbloqueos';
   if (!isObj(m.loadout) || !Object.entries(m.loadout).every(([c, g]) => CHAMPION_IDS.includes(c as never) && typeof g === 'string' && GEAR[g]?.starter && m.unlocked.includes(`starter:${g}`)))
     return 'objetos iniciales';
+  if (!Array.isArray(m.party) || m.party.length !== 4 || !m.party.every((id: unknown) => CHAMPION_IDS.includes(id as never)) || new Set(m.party).size !== 4) return 'equipo';
   if (!isObj(m.bestiary) || !Object.values(m.bestiary).every((b: any) => isObj(b) && isNum(b.seen) && isNum(b.defeated))) return 'bestiario';
   const keys = ['runs', 'victories', 'defeats', 'retreats', 'bestFloor', 'combatsWon', 'deaths'];
   if (!isObj(m.history) || !keys.every((k) => isNum(m.history[k]))) return 'historial';
@@ -35,7 +36,7 @@ function migrateV1(m: any): any {
   const { nightmareDeaths, ...history } = isObj(m.history) ? m.history : ({} as any);
   const { perks, ...rest } = m;
   const refund = Object.entries(V1_PERK_COSTS).reduce((a, [id, costs]) => a + costs.slice(0, isObj(perks) && Number.isInteger(perks[id]) ? perks[id] : 0).reduce((x, y) => x + y, 0), 0);
-  return { ...rest, shards: (isNum(m.shards) ? m.shards : 0) + refund, maxAscension: 0, unlocked: [], loadout: {}, history: { ...history, deaths: nightmareDeaths ?? 0 } };
+  return { ...rest, shards: (isNum(m.shards) ? m.shards : 0) + refund, maxAscension: 0, unlocked: [], loadout: {}, party: ['leona', 'yasuo', 'lux', 'soraka'], history: { ...history, deaths: nightmareDeaths ?? 0 } };
 }
 
 /** Guardado del progreso permanente (Esquirlas, desbloqueos, Ascensión, archivo). Nunca lanza; un guardado dañado se aparta con copia. */

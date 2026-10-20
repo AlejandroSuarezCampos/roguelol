@@ -206,3 +206,32 @@ describe('recordRun', () => {
     expect(m.history).toMatchObject({ defeats: 1, deaths: 2 });
   });
 });
+
+describe('Lulu y el equipo de 4', () => {
+  it('Lulu empieza bloqueada; desbloqueada, se puede llevar en lugar de otro campeón', async () => {
+    const { championAvailable, setParty } = await import('../../src/engine/meta');
+    const m = newMeta();
+    expect(championAvailable(m, 'lulu')).toBe(false);
+    expect(() => setParty(m, ['leona', 'yasuo', 'lux', 'lulu'])).toThrow(/bloqueado/);
+    m.unlocked.push('champion:lulu');
+    setParty(m, ['leona', 'yasuo', 'lux', 'lulu']);
+    expect(() => setParty(m, ['leona', 'yasuo', 'lux'])).toThrow(/4/);
+    const e = createExpedition(5, 0, setupFor(m));
+    expect(e.party).toEqual(['leona', 'yasuo', 'lux', 'lulu']);
+    expect(e.run.champions.map((c) => [c.id, c.pos])).toEqual([['leona', 1], ['yasuo', 2], ['lux', 3], ['lulu', 4]]);
+    expect(e.deck).toHaveLength(20);
+    expect(e.deck.some((id) => CARDS[id].owner === 'soraka')).toBe(false);
+    expect(e.deck.filter((id) => CARDS[id].owner === 'lulu')).toHaveLength(5);
+  });
+
+  it('con un equipo guardado que ya no es válido se usa el de siempre', () => {
+    const m = newMeta();
+    m.party = ['leona', 'yasuo', 'lux', 'lulu']; // Lulu sin desbloquear
+    expect(setupFor(m).party).toEqual(['leona', 'yasuo', 'lux', 'soraka']);
+  });
+
+  it('las cartas de Lulu solo salen si va en el equipo', async () => {
+    const { cardPool } = await import('../../src/engine/expedition');
+    expect(cardPool(createExpedition(5)).some((c) => c.owner === 'lulu')).toBe(false);
+  });
+});

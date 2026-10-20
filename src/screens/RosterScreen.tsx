@@ -7,6 +7,7 @@ import { CARD_LIST, applyUpgrade } from '../data/cards';
 import { CHAMPIONS, CHAMPION_IDS, CRISIS } from '../data/champions';
 import { CRISIS_INFO } from '../data/glossary';
 import { GEAR_LIST } from '../data/gear';
+import { championAvailable } from '../engine/meta';
 import { GearItem } from '../components/GearItem';
 import { DEFAULT_STATS } from '../engine/stats';
 import type { ChampionId, StatBlock } from '../engine/types';
@@ -38,7 +39,7 @@ export function RosterScreen() {
               <ChampionPortrait id={id} className="mini" />
               <span className="tinfo">
                 <b>{CHAMPIONS[id].name}</b>
-                <small className="sub">{CHAMPIONS[id].role}</small>
+                <small className="sub">{championAvailable(meta, id) ? CHAMPIONS[id].role : 'Bloqueado: se desbloquea en Desbloqueos'}</small>
               </span>
             </button>
           ))}

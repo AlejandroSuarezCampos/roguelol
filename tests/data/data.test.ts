@@ -4,9 +4,9 @@ import { CHAMPION_IDS, CHAMPIONS } from '../../src/data/champions';
 import { ENCOUNTERS, ENEMIES } from '../../src/data/enemies';
 
 describe('cartas', () => {
-  it('hay 32 cartas con ids únicos, 8 por campeón', () => {
-    expect(CARD_LIST).toHaveLength(32);
-    expect(new Set(CARD_LIST.map((c) => c.id)).size).toBe(32);
+  it('hay 8 cartas por campeón con ids únicos', () => {
+    expect(CARD_LIST).toHaveLength(8 * CHAMPION_IDS.length);
+    expect(new Set(CARD_LIST.map((c) => c.id)).size).toBe(CARD_LIST.length);
     for (const id of CHAMPION_IDS) expect(CARD_LIST.filter((c) => c.owner === id)).toHaveLength(8);
   });
 
@@ -32,7 +32,7 @@ describe('cartas', () => {
 
 describe('mazo inicial', () => {
   it('son 5 cartas por campeón y todas existen', () => {
-    expect(STARTER_DECK).toHaveLength(20);
+    expect(STARTER_DECK).toHaveLength(5 * CHAMPION_IDS.length);
     for (const id of STARTER_DECK) expect(CARDS[id], id).toBeDefined();
     for (const champ of CHAMPION_IDS) expect(STARTER_DECK.filter((id) => CARDS[id].owner === champ)).toHaveLength(5);
   });

@@ -153,6 +153,7 @@ const WEIGHTS: Record<ChampionId, Record<string, number>> = {
   yasuo: { ad: 1, critChance: 60, critDamage: 30, penetration: 0.6, hp: 0.2 },
   lux: { ap: 1, hp: 0.2, mr: 0.3 },
   soraka: { ap: 0.7, hp: 0.4, mr: 0.4 },
+  lulu: { ap: 0.8, hp: 0.3, mr: 0.4 },
 };
 
 function gearScore(e: Expedition, champ: ChampionId, gearId: string): number {

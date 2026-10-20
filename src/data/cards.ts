@@ -1,7 +1,7 @@
 import type { CardDef, CardUpgrade, Effect } from '../engine/types';
 
 /**
- * 32 cartas provisionales (8 por campeón).
+ * Cartas provisionales (8 por campeón).
  * Números provisionales: se afinan con tests/balance. Los textos deben coincidir con los efectos.
  */
 const phys = (amount: number, over: Partial<Extract<Effect, { type: 'damage' }>> = {}): Effect => ({
@@ -91,6 +91,24 @@ const BASE_CARDS: CardDef[] = [
     effects: [{ type: 'damage', amount: 4, damageType: 'true', on: 'self' }, { type: 'draw', amount: 2 }] },
   { id: 's8', name: 'Renacer', owner: 'soraka', cost: 3, type: 'support', target: 'ally', rarity: 'epic', keywords: [],
     text: 'Reanima a un aliado derribado con 20 de vida.', effects: [{ type: 'revive', hp: 20 }] },
+
+  // ——— Lulu: apoyo y control con Pix, brilla en 3–4 ———
+  { id: 'u1', name: 'Lanza brillante', owner: 'lulu', cost: 1, type: 'attack', target: 'enemy', rarity: 'common', keywords: [],
+    text: 'Inflige 5. Desde 3–4: aplica 1 Vulnerable.', effects: [magic(5)], idealPositions: [3, 4], positionBonus: [status('vulnerable', 1)] },
+  { id: 'u2', name: '¡Ayuda, Pix!', owner: 'lulu', cost: 1, type: 'defense', target: 'ally', rarity: 'common', keywords: ['block'],
+    text: 'Otorga 6 de bloqueo.', effects: [block(6)] },
+  { id: 'u3', name: 'Capricho', owner: 'lulu', cost: 2, type: 'control', target: 'enemy', rarity: 'rare', keywords: [],
+    text: 'Transforma al objetivo: Aturdido y 1 Vulnerable.', effects: [status('stun', 1), status('vulnerable', 1)] },
+  { id: 'u4', name: 'Capricho veloz', owner: 'lulu', cost: 1, type: 'support', target: 'ally', rarity: 'common', keywords: ['block'],
+    text: 'Otorga 4 de bloqueo. Roba 1 carta.', effects: [block(4), { type: 'draw', amount: 1 }] },
+  { id: 'u5', name: 'Pix, compañero hada', owner: 'lulu', cost: 0, type: 'attack', target: 'enemy', rarity: 'common', keywords: [],
+    text: 'Inflige 4.', effects: [magic(4)] },
+  { id: 'u6', name: 'Crecimiento salvaje', owner: 'lulu', cost: 3, type: 'support', target: 'ally', rarity: 'epic', keywords: ['block'],
+    text: 'Cura 15 y otorga 12 de bloqueo.', effects: [{ type: 'heal', amount: 15 }, block(12)] },
+  { id: 'u7', name: 'Polvo de hadas', owner: 'lulu', cost: 1, type: 'support', target: 'allAllies', rarity: 'common', keywords: [],
+    text: 'Reduce 6 de estrés a todos los aliados.', effects: [{ type: 'reduceStress', amount: 6 }] },
+  { id: 'u8', name: 'Revoloteo de Pix', owner: 'lulu', cost: 1, type: 'skill', target: 'allEnemies', rarity: 'rare', keywords: [],
+    text: 'Inflige 3 a todos los enemigos. Roba 1 carta.', effects: [magic(3), { type: 'draw', amount: 1 }] },
 ];
 
 const up = (text: string, extra: Partial<CardUpgrade> = {}): CardUpgrade => ({ text, ...extra });
@@ -129,6 +147,14 @@ const UPGRADES: Record<string, CardUpgrade> = {
   s6: up('Cura 9 y otorga 6 de bloqueo.', { effects: [{ type: 'heal', amount: 9 }, block(6)] }),
   s7: up('Soraka pierde 2 de vida. Roba 2 cartas.', { effects: [{ type: 'damage', amount: 2, damageType: 'true', on: 'self' }, { type: 'draw', amount: 2 }] }),
   s8: up('Reanima a un aliado derribado con 30 de vida.', { effects: [{ type: 'revive', hp: 30 }] }),
+  u1: up('Inflige 8. Desde 3–4: aplica 1 Vulnerable.', { effects: [magic(8)] }),
+  u2: up('Otorga 9 de bloqueo.', { effects: [block(9)] }),
+  u3: up('Transforma al objetivo: Aturdido y 1 Vulnerable. Cuesta 1.', { cost: 1 }),
+  u4: up('Otorga 6 de bloqueo. Roba 1 carta.', { effects: [block(6), { type: 'draw', amount: 1 }] }),
+  u5: up('Inflige 6.', { effects: [magic(6)] }),
+  u6: up('Cura 15 y otorga 12 de bloqueo. Cuesta 2.', { cost: 2 }),
+  u7: up('Reduce 9 de estrés a todos los aliados.', { effects: [{ type: 'reduceStress', amount: 9 }] }),
+  u8: up('Inflige 5 a todos los enemigos. Roba 1 carta.', { effects: [magic(5), { type: 'draw', amount: 1 }] }),
 };
 
 export const CARD_LIST: CardDef[] = BASE_CARDS.map((c) => ({ ...c, upgrade: UPGRADES[c.id] }));
@@ -149,10 +175,11 @@ export function applyUpgrade(def: CardDef): CardDef {
   return { ...def, cost: u.cost ?? def.cost, effects: u.effects ?? def.effects, positionBonus: u.positionBonus ?? def.positionBonus, text: u.text };
 }
 
-/** Mazo inicial: 5 cartas por campeón (el equipo juega 5 de un mazo de 20). */
+/** Mazo inicial: 5 cartas por campeón; una expedición lleva las de sus 4 campeones (20 cartas). */
 export const STARTER_DECK: string[] = [
   'l1', 'l1', 'l2', 'l6', 'l4',
   'y1', 'y1', 'y3', 'y4', 'y2',
   'x1', 'x1', 'x3', 'x5', 'x4',
   's1', 's1', 's2', 's4', 's6',
+  'u1', 'u1', 'u2', 'u5', 'u4',
 ];
