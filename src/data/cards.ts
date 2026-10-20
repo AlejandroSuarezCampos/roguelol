@@ -1,7 +1,7 @@
 import type { CardDef, CardUpgrade, Effect } from '../engine/types';
 
 /**
- * 32 cartas provisionales (8 por campeón). Solo usan los efectos que el motor ya resuelve.
+ * 32 cartas provisionales (8 por campeón).
  * Números provisionales: se afinan con tests/balance. Los textos deben coincidir con los efectos.
  */
 const phys = (amount: number, over: Partial<Extract<Effect, { type: 'damage' }>> = {}): Effect => ({
@@ -51,7 +51,7 @@ const BASE_CARDS: CardDef[] = [
     text: 'Inflige 6 más 5 por cada Carga, que consume.',
     effects: [phys(6, { consumeStatus: { status: 'charge', from: 'self', bonusPerStack: 5 } })] },
   { id: 'y8', name: 'Camino del Errante', owner: 'yasuo', cost: 1, type: 'skill', target: 'self', rarity: 'rare', keywords: ['block', 'charge'],
-    text: 'Gana 8 de bloqueo y 1 Carga.', effects: [block(8), status('charge', 1, 'self')] },
+    text: 'Gana 4 de bloqueo y convierte cada Carga en 4 de bloqueo.', effects: [block(4), { type: 'convertStatus', status: 'charge', perStack: 4, into: 'block' }] },
 
   // ——— Lux: magia y Marcas, brilla en 3–4 ———
   { id: 'x1', name: 'Enlace de luz', owner: 'lux', cost: 1, type: 'skill', target: 'enemy', rarity: 'common', keywords: ['mark'],
@@ -66,7 +66,7 @@ const BASE_CARDS: CardDef[] = [
   { id: 'x5', name: 'Rayo prismático', owner: 'lux', cost: 1, type: 'attack', target: 'enemy', rarity: 'common', keywords: [],
     text: 'Inflige 8. Desde 3–4: +3.', effects: [magic(8)], idealPositions: [3, 4], positionBonus: [magic(3, { scaling: undefined })] },
   { id: 'x6', name: 'Destello', owner: 'lux', cost: 0, type: 'skill', target: 'allEnemies', rarity: 'rare', keywords: ['mark'],
-    text: 'Aplica 1 Marca a todos los enemigos.', effects: [status('mark', 1)] },
+    text: 'Aplica 1 Marca a todos los enemigos. Roba 1 carta.', effects: [status('mark', 1), { type: 'draw', amount: 1 }] },
   { id: 'x7', name: 'Fulgor final', owner: 'lux', cost: 3, type: 'skill', target: 'allEnemies', rarity: 'epic', keywords: ['mark'],
     text: 'Inflige 6 a todos, +6 por cada Marca que consume.',
     effects: [magic(6, { consumeStatus: { status: 'mark', from: 'target', bonusPerStack: 6 } })] },
@@ -86,9 +86,9 @@ const BASE_CARDS: CardDef[] = [
     text: 'Aplica 1 Vulnerable a todos los enemigos.', effects: [status('vulnerable', 1)] },
   { id: 's6', name: 'Inyección astral', owner: 'soraka', cost: 1, type: 'support', target: 'ally', rarity: 'common', keywords: ['block'],
     text: 'Cura 6 y otorga 4 de bloqueo.', effects: [{ type: 'heal', amount: 6 }, block(4)] },
-  { id: 's7', name: 'Sacrificio', owner: 'soraka', cost: 0, type: 'support', target: 'ally', rarity: 'common', keywords: [],
-    text: 'Reduce 10 de estrés al objetivo. Soraka pierde 4 de vida.',
-    effects: [{ type: 'reduceStress', amount: 10 }, { type: 'damage', amount: 4, damageType: 'true', on: 'self' }] },
+  { id: 's7', name: 'Sacrificio', owner: 'soraka', cost: 0, type: 'support', target: 'self', rarity: 'common', keywords: [],
+    text: 'Soraka pierde 4 de vida. Roba 2 cartas.',
+    effects: [{ type: 'damage', amount: 4, damageType: 'true', on: 'self' }, { type: 'draw', amount: 2 }] },
   { id: 's8', name: 'Renacer', owner: 'soraka', cost: 3, type: 'support', target: 'ally', rarity: 'epic', keywords: [],
     text: 'Reanima a un aliado derribado con 20 de vida.', effects: [{ type: 'revive', hp: 20 }] },
 ];
@@ -112,13 +112,13 @@ const UPGRADES: Record<string, CardUpgrade> = {
   y5: up('Inflige 7 dos veces.', { effects: [phys(7), phys(7)] }),
   y6: up('Inflige 6 y gana 2 Cargas.', { effects: [phys(6), status('charge', 2, 'self')] }),
   y7: up('Inflige 6 más 7 por cada Carga, que consume.', { effects: [phys(6, { consumeStatus: { status: 'charge', from: 'self', bonusPerStack: 7 } })] }),
-  y8: up('Gana 11 de bloqueo y 1 Carga.', { effects: [block(11), status('charge', 1, 'self')] }),
+  y8: up('Gana 6 de bloqueo y convierte cada Carga en 6 de bloqueo.', { effects: [block(6), { type: 'convertStatus', status: 'charge', perStack: 6, into: 'block' }] }),
   x1: up('Inflige 8 y aplica 1 Marca. Desde 3–4: +1 Marca.', { effects: [magic(8), status('mark', 1)] }),
   x2: up('Inflige 8 a todos, +6 por cada Marca que consume.', { effects: [magic(8, { consumeStatus: { status: 'mark', from: 'target', bonusPerStack: 6 } })] }),
   x3: up('Otorga 9 de bloqueo.', { effects: [block(9)] }),
   x4: up('Inflige 6 a todos los enemigos.', { effects: [magic(6)] }),
   x5: up('Inflige 11. Desde 3–4: +3.', { effects: [magic(11)] }),
-  x6: up('Aplica 2 Marcas a todos los enemigos.', { effects: [status('mark', 2)] }),
+  x6: up('Aplica 2 Marcas a todos los enemigos. Roba 1 carta.', { effects: [status('mark', 2), { type: 'draw', amount: 1 }] }),
   x7: up('Inflige 6 a todos, +6 por cada Marca que consume. Cuesta 2.', { cost: 2 }),
   x8: up('Cura 8 y otorga 5 de bloqueo.', { effects: [{ type: 'heal', amount: 8 }, block(5)] }),
   s1: up('Cura 14. Desde 3–4: +3.', { effects: [{ type: 'heal', amount: 14 }] }),
@@ -127,7 +127,7 @@ const UPGRADES: Record<string, CardUpgrade> = {
   s4: up('Inflige 9.', { effects: [magic(9)] }),
   s5: up('Aplica 2 Vulnerable a todos los enemigos.', { effects: [status('vulnerable', 2)] }),
   s6: up('Cura 9 y otorga 6 de bloqueo.', { effects: [{ type: 'heal', amount: 9 }, block(6)] }),
-  s7: up('Reduce 14 de estrés al objetivo. Soraka pierde 3 de vida.', { effects: [{ type: 'reduceStress', amount: 14 }, { type: 'damage', amount: 3, damageType: 'true', on: 'self' }] }),
+  s7: up('Soraka pierde 2 de vida. Roba 2 cartas.', { effects: [{ type: 'damage', amount: 2, damageType: 'true', on: 'self' }, { type: 'draw', amount: 2 }] }),
   s8: up('Reanima a un aliado derribado con 30 de vida.', { effects: [{ type: 'revive', hp: 30 }] }),
 };
 

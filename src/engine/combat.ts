@@ -2,6 +2,7 @@ import { baseCardId, isUpgradedId } from '../data/cards';
 import { CONFIG } from './config';
 import { byPos, living, moveUnit, unitAt } from './formation';
 import { computeDamage } from './damage';
+import { drawCards } from './cards';
 import { refreshBelt } from './potions';
 import { newRelicState, processRelics } from './relics';
 import { Rng } from './rng';
@@ -96,17 +97,6 @@ export function startCombat(cfg: CombatSetup): CombatState {
   return s;
 }
 
-function draw(s: CombatState, n: number): void {
-  for (let i = 0; i < n; i++) {
-    if (!s.drawPile.length) {
-      if (!s.discard.length) return;
-      s.drawPile = s.rng.shuffle(s.discard);
-      s.discard = [];
-    }
-    s.hand.push(s.drawPile.shift()!);
-  }
-}
-
 /** Inicio del turno del equipo: bloqueo aliado a 0, energía, nueva mano de 5 y efectos de crisis/virtud. */
 export function startTeamTurn(s: CombatState): void {
   s.turn++;
@@ -124,7 +114,7 @@ export function startTeamTurn(s: CombatState): void {
   }
   s.discard.push(...s.hand);
   s.hand = [];
-  draw(s, CONFIG.handSize);
+  drawCards(s, CONFIG.handSize);
   for (const a of byPos(living(s, 'ally'))) burnTick(s, a);
   for (const a of byPos(living(s, 'ally'))) {
     if (a.virtueActive) gainBlock(a, CONFIG.virtue.blockPerTurn);

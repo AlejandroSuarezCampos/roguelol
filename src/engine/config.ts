@@ -2,6 +2,8 @@
 export const CONFIG = {
   energyPerTurn: 3,
   handSize: 5,
+  /** Máximo de cartas en la mano (robar con la mano llena no hace nada). */
+  maxHand: 10,
   cardsPerChampion: 3,
   swapCost: 1,
   critMultiplier: 1.5,

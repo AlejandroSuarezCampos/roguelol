@@ -38,6 +38,8 @@ function score(s: CombatState, card: CardDef, t: Unit | undefined, rng: Rng): nu
     if (e.type === 'reduceStress') v += t ? (t.stress >= 50 ? t.stress * 0.4 : -2) : 0;
     if (e.type === 'applyStatus') v += 2;
     if (e.type === 'revive') v += t?.downed ? 30 : -50;
+    if (e.type === 'draw') v += 3 * e.amount;
+    if (e.type === 'convertStatus') v += (owner.statuses[e.status] ?? 0) * e.perStack * 0.4;
   }
   return v / Math.max(1, cost + 0.5);
 }

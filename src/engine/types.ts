@@ -42,7 +42,11 @@ export type Effect =
   /** `to`: posición absoluta; `by`: relativa (+1 = una hacia atrás). */
   | { type: 'move'; to?: Pos; by?: number; on?: EffectOn }
   | { type: 'reduceStress'; amount: number; on?: EffectOn }
-  | { type: 'revive'; hp: number; on?: EffectOn };
+  | { type: 'revive'; hp: number; on?: EffectOn }
+  /** Roba cartas (una vez por carta, no por objetivo). */
+  | { type: 'draw'; amount: number }
+  /** Consume todas las acumulaciones del estado del lanzador y gana `perStack` de bloqueo por cada una. */
+  | { type: 'convertStatus'; status: 'charge' | 'mark'; perStack: number; into: 'block' };
 
 export interface CardUpgrade {
   cost?: number;

@@ -93,7 +93,28 @@ function targetsOf(s: CombatState, card: CardDef, owner: Unit, t?: Unit): Unit[]
   }
 }
 
+/** Roba `n` cartas; sin mazo de robo baraja el descarte. La mano no pasa de `CONFIG.maxHand`. */
+export function drawCards(s: CombatState, n: number): void {
+  for (let i = 0; i < n && s.hand.length < CONFIG.maxHand; i++) {
+    if (!s.drawPile.length) {
+      if (!s.discard.length) return;
+      s.drawPile = s.rng.shuffle(s.discard);
+      s.discard = [];
+    }
+    s.hand.push(s.drawPile.shift()!);
+  }
+}
+
 function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void {
+  // Efectos del lanzador que no dependen de los objetivos: se resuelven una sola vez.
+  if (e.type === 'draw') return drawCards(s, e.amount);
+  if (e.type === 'convertStatus') {
+    const stacks = owner.statuses[e.status] ?? 0;
+    delete owner.statuses[e.status];
+    gainBlock(owner, stacks * e.perStack);
+    if (stacks > 0) s.relicQueue.push({ type: 'statusConsumed', owner: owner.id as ChampionId, status: e.status, stacks });
+    return;
+  }
   for (const u of e.on === 'self' ? [owner] : targets) {
     switch (e.type) {
       case 'damage': {

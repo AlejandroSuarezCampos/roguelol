@@ -191,3 +191,50 @@ describe('modelo de cartas (§9)', () => {
     expect(u(s, 'e1').hp).toBe(26);
   });
 });
+
+describe('robar y convertir', () => {
+  const extra = (s: ReturnType<typeof makeState>) => {
+    s.cards = {
+      ...CARDS,
+      flash: { id: 'flash', name: 'Destello', owner: 'lux', cost: 0, type: 'skill', target: 'self', rarity: 'rare', keywords: [], text: 'Roba 2 cartas.', effects: [{ type: 'draw', amount: 2 }] },
+      wander: { id: 'wander', name: 'Camino', owner: 'yasuo', cost: 1, type: 'skill', target: 'self', rarity: 'rare', keywords: ['block', 'charge'], text: 'Convierte cada Carga en 4 de bloqueo.',
+        effects: [{ type: 'convertStatus', status: 'charge', perStack: 4, into: 'block' }] },
+    };
+  };
+
+  it('robar saca cartas del mazo de robo a la mano, una sola vez aunque la carta tenga varios objetivos', () => {
+    const s = makeState();
+    extra(s);
+    s.drawPile = [{ uid: 'd1', defId: 'strike' }, { uid: 'd2', defId: 'guard' }, { uid: 'd3', defId: 'guard' }];
+    const [id] = give(s, 'flash');
+    playCard(s, id);
+    expect(s.hand.map((c) => c.uid)).toEqual(['d1', 'd2']);
+    expect(s.drawPile).toHaveLength(1);
+  });
+
+  it('sin mazo de robo baraja el descarte, y la mano no pasa de 10', () => {
+    const s = makeState();
+    extra(s);
+    s.discard = [{ uid: 'x1', defId: 'strike' }];
+    const [id] = give(s, 'flash');
+    playCard(s, id);
+    expect(s.hand.map((c) => c.uid)).toEqual(['x1']); // la propia carta jugada va al descarte después de resolver
+    const t = makeState();
+    extra(t);
+    t.drawPile = Array.from({ length: 5 }, (_, i) => ({ uid: `p${i}`, defId: 'strike' }));
+    give(t, ...Array(9).fill('guard'));
+    const [f] = give(t, 'flash');
+    playCard(t, f);
+    expect(t.hand).toHaveLength(10);
+  });
+
+  it('convertir consume las Cargas del lanzador y da bloqueo por cada una', () => {
+    const s = makeState();
+    extra(s);
+    u(s, 'yasuo').statuses.charge = 3;
+    const [id] = give(s, 'wander');
+    playCard(s, id);
+    expect(u(s, 'yasuo').block).toBe(12);
+    expect(u(s, 'yasuo').statuses.charge).toBeUndefined();
+  });
+});
