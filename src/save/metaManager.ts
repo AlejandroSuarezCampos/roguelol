@@ -5,7 +5,7 @@ import { UNLOCK_BY_ID } from '../data/unlocks';
 import { newMeta, type MetaState } from '../engine/meta';
 import type { StorageLike } from './saveManager';
 
-export const META_VERSION = 2;
+export const META_VERSION = 3;
 export const META_KEY = 'shattered-runeterra:meta';
 export const META_CORRUPT_KEY = 'shattered-runeterra:meta.corrupt';
 
@@ -36,7 +36,7 @@ function migrateV1(m: any): any {
   const { nightmareDeaths, ...history } = isObj(m.history) ? m.history : ({} as any);
   const { perks, ...rest } = m;
   const refund = Object.entries(V1_PERK_COSTS).reduce((a, [id, costs]) => a + costs.slice(0, isObj(perks) && Number.isInteger(perks[id]) ? perks[id] : 0).reduce((x, y) => x + y, 0), 0);
-  return { ...rest, shards: (isNum(m.shards) ? m.shards : 0) + refund, maxAscension: 0, unlocked: [], loadout: {}, party: ['leona', 'yasuo', 'lux', 'soraka'], history: { ...history, deaths: nightmareDeaths ?? 0 } };
+  return { ...rest, shards: (isNum(m.shards) ? m.shards : 0) + refund, maxAscension: 0, unlocked: [], loadout: {}, history: { ...history, deaths: nightmareDeaths ?? 0 } };
 }
 
 /** Guardado del progreso permanente (Esquirlas, desbloqueos, Ascensión, archivo). Nunca lanza; un guardado dañado se aparta con copia. */
@@ -57,7 +57,9 @@ export function createMetaManager(storage: StorageLike | null) {
       let why: string | null = null;
       try {
         data = JSON.parse(raw);
-        if (isObj(data) && data.version === 1 && isObj(data.meta)) data = { version: META_VERSION, meta: migrateV1(data.meta) };
+        if (isObj(data) && data.version === 1 && isObj(data.meta)) data = { version: 2, meta: migrateV1(data.meta) };
+        // v2 → v3: se añade el equipo elegido (por defecto, el de siempre).
+        if (isObj(data) && data.version === 2 && isObj(data.meta)) data = { version: META_VERSION, meta: { ...data.meta, party: data.meta.party ?? ['leona', 'yasuo', 'lux', 'soraka'] } };
         if (!isObj(data) || data.version !== META_VERSION) why = `versión ${isObj(data) ? data.version : '?'} no soportada`;
         else why = problem(data.meta);
       } catch {

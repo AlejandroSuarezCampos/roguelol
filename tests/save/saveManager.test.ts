@@ -65,7 +65,7 @@ describe('guardar y cargar', () => {
   it('el resumen da piso, oro y fecha para el menú', () => {
     const m = createSaveManager(memory());
     m.save(played());
-    expect(m.summary()).toMatchObject({ floor: 1, gold: 77, champions: 4 });
+    expect(m.summary()).toMatchObject({ act: 1, floor: 1, gold: 77, champions: 4 });
   });
 
   it('borrar elimina el guardado', () => {
@@ -169,7 +169,7 @@ describe('datos corruptos', () => {
 
   it('save devuelve el resumen calculado y null si no se pudo guardar', () => {
     const m = createSaveManager(memory(), () => 1234);
-    expect(m.save(played())).toEqual({ floor: 1, gold: 77, champions: 4, savedAt: 1234 });
+    expect(m.save(played())).toEqual({ act: 1, floor: 1, gold: 77, champions: 4, savedAt: 1234 });
     const boom: StorageLike = { getItem: () => null, setItem: () => { throw new Error('cuota'); }, removeItem: () => undefined };
     expect(createSaveManager(boom).save(played())).toBeNull();
   });

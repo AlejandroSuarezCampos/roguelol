@@ -36,6 +36,8 @@ Reliquias: [`specs/2026-10-19-reliquias-design.md`](docs/superpowers/specs/2026-
 
 Metaprogresión (Esquirlas, Desbloqueos, objeto inicial en Equipo del menú y Archivo): [`specs/2026-10-19-metaprogresion-design.md`](docs/superpowers/specs/2026-10-19-metaprogresion-design.md) con los cambios de [`specs/2026-10-20-revision-fase1.md`](docs/superpowers/specs/2026-10-20-revision-fase1.md); el progreso permanente se guarda aparte en `localStorage` (`shattered-runeterra:meta`). Los desbloqueos están en `src/data/unlocks.ts`.
 
+Expedición de 3 actos (Barón Nashor, Dragón anciano y Viego), con reliquias de jefe y Lulu como campeona desbloqueable: [`specs/2026-10-20-contenido-fase2.md`](docs/superpowers/specs/2026-10-20-contenido-fase2.md).
+
 Dificultad: una sola, con 10 niveles de Ascensión acumulativos como en Slay the Spire (el 10 trae la muerte permanente). Se desbloquean ganando. Todos los modificadores están en `src/data/ascension.ts`.
 
 Fuera de esta fase: pasivas de gear y campeones nuevos.

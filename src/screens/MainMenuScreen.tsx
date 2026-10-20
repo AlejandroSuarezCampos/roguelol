@@ -35,7 +35,7 @@ export function MainMenuScreen() {
             <Icon name="flag" />
             <b>Continuar</b>
             <span>
-              {saved.floor ? `Piso ${saved.floor}` : 'Entrada'} · {saved.gold} de oro
+              Acto {saved.act} · {saved.floor ? `Piso ${saved.floor}` : 'Entrada'} · {saved.gold} de oro
             </span>
           </button>
         )}

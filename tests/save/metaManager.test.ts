@@ -78,6 +78,18 @@ describe('guardado del progreso permanente', () => {
     void deaths;
   });
 
+  it('un progreso de la versión 2 se migra añadiendo el equipo de siempre', () => {
+    const store = memory();
+    const old = newMeta() as any;
+    delete old.party;
+    old.shards = 40;
+    store.setItem(META_KEY, JSON.stringify({ version: 2, meta: old }));
+    const r = createMetaManager(store).load();
+    expect(r.corrupt).toBeNull();
+    expect(r.meta.shards).toBe(40);
+    expect(r.meta.party).toEqual(['leona', 'yasuo', 'lux', 'soraka']);
+  });
+
   it('sin almacenamiento, o con uno que falla, nada lanza', () => {
     const none = createMetaManager(null);
     expect(() => none.save(newMeta())).not.toThrow();

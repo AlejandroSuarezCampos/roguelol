@@ -10,12 +10,12 @@ import { OMENS } from '../engine/run';
 import { POTIONS } from '../engine/potions';
 
 /** Versión del formato. Súbela (y añade una migración) si cambia la forma de lo que se guarda. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 /**
- * Versiones que se pueden cargar. La 6 cambió el mapa (15 pisos), el gear (6 huecos) y la dificultad: las anteriores no se migran
- * (son de antes de publicar nada) y se apartan como dañadas.
+ * Versiones que se pueden cargar. La 7 añade los actos, el equipo elegido y las pasivas de gear gastadas: las anteriores no se migran
+ * (una expedición a medias se pierde, el progreso permanente no) y se apartan como dañadas.
  */
-const LOADABLE_VERSIONS = [6];
+const LOADABLE_VERSIONS = [7];
 export const SAVE_KEY = 'shattered-runeterra:run';
 export const CORRUPT_KEY = 'shattered-runeterra:run.corrupt';
 
@@ -47,6 +47,8 @@ export type LoadResult =
   | { status: 'corrupt'; reason: string };
 
 export interface SaveSummary {
+  /** Acto (1–3). */
+  act: number;
   /** Piso actual (1 = primer piso; 0 si aún no ha entrado en ninguno). */
   floor: number;
   gold: number;
@@ -127,7 +129,7 @@ function journalProblem(j: unknown): string | null {
 
 function summaryOf(e: any, savedAt: number): SaveSummary {
   const cur = e.currentId ? e.map.nodes.find((n: any) => n.id === e.currentId) : null;
-  return { floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt };
+  return { act: (e.act ?? 0) + 1, floor: cur ? cur.floor + 1 : 0, gold: e.run.gold, champions: e.run.champions.length, savedAt };
 }
 
 /** Copia profunda de una expedición (el RNG se reconstruye con su estado). Es el «punto seguro» al que se vuelve si falla la reproducción. */
