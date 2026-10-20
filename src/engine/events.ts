@@ -1,8 +1,7 @@
 import { CARDS } from '../data/cards';
 import { EVENTS, SHRINES, type EventChoice, type EventDef, type EventEffect } from '../data/events';
-import { RELIC_LIST } from '../data/relics';
 import { CONFIG } from './config';
-import { cardPool, claimPotion, type Expedition } from './expedition';
+import { cardPool, claimPotion, relicPool, type Expedition } from './expedition';
 import { syncMaxHp } from './gear';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
@@ -71,7 +70,7 @@ function apply(e: Expedition, fx: EventEffect, lines: string[]): void {
       break;
     }
     case 'relic': {
-      const fresh = RELIC_LIST.filter((r) => !run.relics.includes(r.id));
+      const fresh = relicPool(e);
       if (!fresh.length) {
         run.gold += 60;
         lines.push('Ya tienes todas las reliquias: +60 de oro');
@@ -83,7 +82,7 @@ function apply(e: Expedition, fx: EventEffect, lines: string[]): void {
       break;
     }
     case 'maxHpAll': {
-      e.perks.hp += fx.amount;
+      e.bonusHp += fx.amount;
       for (const c of run.champions) {
         c.maxHp += fx.amount;
         if (!c.downed) c.hp += fx.amount;

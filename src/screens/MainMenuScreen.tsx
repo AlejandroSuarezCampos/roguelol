@@ -4,8 +4,8 @@ import { Icon } from '../components/Icon';
 import { game, useGame } from '../state/gameStore';
 
 const SECTIONS = [
-  { screen: 'roster', icon: 'team', name: 'Equipo', text: 'Campeones y cartas' },
-  { screen: 'upgrades', icon: 'up', name: 'Mejoras', text: 'Forja permanente' },
+  { screen: 'roster', icon: 'team', name: 'Equipo', text: 'Campeones, cartas y objeto inicial' },
+  { screen: 'upgrades', icon: 'up', name: 'Desbloqueos', text: 'Contenido nuevo' },
   { screen: 'archive', icon: 'book', name: 'Archivo', text: 'Bestiario e historial' },
 ] as const;
 

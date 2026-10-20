@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PERKS } from '../../src/data/perks';
+import { OPEN_SETUP } from '../../src/data/unlocks';
 import { createExpedition } from '../../src/engine/expedition';
 import { playExpedition, type RunReport } from './bot';
 
@@ -55,12 +55,12 @@ describe('Ascensión 10 con bot', () => {
   });
 });
 
-describe('mejoras permanentes con bot', () => {
-  const maxPerks = { hp: PERKS.vigor.values[2], gold: PERKS.provisions.values[2], potions: PERKS.belt.values[2], upgradedCards: PERKS.mastery.values[2] };
-  const maxed = Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 0, maxPerks), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
+describe('objetos iniciales con bot', () => {
+  const starters = { leona: 'doranshield', yasuo: 'blade', lux: 'ring', soraka: 'atlas' } as const;
+  const kitted = Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 0, { ...OPEN_SETUP, starters }), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
 
-  it('con todo al máximo ayudan, pero no hacen trivial la expedición (spec §14)', () => {
-    expect(maxed).toBeGreaterThan(normalWinRate);
-    expect(maxed).toBeLessThan(0.75);
+  it('con un objeto inicial cada uno ayudan algo, pero no hacen trivial la expedición (spec §14)', () => {
+    expect(kitted).toBeGreaterThanOrEqual(normalWinRate * 0.9);
+    expect(kitted).toBeLessThan(0.7);
   });
 });

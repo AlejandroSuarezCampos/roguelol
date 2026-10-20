@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { PERKS, PERK_IDS } from '../../src/data/perks';
+import { GEAR } from '../../src/data/gear';
+import { RELIC_LIST } from '../../src/data/relics';
+import { OPEN_SETUP, UNLOCKS } from '../../src/data/unlocks';
 import { CARDS } from '../../src/data/cards';
 import { CHAMPIONS } from '../../src/data/champions';
 import { availableNodes, combatFromExpedition, createExpedition, enterNode, finishCombat, retreat } from '../../src/engine/expedition';
-import { NO_PERKS, buyPerk, newMeta, perksFor, recordRun, shardsFor } from '../../src/engine/meta';
+import { buyUnlock, newMeta, recordRun, setStarter, setupFor, shardsFor } from '../../src/engine/meta';
+import { openShop } from '../../src/engine/shop';
 import { maxHpFor } from '../../src/engine/gear';
 
 describe('Esquirlas', () => {
@@ -71,87 +74,89 @@ describe('Esquirlas: nada de granjearlas sin jugar', () => {
   });
 });
 
-describe('mejoras permanentes', () => {
-  it('hay 4 mejoras de 3 niveles con costes crecientes', () => {
-    expect(PERK_IDS).toHaveLength(4);
-    for (const id of PERK_IDS) {
-      expect(PERKS[id].costs).toHaveLength(3);
-      expect(PERKS[id].values).toHaveLength(3);
-      expect(PERKS[id].costs[0]).toBeLessThan(PERKS[id].costs[1]);
-      expect(PERKS[id].costs[1]).toBeLessThan(PERKS[id].costs[2]);
-      expect(PERKS[id].values[0]).toBeLessThan(PERKS[id].values[2]);
+describe('desbloqueos', () => {
+  it('hay objetos iniciales, cartas y reliquias, todos con coste y referencia válida', () => {
+    for (const kind of ['starter', 'card', 'relic'] as const) expect(UNLOCKS.filter((u) => u.kind === kind).length, kind).toBeGreaterThan(0);
+    expect(new Set(UNLOCKS.map((u) => u.id)).size).toBe(UNLOCKS.length);
+    for (const u of UNLOCKS) {
+      expect(u.cost).toBeGreaterThan(0);
+      if (u.kind === 'starter') expect(GEAR[u.ref]?.starter, u.id).toBe(true);
+      if (u.kind === 'card') expect(CARDS[u.ref], u.id).toBeDefined();
+      if (u.kind === 'relic') expect(RELIC_LIST.some((r) => r.id === u.ref), u.id).toBe(true);
     }
   });
 
-  it('comprar gasta Esquirlas, sube el nivel y no pasa del 3', () => {
-    const m = newMeta();
-    m.shards = 1000;
-    buyPerk(m, 'vigor');
-    expect(m.perks.vigor).toBe(1);
-    expect(m.shards).toBe(1000 - PERKS.vigor.costs[0]);
-    buyPerk(m, 'vigor');
-    buyPerk(m, 'vigor');
-    expect(m.perks.vigor).toBe(3);
-    expect(() => buyPerk(m, 'vigor')).toThrow(/máximo/i);
+  it('las cartas bloqueadas no están en el mazo inicial', async () => {
+    const { STARTER_DECK } = await import('../../src/data/cards');
+    for (const u of UNLOCKS.filter((x) => x.kind === 'card')) expect(STARTER_DECK).not.toContain(u.ref);
   });
 
-  it('sin saldo no compra nada', () => {
+  it('comprar gasta Esquirlas y no se compra dos veces ni sin saldo', () => {
     const m = newMeta();
-    m.shards = PERKS.vigor.costs[0] - 1;
-    expect(() => buyPerk(m, 'vigor')).toThrow(/Esquirlas/);
-    expect(m.perks.vigor).toBe(0);
-    expect(m.shards).toBe(PERKS.vigor.costs[0] - 1);
+    const u = UNLOCKS[0];
+    expect(() => buyUnlock(m, u.id)).toThrow(/Esquirlas/);
+    m.shards = u.cost + 5;
+    buyUnlock(m, u.id);
+    expect(m.shards).toBe(5);
+    expect(m.unlocked).toEqual([u.id]);
+    expect(() => buyUnlock(m, u.id)).toThrow(/Ya está/);
+    expect(() => buyUnlock(m, 'card:nope')).toThrow(/no existe/);
   });
 
-  it('perksFor traduce los niveles a ventajas', () => {
+  it('el objeto inicial solo se elige si está desbloqueado y es inicial', () => {
     const m = newMeta();
-    expect(perksFor(m)).toEqual(NO_PERKS);
-    m.perks = { vigor: 2, provisions: 3, belt: 1, mastery: 3 };
-    expect(perksFor(m)).toEqual({ hp: PERKS.vigor.values[1], gold: PERKS.provisions.values[2], potions: PERKS.belt.values[0], upgradedCards: PERKS.mastery.values[2] });
+    expect(() => setStarter(m, 'yasuo', 'blade')).toThrow(/bloqueado/);
+    expect(() => setStarter(m, 'yasuo', 'infinity')).toThrow(/inicial/);
+    m.unlocked.push('starter:blade');
+    setStarter(m, 'yasuo', 'blade');
+    expect(m.loadout).toEqual({ yasuo: 'blade' });
+    setStarter(m, 'yasuo', null);
+    expect(m.loadout).toEqual({});
+  });
+
+  it('setupFor bloquea lo no comprado y pasa los objetos iniciales', () => {
+    const m = newMeta();
+    const fresh = setupFor(m);
+    expect(fresh.locked.cards.length).toBe(UNLOCKS.filter((u) => u.kind === 'card').length);
+    expect(fresh.locked.relics.length).toBe(UNLOCKS.filter((u) => u.kind === 'relic').length);
+    m.unlocked.push('card:l8', 'starter:ring');
+    m.loadout.lux = 'ring';
+    const s = setupFor(m);
+    expect(s.locked.cards).not.toContain('l8');
+    expect(s.starters).toEqual({ lux: 'ring' });
   });
 });
 
-describe('aplicar las ventajas al empezar', () => {
-  it('sin mejoras la expedición es idéntica a la de antes', () => {
-    const a = createExpedition(3);
-    const b = createExpedition(3, 0, NO_PERKS);
-    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+describe('aplicar el progreso al empezar', () => {
+  it('sin progreso que aplicar la expedición es idéntica a la de antes', () => {
+    expect(JSON.stringify(createExpedition(3, 0, OPEN_SETUP))).toBe(JSON.stringify(createExpedition(3)));
   });
 
-  it('vida máxima, oro, pociones y cartas mejoradas', () => {
-    const e = createExpedition(3, 0, { hp: 10, gold: 50, potions: 2, upgradedCards: 3 });
-    for (const c of e.run.champions) {
-      expect(c.maxHp).toBe(CHAMPIONS[c.id].maxHp + 10);
-      expect(c.hp).toBe(c.maxHp);
-      expect(maxHpFor(e, c.id)).toBe(c.maxHp);
+  it('el objeto inicial empieza equipado y su vida suma a la vida actual', () => {
+    const e = createExpedition(3, 0, { ...OPEN_SETUP, starters: { lux: 'ring' } });
+    const lux = e.run.champions.find((c) => c.id === 'lux')!;
+    expect(e.gear.lux[0]).toBe('ring');
+    expect(e.inventory).toEqual([]);
+    expect(lux.maxHp).toBe(CHAMPIONS.lux.maxHp + GEAR.ring.hp!);
+    expect(lux.hp).toBe(lux.maxHp);
+    expect(maxHpFor(e, 'lux')).toBe(lux.maxHp);
+    expect(() => createExpedition(3, 0, { ...OPEN_SETUP, starters: { lux: 'rabadon' } })).toThrow(/inicial/);
+  });
+
+  it('lo bloqueado no sale en el botín ni en la tienda', () => {
+    const locked = { cards: ['l8', 'y8', 'x7', 's5'], relics: RELIC_LIST.slice(0, 7).map((r) => r.id) };
+    for (let seed = 1; seed <= 40; seed++) {
+      const e = createExpedition(seed, 0, { locked, starters: {} });
+      const s = combatFromExpedition(e, 'elite');
+      for (const u of s.units) if (u.side === 'enemy') { u.hp = 0; u.downed = true; }
+      s.outcome = 'won';
+      const r = finishCombat(e, s, 'elite')!;
+      for (const id of r.cards) expect(locked.cards).not.toContain(id);
+      for (const id of r.relicIds ?? []) expect(locked.relics).not.toContain(id);
+      const shop = openShop(e);
+      for (const c of shop.cards) expect(locked.cards).not.toContain(c.defId);
+      for (const x of shop.relics) expect(locked.relics).not.toContain(x.id);
     }
-    expect(e.run.gold).toBe(50);
-    expect(e.run.belt.filter((p) => p?.id === 'health')).toHaveLength(2);
-    expect(e.deck.filter((id) => id.endsWith('+'))).toHaveLength(3);
-    expect(e.deck.every((id) => CARDS[id.replace('+', '')])).toBe(true);
-  });
-
-  it('la vida extra sigue contando tras una herida', () => {
-    const e = createExpedition(3, 0, { ...NO_PERKS, hp: 10 });
-    e.wounds.lux = 1;
-    expect(maxHpFor(e, 'lux')).toBe(Math.round(CHAMPIONS.lux.maxHp * 0.9) + 10);
-  });
-
-  it('elegir cartas mejoradas no altera el combate reproducible de la run', () => {
-    const plain = createExpedition(3);
-    const perked = createExpedition(3, 0, { ...NO_PERKS, upgradedCards: 2 });
-    const a = combatFromExpedition(plain, 'combat');
-    const b = combatFromExpedition(perked, 'combat');
-    expect(b.units.filter((u) => u.side === 'enemy').map((u) => u.id)).toEqual(a.units.filter((u) => u.side === 'enemy').map((u) => u.id));
-  });
-
-  it('con todo al máximo el bonus es moderado (spec §14)', () => {
-    const m = newMeta();
-    m.perks = { vigor: 3, provisions: 3, belt: 3, mastery: 3 };
-    const p = perksFor(m);
-    expect(p.hp / Math.min(...Object.values(CHAMPIONS).map((c) => c.maxHp))).toBeLessThan(0.4);
-    expect(p.gold).toBeLessThanOrEqual(100);
-    expect(p.potions).toBeLessThanOrEqual(3);
   });
 });
 

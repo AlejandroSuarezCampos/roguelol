@@ -20,7 +20,9 @@ describe('guardado del progreso permanente', () => {
     const m = createMetaManager(store);
     const meta = newMeta();
     meta.shards = 120;
-    meta.perks.vigor = 2;
+    meta.unlocked = ['starter:blade', 'card:l8'];
+    meta.loadout = { yasuo: 'blade' };
+    meta.maxAscension = 3;
     meta.bestiary.wolf = { seen: 4, defeated: 3 };
     meta.history.runs = 5;
     m.save(meta);
@@ -40,8 +42,9 @@ describe('guardado del progreso permanente', () => {
 
   it.each([
     ['Esquirlas negativas', (r: any) => (r.meta.shards = -1)],
-    ['un nivel de mejora de 7', (r: any) => (r.meta.perks.vigor = 7)],
-    ['una mejora que no existe', (r: any) => delete r.meta.perks.vigor],
+    ['un desbloqueo que no existe', (r: any) => r.meta.unlocked.push('card:nope')],
+    ['un objeto inicial bloqueado', (r: any) => (r.meta.loadout = { lux: 'ring' })],
+    ['un objeto inicial que no es inicial', (r: any) => { r.meta.unlocked.push('starter:blade'); r.meta.loadout = { lux: 'rabadon' }; }],
     ['un bestiario con basura', (r: any) => (r.meta.bestiary.wolf = { seen: 'x' })],
     ['un historial incompleto', (r: any) => delete r.meta.history.runs],
     ['una Ascensión de 11', (r: any) => (r.meta.maxAscension = 11)],
@@ -56,17 +59,20 @@ describe('guardado del progreso permanente', () => {
     expect(m.load().corrupt).not.toBeNull();
   });
 
-  it('un progreso de la versión 1 (con Pesadilla) se migra sin perder Esquirlas ni historial', () => {
+  it('un progreso de la versión 1 (Pesadilla y mejoras) se migra devolviendo las Esquirlas de las mejoras y sin perder historial', () => {
     const store = memory();
     const old = newMeta() as any;
     delete old.maxAscension;
     const { deaths, ...history } = old.history;
     old.shards = 77;
+    old.perks = { vigor: 2, provisions: 0, belt: 1, mastery: 0 }; // 40 + 80 + 35 = 155 que se devuelven
     old.history = { ...history, runs: 3, nightmareDeaths: 2 };
     store.setItem(META_KEY, JSON.stringify({ version: 1, meta: old }));
     const r = createMetaManager(store).load();
     expect(r.corrupt).toBeNull();
-    expect(r.meta.shards).toBe(77);
+    expect(r.meta.shards).toBe(77 + 155);
+    expect(r.meta.unlocked).toEqual([]);
+    expect('perks' in r.meta).toBe(false);
     expect(r.meta.maxAscension).toBe(0);
     expect(r.meta.history).toMatchObject({ runs: 3, deaths: 2 });
     void deaths;

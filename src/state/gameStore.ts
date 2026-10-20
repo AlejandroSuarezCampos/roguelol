@@ -15,8 +15,7 @@ import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions'
 import { reorder } from '../engine/run';
 import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, buyRelic as engineBuyRelic, openShop, removeCard as engineRemoveCard } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
-import { buyPerk as engineBuyPerk, newMeta, perksFor, recordRun, type MetaState } from '../engine/meta';
-import type { PerkId } from '../data/perks';
+import { buyUnlock as engineBuyUnlock, newMeta, recordRun, setStarter as engineSetStarter, setupFor, type MetaState } from '../engine/meta';
 import { createMetaManager, type MetaManager } from '../save/metaManager';
 import { browserStorage, cloneExpedition, createSaveManager, type JournalEntry, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
@@ -193,14 +192,14 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     /** Nueva expedición en el nivel de Ascensión más alto desbloqueado (o el indicado, recortado a lo desbloqueado). */
     newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1, ascension = meta.maxAscension) {
       state = initial(meta, state.saved);
-      emit({ screen: 'prep', expedition: createExpedition(seed, Math.max(0, Math.min(ascension, meta.maxAscension)), perksFor(meta)) });
+      emit({ screen: 'prep', expedition: createExpedition(seed, Math.max(0, Math.min(ascension, meta.maxAscension)), setupFor(meta)) });
     },
     /** Cambia la Ascensión en la preparación (misma semilla, así que el Presagio no cambia; el mapa sí). Solo niveles desbloqueados. */
     setAscension(level: number) {
       const e = state.expedition;
       if (!e || state.screen !== 'prep' || e.ascension === level || level < 0 || level > meta.maxAscension) return;
       const order = e.run.champions.map((c) => [c.id, c.pos] as const);
-      const fresh = createExpedition(e.seed, level, perksFor(meta));
+      const fresh = createExpedition(e.seed, level, setupFor(meta));
       for (const [id, pos] of order) fresh.run.champions.find((c) => c.id === id)!.pos = pos;
       emit({ expedition: fresh });
     },
@@ -237,13 +236,23 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         emit({ saved: null, notice: `El guardado estaba dañado (${r.reason}) y se ha descartado. Se conserva una copia.` });
       } else emit({ saved: null });
     },
-    /** Pantallas del menú (Mejoras, Archivo, Equipo). */
+    /** Pantallas del menú (Desbloqueos, Archivo, Equipo). */
     openMenuScreen(screen: 'upgrades' | 'archive' | 'roster') {
       emit({ screen, hint: null });
     },
-    buyPerk(id: PerkId) {
+    buyUnlock(id: string) {
       try {
-        engineBuyPerk(meta, id);
+        engineBuyUnlock(meta, id);
+        metaStore?.save(meta);
+        emit({ hint: null });
+      } catch (err) {
+        fail((err as Error).message);
+      }
+    },
+    /** Elige el objeto inicial de un campeón en el menú (se aplica a la siguiente expedición). */
+    setStarter(champion: ChampionId, gearId: string | null) {
+      try {
+        engineSetStarter(meta, champion, gearId);
         metaStore?.save(meta);
         emit({ hint: null });
       } catch (err) {

@@ -1,6 +1,6 @@
 import { RELIC_LIST } from '../data/relics';
 import { CONFIG } from './config';
-import type { Expedition } from './expedition';
+import { relicPool, type Expedition } from './expedition';
 
 export type ChestOffer = { kind: 'gold'; amount: number } | { kind: 'relic'; id: string };
 
@@ -16,7 +16,7 @@ export interface ChestState {
  */
 export function openChest(e: Expedition): ChestState {
   if (e.chest) return e.chest;
-  const fresh = RELIC_LIST.filter((r) => !e.run.relics.includes(r.id));
+  const fresh = relicPool(e);
   const offer: ChestOffer = fresh.length ? { kind: 'relic', id: e.run.rng.pick(fresh).id } : { kind: 'gold', amount: CONFIG.chest.fallbackGold };
   e.chest = { offers: [offer], taken: null };
   return e.chest;

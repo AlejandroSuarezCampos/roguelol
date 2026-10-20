@@ -27,7 +27,7 @@ export function finalStatsFor(e: Expedition, id: ChampionId): StatBlock {
 /** Vida máxima: base × (1 − 10 % por herida) + vida del gear. */
 export function maxHpFor(e: Expedition, id: ChampionId): number {
   const gearHp = equipped(e, id).reduce((a, g) => a + (g.hp ?? 0), 0);
-  return Math.round(CHAMPIONS[id].maxHp * (1 - CONFIG.expedition.wound.maxHpLoss * e.wounds[id])) + gearHp + e.perks.hp;
+  return Math.round(CHAMPIONS[id].maxHp * (1 - CONFIG.expedition.wound.maxHpLoss * e.wounds[id])) + gearHp + e.bonusHp;
 }
 
 /** Recalcula `maxHp` del campeón y recorta la vida actual si se pasa (nunca deja a uno vivo en 0). */

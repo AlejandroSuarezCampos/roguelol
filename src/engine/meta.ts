@@ -1,16 +1,9 @@
-import { PERKS, PERK_IDS, type PerkId } from '../data/perks';
+import { GEAR } from '../data/gear';
+import { UNLOCKS, UNLOCK_BY_ID, type RunSetup } from '../data/unlocks';
 import type { Expedition } from './expedition';
+import type { ChampionId } from './types';
 import { CONFIG } from './config';
 import { MAX_ASCENSION } from '../data/ascension';
-
-/** Ventajas que se aplican al crear una expedición (salen de los niveles de las mejoras). */
-export interface Perks {
-  hp: number;
-  gold: number;
-  potions: number;
-  upgradedCards: number;
-}
-export const NO_PERKS: Perks = { hp: 0, gold: 0, potions: 0, upgradedCards: 0 };
 
 export interface MetaHistory {
   runs: number;
@@ -28,7 +21,10 @@ export interface MetaState {
   shards: number;
   /** Nivel de Ascensión más alto desbloqueado (se desbloquea el siguiente al ganar en el más alto). */
   maxAscension: number;
-  perks: Record<PerkId, number>;
+  /** Ids de `UNLOCKS` ya comprados con Esquirlas. */
+  unlocked: string[];
+  /** Objeto inicial elegido para cada campeón (debe estar desbloqueado). */
+  loadout: Partial<Record<ChampionId, string>>;
   bestiary: Record<string, { seen: number; defeated: number }>;
   history: MetaHistory;
 }
@@ -36,7 +32,8 @@ export interface MetaState {
 export const newMeta = (): MetaState => ({
   shards: 0,
   maxAscension: 0,
-  perks: { vigor: 0, provisions: 0, belt: 0, mastery: 0 },
+  unlocked: [],
+  loadout: {},
   bestiary: {},
   history: { runs: 0, victories: 0, defeats: 0, retreats: 0, bestFloor: 0, combatsWon: 0, deaths: 0 },
 });
@@ -78,21 +75,29 @@ export function recordRun(meta: MetaState, e: Expedition): { shards: number } {
   return { shards };
 }
 
-export const perkCost = (meta: MetaState, id: PerkId): number | null => (meta.perks[id] >= 3 ? null : PERKS[id].costs[meta.perks[id]]);
-
-/** Compra el siguiente nivel de una mejora. Lanza un error con el motivo si no se puede. */
-export function buyPerk(meta: MetaState, id: PerkId): void {
-  const cost = perkCost(meta, id);
-  if (cost === null) throw new Error('Ya está al nivel máximo');
-  if (meta.shards < cost) throw new Error(`Esquirlas insuficientes (faltan ${cost - meta.shards})`);
-  meta.shards -= cost;
-  meta.perks[id]++;
+/** Compra un desbloqueo con Esquirlas. Lanza un error con el motivo si no se puede. */
+export function buyUnlock(meta: MetaState, id: string): void {
+  const u = UNLOCK_BY_ID[id];
+  if (!u) throw new Error('Ese desbloqueo no existe');
+  if (meta.unlocked.includes(id)) throw new Error('Ya está desbloqueado');
+  if (meta.shards < u.cost) throw new Error(`Esquirlas insuficientes (faltan ${u.cost - meta.shards})`);
+  meta.shards -= u.cost;
+  meta.unlocked.push(id);
 }
 
-const val = (meta: MetaState, id: PerkId): number => (meta.perks[id] ? PERKS[id].values[meta.perks[id] - 1] : 0);
-
-export function perksFor(meta: MetaState): Perks {
-  return { hp: val(meta, 'vigor'), gold: val(meta, 'provisions'), potions: val(meta, 'belt'), upgradedCards: val(meta, 'mastery') };
+/** Elige el objeto inicial de un campeón (`null` = ninguno). Solo objetos iniciales desbloqueados. */
+export function setStarter(meta: MetaState, champion: ChampionId, gearId: string | null): void {
+  if (gearId === null) {
+    delete meta.loadout[champion];
+    return;
+  }
+  if (!GEAR[gearId]?.starter) throw new Error('No es un objeto inicial');
+  if (!meta.unlocked.includes(`starter:${gearId}`)) throw new Error('Ese objeto inicial aún está bloqueado');
+  meta.loadout[champion] = gearId;
 }
 
-export { PERK_IDS };
+/** Lo que el progreso aporta a una expedición nueva: lo que sigue bloqueado y los objetos iniciales elegidos. */
+export function setupFor(meta: MetaState): RunSetup {
+  const lockedOf = (kind: 'card' | 'relic') => UNLOCKS.filter((u) => u.kind === kind && !meta.unlocked.includes(u.id)).map((u) => u.ref);
+  return { locked: { cards: lockedOf('card'), relics: lockedOf('relic') }, starters: { ...meta.loadout } };
+}

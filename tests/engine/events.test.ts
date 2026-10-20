@@ -144,7 +144,6 @@ describe('efectos', () => {
 });
 
 import { SHRINES } from '../../src/data/events';
-import { NO_PERKS } from '../../src/engine/meta';
 import { RELIC_LIST } from '../../src/data/relics';
 import { maxHpFor } from '../../src/engine/gear';
 
@@ -199,12 +198,11 @@ describe('santuarios', () => {
     expect(maxHpFor(e, 'leona')).toBe(Math.round(70 * 0.9) + 4);
   });
 
-  it('las ventajas de una expedición no comparten objeto con la constante de «sin mejoras»', () => {
+  it('la vida máxima del santuario es de esa expedición y no se arrastra a la siguiente', () => {
     const e = createExpedition(5);
     e.run.gold = 100;
     resolveChoice(e, SHRINES[0], 1);
-    expect(e.perks.hp).toBe(4);
-    expect(NO_PERKS.hp).toBe(0);
-    expect(createExpedition(6).perks.hp).toBe(0);
+    expect(e.bonusHp).toBe(4);
+    expect(createExpedition(6).bonusHp).toBe(0);
   });
 });

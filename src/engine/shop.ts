@@ -1,8 +1,7 @@
 import { deckCardDef } from '../data/cards';
-import { RELIC_LIST } from '../data/relics';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
-import { cardPool, claimPotion, modsOf } from './expedition';
+import { cardPool, claimPotion, modsOf, relicPool } from './expedition';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
@@ -37,7 +36,7 @@ export function openShop(e: Expedition): ShopState {
   const cards = rng.shuffle(cardPool(e)).slice(0, CONFIG.shop.cards).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
   const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: priced(e, CONFIG.shop.potionPrice[id]), sold: false }));
   const relics = rng
-    .shuffle(RELIC_LIST.filter((r) => !e.run.relics.includes(r.id)))
+    .shuffle(relicPool(e))
     .slice(0, CONFIG.shop.relics)
     .map((r) => ({ id: r.id, price: priced(e, CONFIG.shop.relicPrice[r.rarity]), sold: false }));
   e.shop = { cards, relics, potions };

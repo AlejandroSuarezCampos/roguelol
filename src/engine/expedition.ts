@@ -10,7 +10,7 @@ import { combatMods, type NodeType } from './mist';
 import { rollRewards, type Rewards } from './rewards';
 import { RELIC_LIST } from '../data/relics';
 import { combatEndNotes } from './relics';
-import { NO_PERKS, type Perks } from './meta';
+import { OPEN_SETUP, type RunSetup } from '../data/unlocks';
 import { createRun, enterNode as runEnterNode, stokeFire, type RunChampion, type RunState } from './run';
 import { Rng } from './rng';
 import { addPotion, POTIONS, resolveFullBelt } from './potions';
@@ -34,8 +34,10 @@ export interface ExpeditionMap {
 export type ExpeditionStatus = 'active' | 'victory' | 'defeat' | 'retreat';
 
 export interface Expedition {
-  /** Ventajas de las mejoras permanentes aplicadas al empezar. */
-  perks: Perks;
+  /** Vida máxima extra de la expedición para todos (santuarios). */
+  bonusHp: number;
+  /** Cartas y reliquias que el progreso permanente aún no ha desbloqueado: no se ofrecen. */
+  locked: RunSetup['locked'];
   /** Ya se sumó al progreso permanente (las Esquirlas se ganan una sola vez). */
   recorded: boolean;
   /** Enemigos vistos y derrotados en esta expedición (alimenta el bestiario). */
@@ -161,25 +163,27 @@ function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: num
 /** Modificadores de la Ascensión de la expedición. */
 export const modsOf = (e: Pick<Expedition, 'ascension'>): AscensionMods => ascensionMods(e.ascension);
 
-export function createExpedition(seed: number, ascension = 0, perks: Perks = NO_PERKS): Expedition {
+export function createExpedition(seed: number, ascension = 0, setup: RunSetup = OPEN_SETUP): Expedition {
   const mods = ascensionMods(ascension);
   const champions: RunChampion[] = CHAMPION_IDS.map((id) => ({
-    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp + perks.hp, maxHp: CHAMPIONS[id].maxHp + perks.hp, stress: mods.startStress, downed: false,
+    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp, maxHp: CHAMPIONS[id].maxHp, stress: mods.startStress, downed: false,
   }));
   const run = createRun(seed, champions);
-  run.gold = perks.gold;
-  for (let i = 0; i < perks.potions; i++) addPotion(run.belt, 'health');
   const deck = [...STARTER_DECK];
-  // Maestría: cartas del mazo inicial ya mejoradas, elegidas con una semilla aparte para no tocar el RNG de la run.
-  const picks = new Rng(seed ^ 0x5bd1e995).shuffle(deck.map((_, i) => i)).slice(0, perks.upgradedCards);
-  for (const i of picks) deck[i] = upgradedId(deck[i]);
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
   const map = generateMap(new Rng(seed ^ 0x9e3779b9), mods.restWeight, mods.eliteWeight);
-  return {
-    perks: { ...perks }, recorded: false, encounters: {}, seed, ascension, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
+  const e: Expedition = {
+    bonusHp: 0, locked: { cards: [...setup.locked.cards], relics: [...setup.locked.relics] }, recorded: false, encounters: {}, seed, ascension, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
     gear: emptyGear(), inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
+  // Objetos iniciales elegidos en el menú: se equipan en el primer hueco (y suben la vida si dan vida).
+  for (const [id, gearId] of Object.entries(setup.starters) as [ChampionId, string][]) {
+    if (!GEAR[gearId]?.starter) throw new Error(`No es un objeto inicial: ${gearId}`);
+    e.inventory.push(gearId);
+    equip(e, id, gearId);
+  }
+  return e;
 }
 
 export const nodeById = (e: Expedition, id: string): MapNode => {
@@ -301,7 +305,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   const pool = e.run.rng.shuffle(cardPool(e).map((c) => c.id));
   const potion = e.run.rng.next() < CONFIG.potions.drop[kind] * diff.potionDrop ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
   const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
-  const fresh = e.run.rng.shuffle(RELIC_LIST.map((r) => r.id).filter((id) => !e.run.relics.includes(id)));
+  const fresh = e.run.rng.shuffle(relicPool(e).map((r) => r.id));
   const relicIds = fresh.slice(0, base.relics);
   return { ...base, cards: pool.slice(0, base.cardOptions), potion, gear, relicIds, relicNotes };
 }
@@ -341,8 +345,12 @@ export function claimPotion(e: Expedition, id: PotionId, slot?: number | 'new'):
   return slot === 'new' ? 'discarded' : 'replaced';
 }
 
-/** Cartas que pueden salir como botín, en tienda o en eventos: solo las de campeones que siguen vivos. */
-export const cardPool = (e: Expedition) => CARD_LIST.filter((c) => e.run.champions.some((ch) => ch.id === c.owner));
+/** Cartas que pueden salir como botín, en tienda o en eventos: solo las de campeones que siguen vivos y ya desbloqueadas. */
+export const cardPool = (e: Expedition) =>
+  CARD_LIST.filter((c) => e.run.champions.some((ch) => ch.id === c.owner) && !e.locked.cards.includes(c.id));
+
+/** Reliquias que pueden salir (botín, tienda, tesoro, eventos): ni las que ya se tienen ni las aún bloqueadas. */
+export const relicPool = (e: Expedition) => RELIC_LIST.filter((r) => !e.run.relics.includes(r.id) && !e.locked.relics.includes(r.id));
 
 export function claimRewards(e: Expedition, r: Rewards & { relicIds?: string[] }): void {
   e.run.gold += r.gold;

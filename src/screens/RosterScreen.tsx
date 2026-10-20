@@ -6,13 +6,14 @@ import { Icon } from '../components/Icon';
 import { CARD_LIST, applyUpgrade } from '../data/cards';
 import { CHAMPIONS, CHAMPION_IDS, CRISIS } from '../data/champions';
 import { CRISIS_INFO } from '../data/glossary';
-import { perksFor } from '../engine/meta';
+import { GEAR_LIST } from '../data/gear';
+import { GearItem } from '../components/GearItem';
 import { DEFAULT_STATS } from '../engine/stats';
 import type { ChampionId, StatBlock } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
 import { statLines } from '../ui/format';
 
-/** Equipo (menú): fichas de los campeones y su colección de cartas, de solo lectura. El gear se gestiona dentro de una expedición. */
+/** Equipo (menú): fichas de los campeones, su objeto inicial y su colección de cartas. El resto del gear se gestiona dentro de una expedición. */
 export function RosterScreen() {
   const { meta } = useGame();
   const [sel, setSel] = useState<ChampionId>('leona');
@@ -20,7 +21,8 @@ export function RosterScreen() {
   const c = CHAMPIONS[sel];
   const crisis = CRISIS_INFO[CRISIS[sel]];
   const base: StatBlock = { ...DEFAULT_STATS, ...c.stats };
-  const perkHp = perksFor(meta).hp;
+  const starters = GEAR_LIST.filter((g) => g.starter && meta.unlocked.includes(`starter:${g.id}`));
+  const chosen = meta.loadout[sel] ?? null;
   const cards = CARD_LIST.filter((x) => x.owner === sel);
   return (
     <div className="screen roster scene-bg">
@@ -49,7 +51,7 @@ export function RosterScreen() {
             <ChampionPortrait id={sel} className="big" />
             <div className="col grow">
               <p className="sub">Rasgos: {c.traits.join(' · ')}</p>
-              <span className="tag">Vida máxima {c.maxHp + perkHp}{perkHp ? ` (incluye +${perkHp} de Vigor)` : ''}</span>
+              <span className="tag">Vida máxima {c.maxHp}</span>
               <span className="tag">Bonus de posición en {c.sweetSpot.join('–')}</span>
               <span className="tag warn" title={crisis.text}>
                 <Icon name="warn" /> Crisis: {crisis.name}
@@ -57,6 +59,23 @@ export function RosterScreen() {
               <p className="sub small">{crisis.text}</p>
             </div>
           </div>
+          <h4 className="fd">Objeto inicial</h4>
+          {starters.length ? (
+            <div className="col" role="radiogroup" aria-label={`Objeto inicial de ${c.name}`}>
+              <label className="row">
+                <input type="radio" name="starter" checked={chosen === null} onChange={() => game.setStarter(sel, null)} /> Ninguno
+              </label>
+              {starters.map((g) => (
+                <label key={g.id} className="row">
+                  <input type="radio" name="starter" checked={chosen === g.id} onChange={() => game.setStarter(sel, g.id)} aria-label={g.name} />
+                  <GearItem id={g.id} compact />
+                </label>
+              ))}
+              <small className="sub">Empieza la expedición equipado en el primer hueco.</small>
+            </div>
+          ) : (
+            <p className="sub">Desbloquea objetos iniciales en Desbloqueos para elegir con cuál empieza cada campeón.</p>
+          )}
           <h4 className="fd">Estadísticas base</h4>
           <dl className="statlist">
             {statLines(base, 0, true).map((l) => (

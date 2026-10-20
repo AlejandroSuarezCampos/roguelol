@@ -35,10 +35,10 @@ describe('menú y preparación', () => {
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
   });
 
-  it('Equipo, Mejoras y Archivo abren su pantalla y se vuelve al menú', async () => {
+  it('Equipo, Desbloqueos y Archivo abren su pantalla y se vuelve al menú', async () => {
     const user = userEvent.setup();
     render(<App />);
-    for (const [name, heading] of [[/^Equipo/, 'Equipo'], [/^Mejoras/, 'Mejoras'], [/^Archivo/, 'Archivo']] as const) {
+    for (const [name, heading] of [[/^Equipo/, 'Equipo'], [/^Desbloqueos/, 'Desbloqueos'], [/^Archivo/, 'Archivo']] as const) {
       await user.click(screen.getByRole('button', { name }));
       expect(screen.getByText(heading, { selector: '.where b' })).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'Volver al menú' }));
@@ -585,23 +585,42 @@ describe('forja en el descanso', () => {
 
 
 describe('metaprogresión en pantalla', () => {
-  it('Mejoras: sin Esquirlas no se compra; con ellas sube el nivel y se actualiza el saldo', async () => {
+  it('Desbloqueos: sin Esquirlas no se compra; con ellas se desbloquea y se actualiza el saldo', async () => {
     const user = userEvent.setup();
-    go(() => game.openMenuScreen('upgrades'));
+    go(() => {
+      game.resetProgress();
+      game.openMenuScreen('upgrades');
+    });
     render(<App />);
-    expect(screen.getByRole('button', { name: /Comprar Vigor nivel 1/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Desbloquear Hoja de Doran por 30 Esquirlas/ })).toBeDisabled();
     expect(screen.getAllByText(/^Faltan \d+/).length).toBeGreaterThan(0);
     go(() => {
       game.getState().meta.shards = 100;
       game.notify(null);
     });
-    await user.click(screen.getByRole('button', { name: /Comprar Vigor nivel 1/ }));
-    expect(game.getState().meta.perks.vigor).toBe(1);
-    expect(screen.getByLabelText(/60 Esquirlas/)).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Nivel 1 de 3' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Desbloquear Hoja de Doran/ }));
+    expect(game.getState().meta.unlocked).toContain('starter:blade');
+    expect(screen.getByLabelText(/70 Esquirlas/)).toBeInTheDocument();
+    expect(screen.getAllByText('Desbloqueado').length).toBe(1);
   });
 
-  it('Mejoras: borrar el progreso pide confirmación', async () => {
+  it('Equipo del menú: el objeto inicial desbloqueado se elige y la expedición empieza con él', async () => {
+    const user = userEvent.setup();
+    go(() => {
+      game.resetProgress();
+      game.getState().meta.unlocked.push('starter:blade');
+      game.openMenuScreen('roster');
+    });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
+    await user.click(screen.getByRole('radio', { name: 'Hoja de Doran' }));
+    expect(game.getState().meta.loadout).toEqual({ yasuo: 'blade' });
+    go(() => game.newExpedition(4));
+    expect(game.getState().expedition!.gear.yasuo[0]).toBe('blade');
+    go(() => game.resetProgress());
+  });
+
+  it('Desbloqueos: borrar el progreso pide confirmación', async () => {
     const user = userEvent.setup();
     go(() => {
       game.openMenuScreen('upgrades');

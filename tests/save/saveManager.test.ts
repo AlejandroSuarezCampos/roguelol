@@ -124,7 +124,8 @@ describe('datos corruptos', () => {
     ['una Ascensión inventada', (r: any) => (r.expedition.ascension = 11)],
     ['un muerto sin muerte permanente', (r: any) => { r.expedition.dead = ['lux']; r.expedition.run.champions.splice(2, 1); }],
     ['un campeón vivo y muerto a la vez', (r: any) => { r.expedition.ascension = 10; r.expedition.dead = ['leona']; }],
-    ['unas mejoras inventadas', (r: any) => (r.expedition.perks = { hp: 'mucho' })],
+    ['una vida extra inventada', (r: any) => (r.expedition.bonusHp = 'mucho')],
+    ['una carta bloqueada que no existe', (r: any) => r.expedition.locked.cards.push('nope')],
     ['un bestiario roto', (r: any) => (r.expedition.encounters = { wolf: { seen: -1, defeated: 0 } })],
     ['una expedición ya terminada', (r: any) => (r.expedition.status = 'defeat')],
   ])('rechaza %s', (_name, tamper) => {

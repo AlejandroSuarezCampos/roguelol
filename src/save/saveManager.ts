@@ -103,7 +103,9 @@ function problem(x: any): string | null {
   if (!Array.isArray(x.visited) || !x.visited.every((id: unknown) => typeof id === 'string' && ids.has(id))) return 'visitados';
   if (x.status !== 'active') return 'estado';
   if (!isObj(x.wounds) || !CHAMPION_IDS.every((id) => isNum(x.wounds[id]) && x.wounds[id] >= 0 && x.wounds[id] <= CONFIG.expedition.wound.cap)) return 'heridas';
-  if (!isObj(x.perks) || !['hp', 'gold', 'potions', 'upgradedCards'].every((k) => isNum(x.perks[k]) && x.perks[k] >= 0)) return 'mejoras';
+  if (!isNum(x.bonusHp) || x.bonusHp < 0) return 'vida extra';
+  const allIds = (a: unknown, ok: (id: string) => boolean) => Array.isArray(a) && a.every((id) => typeof id === 'string' && ok(id));
+  if (!isObj(x.locked) || !allIds(x.locked.cards, (id) => id in CARDS) || !allIds(x.locked.relics, (id) => id in RELICS)) return 'bloqueos';
   if (typeof x.recorded !== 'boolean') return 'registro';
   if (!isObj(x.encounters) || !Object.values(x.encounters).every((c: any) => isObj(c) && isNum(c.seen) && isNum(c.defeated) && c.seen >= 0 && c.defeated >= 0)) return 'bestiario';
   if (!isNum(x.removals) || x.removals < 0 || !Array.isArray(x.seenEvents) || !isObj(x.stats) || !isNum(x.stats.combats) || !isNum(x.stats.elites)) return 'contadores';

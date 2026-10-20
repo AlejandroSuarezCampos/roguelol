@@ -465,7 +465,6 @@ describe('Ascensión', () => {
 });
 
 import { createMetaManager, META_KEY } from '../../src/save/metaManager';
-import { PERKS } from '../../src/data/perks';
 
 describe('metaprogresión en el store', () => {
   const mem = (): StorageLike & { data: Map<string, string> } => {
@@ -491,39 +490,44 @@ describe('metaprogresión en el store', () => {
     expect(g2.getState().meta.shards).toBe(shards);
   });
 
-  it('comprar una mejora gasta Esquirlas, se guarda y se aplica a la siguiente expedición', () => {
+  it('desbloquear gasta Esquirlas, se guarda y se aplica a la siguiente expedición', () => {
     const store = mem();
     const g = createGameStore({ meta: createMetaManager(store) });
     g.getState().meta.shards = 500;
-    g.buyPerk('vigor');
-    g.buyPerk('provisions');
-    expect(g.getState().meta.perks.vigor).toBe(1);
-    expect(g.getState().meta.shards).toBe(500 - PERKS.vigor.costs[0] - PERKS.provisions.costs[0]);
+    expect(g.getState().meta.unlocked).toEqual([]);
+    g.newExpedition(3);
+    expect(g.getState().expedition!.locked.cards).toContain('l8');
+    g.buyUnlock('card:l8');
+    g.buyUnlock('starter:ring');
+    g.setStarter('lux', 'ring');
+    expect(g.getState().meta.shards).toBe(500 - 60 - 30);
+    expect(JSON.parse(store.data.get(META_KEY)!).meta.loadout).toEqual({ lux: 'ring' });
     g.newExpedition(3);
     const e = g.getState().expedition!;
-    expect(e.run.gold).toBe(PERKS.provisions.values[0]);
-    expect(e.run.champions[0].maxHp).toBeGreaterThan(0);
-    expect(e.perks.hp).toBe(PERKS.vigor.values[0]);
+    expect(e.locked.cards).not.toContain('l8');
+    expect(e.gear.lux[0]).toBe('ring');
     g.getState().meta.maxAscension = 1;
     g.setAscension(1);
-    expect(g.getState().expedition!.perks.hp).toBe(PERKS.vigor.values[0]);
+    expect(g.getState().expedition!.gear.lux[0]).toBe('ring');
   });
 
-  it('comprar sin saldo o al máximo da un aviso', () => {
+  it('desbloquear sin saldo o elegir un inicial bloqueado da un aviso', () => {
     const g = createGameStore({ meta: createMetaManager(mem()) });
-    g.buyPerk('mastery');
+    g.buyUnlock('card:l8');
     expect(g.getState().hint).toMatch(/Esquirlas/);
-    expect(g.getState().meta.perks.mastery).toBe(0);
+    g.setStarter('lux', 'ring');
+    expect(g.getState().hint).toMatch(/bloqueado/);
+    expect(g.getState().meta.unlocked).toEqual([]);
   });
 
   it('borrar el progreso lo deja a cero', () => {
     const store = mem();
     const g = createGameStore({ meta: createMetaManager(store) });
     g.getState().meta.shards = 50;
-    g.buyPerk('belt');
+    g.buyUnlock('starter:blade');
     g.resetProgress();
     expect(g.getState().meta.shards).toBe(0);
-    expect(g.getState().meta.perks.belt).toBe(0);
+    expect(g.getState().meta.unlocked).toEqual([]);
     expect(store.data.has(META_KEY)).toBe(false);
   });
 

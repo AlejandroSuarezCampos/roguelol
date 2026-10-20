@@ -1,5 +1,7 @@
 import { MAX_ASCENSION } from '../data/ascension';
-import { PERK_IDS } from '../data/perks';
+import { CHAMPION_IDS } from '../data/champions';
+import { GEAR } from '../data/gear';
+import { UNLOCK_BY_ID } from '../data/unlocks';
 import { newMeta, type MetaState } from '../engine/meta';
 import type { StorageLike } from './saveManager';
 
@@ -13,20 +15,30 @@ const isObj = (v: unknown): v is Record<string, any> => typeof v === 'object' &&
 function problem(m: any): string | null {
   if (!isObj(m) || !isNum(m.shards)) return 'Esquirlas';
   if (!Number.isInteger(m.maxAscension) || m.maxAscension < 0 || m.maxAscension > MAX_ASCENSION) return 'Ascensión';
-  if (!isObj(m.perks) || !PERK_IDS.every((id) => Number.isInteger(m.perks[id]) && m.perks[id] >= 0 && m.perks[id] <= 3)) return 'mejoras';
+  if (!Array.isArray(m.unlocked) || !m.unlocked.every((id: unknown) => typeof id === 'string' && id in UNLOCK_BY_ID) || new Set(m.unlocked).size !== m.unlocked.length) return 'desbloqueos';
+  if (!isObj(m.loadout) || !Object.entries(m.loadout).every(([c, g]) => CHAMPION_IDS.includes(c as never) && typeof g === 'string' && GEAR[g]?.starter && m.unlocked.includes(`starter:${g}`)))
+    return 'objetos iniciales';
   if (!isObj(m.bestiary) || !Object.values(m.bestiary).every((b: any) => isObj(b) && isNum(b.seen) && isNum(b.defeated))) return 'bestiario';
   const keys = ['runs', 'victories', 'defeats', 'retreats', 'bestFloor', 'combatsWon', 'deaths'];
   if (!isObj(m.history) || !keys.every((k) => isNum(m.history[k]))) return 'historial';
   return null;
 }
 
-/** v1 → v2: la Ascensión sustituye a Pesadilla (se empieza sin niveles desbloqueados) y las muertes cuentan en cualquier nivel. */
+/** Lo que costaba cada nivel de las mejoras de la v1 (se devuelve al migrar). */
+const V1_PERK_COSTS: Record<string, number[]> = { vigor: [40, 80, 120], provisions: [30, 60, 90], belt: [35, 70, 105], mastery: [50, 100, 150] };
+
+/**
+ * v1 → v2: la Ascensión sustituye a Pesadilla (se empieza sin niveles desbloqueados), las muertes cuentan en cualquier nivel y las
+ * mejoras de estadísticas desaparecen a favor de los desbloqueos: se devuelven todas las Esquirlas que costaron.
+ */
 function migrateV1(m: any): any {
   const { nightmareDeaths, ...history } = isObj(m.history) ? m.history : ({} as any);
-  return { ...m, maxAscension: 0, history: { ...history, deaths: nightmareDeaths ?? 0 } };
+  const { perks, ...rest } = m;
+  const refund = Object.entries(V1_PERK_COSTS).reduce((a, [id, costs]) => a + costs.slice(0, isObj(perks) && Number.isInteger(perks[id]) ? perks[id] : 0).reduce((x, y) => x + y, 0), 0);
+  return { ...rest, shards: (isNum(m.shards) ? m.shards : 0) + refund, maxAscension: 0, unlocked: [], loadout: {}, history: { ...history, deaths: nightmareDeaths ?? 0 } };
 }
 
-/** Guardado del progreso permanente (Esquirlas, mejoras, archivo). Nunca lanza; un guardado dañado se aparta con copia. */
+/** Guardado del progreso permanente (Esquirlas, desbloqueos, Ascensión, archivo). Nunca lanza; un guardado dañado se aparta con copia. */
 export function createMetaManager(storage: StorageLike | null) {
   const safe = <T>(fn: (s: StorageLike) => T, fallback: T): T => {
     if (!storage) return fallback;
