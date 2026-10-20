@@ -1,4 +1,4 @@
-// Captura las pantallas de metaprogresión (menú, Mejoras, Archivo, Equipo). Uso: node tests/e2e/meta.mjs <carpeta>
+// Captura las pantallas de metaprogresión (menú, Desbloqueos, Archivo, Equipo). Uso: node tests/e2e/meta.mjs <carpeta>
 import { open } from './play.mjs';
 
 const out = process.argv[2] ?? 'shots';
@@ -8,15 +8,16 @@ await page.goto('http://localhost:4173/?debug');
 await page.evaluate(() => {
   const m = window.__game.getState().meta;
   m.shards = 130;
-  m.perks.vigor = 1;
+  m.unlocked = ['starter:blade'];
+  m.loadout = { yasuo: 'blade' };
   m.bestiary.wolf = { seen: 4, defeated: 3 };
   m.bestiary.gromp = { seen: 1, defeated: 0 };
-  m.history = { runs: 6, victories: 1, defeats: 3, retreats: 2, bestFloor: 7, combatsWon: 19, nightmareDeaths: 2 };
+  m.history = { runs: 6, victories: 1, defeats: 3, retreats: 2, bestFloor: 7, combatsWon: 19, deaths: 2 };
   window.__game.toMenu();
 });
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${out}/m1-menu.png` });
-await page.getByRole('button', { name: /^Mejoras/ }).click();
+await page.getByRole('button', { name: /^Desbloqueos/ }).click();
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${out}/m2-upgrades.png` });
 await page.getByRole('button', { name: 'Volver al menú' }).click();

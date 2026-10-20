@@ -67,10 +67,7 @@ for (let step = 0; step < max; step++) {
   }
   if (await page.locator('.screen.chestscreen').count()) {
     await once('87-chest');
-    if (await page.getByRole('button', { name: 'Llevármelo' }).count()) {
-      await page.getByRole('button', { name: 'Llevármelo' }).first().click();
-      await page.getByRole('alertdialog').getByRole('button', { name: 'Llevármelo' }).click();
-    }
+    if (await page.getByRole('button', { name: 'Abrir el cofre' }).count()) await page.getByRole('button', { name: 'Abrir el cofre' }).click();
     await page.getByRole('button', { name: 'Continuar' }).click();
     continue;
   }

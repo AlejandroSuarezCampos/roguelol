@@ -22,7 +22,7 @@ Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Comba
     npm install
     npm run dev        # http://localhost:5173
     npm run build      # typecheck + build de producción en dist/
-    npm run balance    # simula 300 expediciones con un bot (Normal y Pesadilla) y muestra tasas de victoria
+    npm run balance    # simula 300 expediciones con un bot (Ascensión 0 y 10) y muestra tasas de victoria
 
 Estructura: `src/app` (raíz), `src/screens` (una por pantalla), `src/components` (carta, unidad, intención, barras…), `src/state` (store y selectores), `src/save` (guardado), `src/data` (cartas, enemigos, campeones, glosario), `src/styles` (tokens y CSS), `tests/` (motor, datos, estado, pantallas, equilibrio y `e2e/` con capturas en Chromium real).
 
@@ -34,9 +34,9 @@ Gear: [`specs/2026-10-19-gear-design.md`](docs/superpowers/specs/2026-10-19-gear
 
 Reliquias: [`specs/2026-10-19-reliquias-design.md`](docs/superpowers/specs/2026-10-19-reliquias-design.md).
 
-Metaprogresión (Esquirlas, Mejoras, Archivo y Equipo del menú): [`specs/2026-10-19-metaprogresion-design.md`](docs/superpowers/specs/2026-10-19-metaprogresion-design.md); el progreso permanente se guarda aparte en `localStorage` (`shattered-runeterra:meta`).
+Metaprogresión (Esquirlas, Desbloqueos, objeto inicial en Equipo del menú y Archivo): [`specs/2026-10-19-metaprogresion-design.md`](docs/superpowers/specs/2026-10-19-metaprogresion-design.md) con los cambios de [`specs/2026-10-20-revision-fase1.md`](docs/superpowers/specs/2026-10-20-revision-fase1.md); el progreso permanente se guarda aparte en `localStorage` (`shattered-runeterra:meta`). Los desbloqueos están en `src/data/unlocks.ts`.
 
-Dificultad Pesadilla (muerte permanente): [`specs/2026-10-19-pesadilla-design.md`](docs/superpowers/specs/2026-10-19-pesadilla-design.md). Todos los modificadores están en `src/data/difficulty.ts`.
+Dificultad: una sola, con 10 niveles de Ascensión acumulativos como en Slay the Spire (el 10 trae la muerte permanente). Se desbloquean ganando. Todos los modificadores están en `src/data/ascension.ts`.
 
 Fuera de esta fase: pasivas de gear y campeones nuevos.
 

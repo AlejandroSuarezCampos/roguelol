@@ -1,12 +1,14 @@
-// Captura la preparación y el combate de Pesadilla con un campeón derribado. Uso: node tests/e2e/nightmare.mjs <carpeta>
+// Captura la preparación en Ascensión 10 y el combate con un campeón derribado. Uso: node tests/e2e/ascension.mjs <carpeta>
 import { open } from './play.mjs';
 
 const out = process.argv[2] ?? 'shots';
 const s = await open(out);
 const { page } = s;
 await page.goto('http://localhost:4173/?debug');
-await page.evaluate(() => window.__game.newExpedition(5));
-await page.getByRole('radio', { name: /Pesadilla/ }).click({ force: true });
+await page.evaluate(() => {
+  window.__game.getState().meta.maxAscension = 10;
+  window.__game.newExpedition(5, 10);
+});
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${out}/n1-prep.png` });
 await page.evaluate(() => {
