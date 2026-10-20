@@ -130,6 +130,7 @@ function resolve(s: CombatState, e: Effect, owner: Unit, targets: Unit[]): void 
           amount: e.amount, damageType: e.damageType, scaling: e.scaling, additive, crit: e.canCrit ? 'roll' : undefined,
         });
         applyDamage(s, u, hit.amount, { crit: hit.crit });
+        if (hit.crit && owner.side === 'ally') s.relicQueue.push({ type: 'criticalHit', owner: owner.id as ChampionId, target: u.id });
         break;
       }
       case 'block':

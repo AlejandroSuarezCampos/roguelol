@@ -42,6 +42,9 @@ export interface CombatSetup {
   belt: BeltSlot[];
   /** Ids de las reliquias de la run. */
   relics?: string[];
+  /** Gear equipado por cada aliado y pasivas de expedición ya gastadas. */
+  gear?: { wearer: ChampionId; gearId: string }[];
+  spentGear?: string[];
 }
 
 export function startCombat(cfg: CombatSetup): CombatState {
@@ -83,6 +86,8 @@ export function startCombat(cfg: CombatSetup): CombatState {
     relicQueue: [{ type: 'combatStart' }],
     relicLog: [],
     fallen: [],
+    gear: [...(cfg.gear ?? [])],
+    spentGear: [...(cfg.spentGear ?? [])],
     pendingApMark: 0,
     rng,
     outcome: 'ongoing',
@@ -179,6 +184,7 @@ function resolveIntent(s: CombatState, enemy: Unit, i: Intent): void {
       if (!t) return;
       applyDamage(s, t, intentValue(s, enemy, i), { crit: i.crit });
       if (enemy.statuses.shadowMark) addStress(s, t, CONFIG.mist.shadowMarkStress);
+      s.relicQueue.push({ type: 'allyHit', unit: t.id as ChampionId, attacker: enemy.id, crit: !!i.crit });
       break;
     }
     case 'block':
@@ -210,6 +216,7 @@ export function endTeamTurn(s: CombatState): void {
     for (const i of s.intents[e.id] ?? []) {
       if (s.outcome !== 'ongoing' || e.downed) break;
       resolveIntent(s, e, i);
+      processRelics(s); // las pasivas reaccionan a cada golpe (espinas, Ángel de la guarda…)
     }
     vulnerableTick(e);
   }

@@ -56,6 +56,8 @@ export interface Expedition {
   currentId: string | null;
   visited: string[];
   status: ExpeditionStatus;
+  /** Pasivas de gear «una vez por expedición» ya usadas (`campeón:objeto:p`). */
+  spentGear: string[];
   /** Gear equipado por campeón y objetos sin equipar (sin límite). */
   gear: Record<ChampionId, ChampionGear>;
   inventory: string[];
@@ -174,7 +176,7 @@ export function createExpedition(seed: number, ascension = 0, setup: RunSetup = 
   const map = generateMap(new Rng(seed ^ 0x9e3779b9), mods.restWeight, mods.eliteWeight);
   const e: Expedition = {
     bonusHp: 0, locked: { cards: [...setup.locked.cards], relics: [...setup.locked.relics] }, recorded: false, encounters: {}, seed, ascension, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
-    gear: emptyGear(), inventory: [], inCombat: false,
+    gear: emptyGear(), spentGear: [], inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
   // Objetos iniciales elegidos en el menú: se equipan en el primer hueco (y suben la vida si dan vida).
@@ -247,6 +249,8 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
     mods: { ...mods, hpMultiplier: mods.hpMultiplier * diff.enemyHp[kind] },
     belt: run.belt,
     relics: run.relics,
+    gear: run.champions.flatMap((c) => e.gear[c.id].filter((g): g is string => !!g).map((gearId) => ({ wearer: c.id, gearId }))),
+    spentGear: e.spentGear,
   });
 }
 
@@ -276,6 +280,7 @@ function killChampion(e: Expedition, c: RunChampion): void {
 export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind): ExpeditionRewards | null {
   if (s.outcome === 'ongoing') throw new Error('El combate no ha terminado');
   e.inCombat = false;
+  e.spentGear = [...s.spentGear];
   for (const a of alliesAfter(s)) {
     const c = e.run.champions.find((x) => x.id === a.id)!;
     c.hp = a.hp;

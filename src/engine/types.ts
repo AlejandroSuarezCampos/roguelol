@@ -130,7 +130,11 @@ export type RelicEvent =
   | { type: 'turnStart' }
   | { type: 'cardPlayed'; owner: ChampionId; cardType: CardType }
   | { type: 'statusConsumed'; owner: ChampionId; status: StatusId; stacks: number }
-  | { type: 'championDowned'; unit: string };
+  | { type: 'championDowned'; unit: string }
+  /** Un campeón ha hecho un crítico con una carta. */
+  | { type: 'criticalHit'; owner: ChampionId; target: string }
+  /** Un enemigo ha golpeado a un campeón (aunque el bloqueo lo absorba). */
+  | { type: 'allyHit'; unit: ChampionId; attacker: string; crit: boolean };
 
 export interface RelicState {
   attacksThisTurn: number;
@@ -169,6 +173,10 @@ export interface CombatState {
   relicLog: { relic: string; turn: number }[];
   /** Aliados que han caído en algún momento del combate (aunque luego los reanimen). */
   fallen: string[];
+  /** Gear equipado (para sus pasivas y desventajas). */
+  gear: { wearer: ChampionId; gearId: string }[];
+  /** Pasivas «una vez por expedición» ya gastadas (`campeón:objeto`); vuelve a la expedición al acabar. */
+  spentGear: string[];
   /** Marcas que aplicará la siguiente carta de AP de este turno (Elixir de brujería). */
   pendingApMark: number;
   rng: Rng;

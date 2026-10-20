@@ -104,6 +104,7 @@ function problem(x: any): string | null {
   if (x.status !== 'active') return 'estado';
   if (!isObj(x.wounds) || !CHAMPION_IDS.every((id) => isNum(x.wounds[id]) && x.wounds[id] >= 0 && x.wounds[id] <= CONFIG.expedition.wound.cap)) return 'heridas';
   if (!isNum(x.bonusHp) || x.bonusHp < 0) return 'vida extra';
+  if (!Array.isArray(x.spentGear) || !x.spentGear.every((k: unknown) => typeof k === 'string')) return 'pasivas gastadas';
   const allIds = (a: unknown, ok: (id: string) => boolean) => Array.isArray(a) && a.every((id) => typeof id === 'string' && ok(id));
   if (!isObj(x.locked) || !allIds(x.locked.cards, (id) => id in CARDS) || !allIds(x.locked.relics, (id) => id in RELICS)) return 'bloqueos';
   if (typeof x.recorded !== 'boolean') return 'registro';

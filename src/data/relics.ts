@@ -1,14 +1,23 @@
-import type { CombatState, RelicEvent } from '../engine/types';
+import type { CombatState, RelicEvent, StatusId, Unit } from '../engine/types';
 
 export type RelicRarity = 'common' | 'rare' | 'legendary';
 
-/** A quién afecta un efecto. `owner`: el protagonista del evento (quien juega la carta, consume el estado o cae). */
-export type AllyTarget = 'allies' | 'owner' | 'others';
+/**
+ * A quién afecta un efecto. `owner`: el protagonista del evento (quien juega la carta, consume el estado, cae o recibe el golpe).
+ * `wearer`: quien lleva el objeto (solo pasivas de gear).
+ */
+export type AllyTarget = 'allies' | 'owner' | 'others' | 'wearer';
+/** Enemigo afectado: todos, el de menos vida, el objetivo del crítico o quien acaba de golpear. */
+export type EnemyTarget = 'allEnemies' | 'weakestEnemy' | 'target' | 'attacker';
 export type RelicEffect =
   | { type: 'block'; amount: number; to: AllyTarget }
   | { type: 'stress'; amount: number; to: AllyTarget }
+  | { type: 'heal'; amount: number; to: AllyTarget }
   /** Daño verdadero; con `perStack`, por cada acumulación consumida (evento `statusConsumed`). */
-  | { type: 'damage'; amount: number; to: 'allEnemies' | 'weakestEnemy'; perStack?: boolean }
+  | { type: 'damage'; amount: number; to: EnemyTarget; perStack?: boolean }
+  | { type: 'status'; status: StatusId; stacks: number; to: 'wearer' | EnemyTarget }
+  /** Levanta al portador derribado con esa fracción de su vida máxima. */
+  | { type: 'revive'; fraction: number }
   | { type: 'energy'; amount: number }
   /** Genera un evento nuevo para las reliquias. Solo cuenta si la reliquia declara `chains: true`; el tope por vaciado lo acota. */
   | { type: 'emit'; event: RelicEvent };
@@ -20,8 +29,8 @@ export interface RelicDef {
   text: string;
   /** Evento de combate que la dispara. Excluyente con `run`. */
   on?: RelicEvent['type'];
-  /** Condición extra, evaluada con el estado ya actualizado por el evento. */
-  when?: (s: CombatState, ev: RelicEvent) => boolean;
+  /** Condición extra, evaluada con el estado ya actualizado por el evento (`wearer`: portador, en las pasivas de gear). */
+  when?: (s: CombatState, ev: RelicEvent, wearer?: Unit) => boolean;
   effects?: RelicEffect[];
   /** Máximo de activaciones: una por turno o una por combate. */
   limit?: 'turn' | 'combat';

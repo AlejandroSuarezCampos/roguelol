@@ -28,11 +28,13 @@ export function GearItem({ id, delta, compact }: { id: string; delta?: { stats: 
         </small>
         <span className="gstats">
           {lines.map((l) => (
-            <span key={l.key} className="gst">
+            <span key={l.key} className={`gst ${l.raw < 0 ? 'neg' : ''}`}>
               {l.label} {l.value}
             </span>
           ))}
         </span>
+        {g.passive && !compact && <span className="gpass">Pasiva: {g.passive.text}</span>}
+        {g.drawback && <span className="gdraw" role="note">Desventaja: {g.drawback.text}</span>}
         {delta && (
           <span className="gdelta" aria-label="Cambio frente a lo equipado">
             {diff.length ? (

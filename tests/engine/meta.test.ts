@@ -133,11 +133,11 @@ describe('aplicar el progreso al empezar', () => {
   });
 
   it('el objeto inicial empieza equipado y su vida suma a la vida actual', () => {
-    const e = createExpedition(3, 0, { ...OPEN_SETUP, starters: { lux: 'ring' } });
+    const e = createExpedition(3, 0, { ...OPEN_SETUP, starters: { lux: 'atlas' } });
     const lux = e.run.champions.find((c) => c.id === 'lux')!;
-    expect(e.gear.lux[0]).toBe('ring');
+    expect(e.gear.lux[0]).toBe('atlas');
     expect(e.inventory).toEqual([]);
-    expect(lux.maxHp).toBe(CHAMPIONS.lux.maxHp + GEAR.ring.hp!);
+    expect(lux.maxHp).toBe(CHAMPIONS.lux.maxHp + GEAR.atlas.hp!);
     expect(lux.hp).toBe(lux.maxHp);
     expect(maxHpFor(e, 'lux')).toBe(lux.maxHp);
     expect(() => createExpedition(3, 0, { ...OPEN_SETUP, starters: { lux: 'rabadon' } })).toThrow(/inicial/);

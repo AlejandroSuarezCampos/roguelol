@@ -124,30 +124,30 @@ describe('vida máxima', () => {
 
   it('el ciclo equipar/quitar con poca vida no regala vida (el caso límite que el recorte a 1 permitía)', () => {
     const e = createExpedition(1);
-    e.inventory.push('blade'); // +15 de vida
+    e.inventory.push('ruby'); // +20 de vida
     champ(e, 'leona').hp = 3;
-    equip(e, 'leona', 'blade');
-    expect(champ(e, 'leona').hp).toBe(18);
+    equip(e, 'leona', 'ruby');
+    expect(champ(e, 'leona').hp).toBe(23);
     unequip(e, 'leona', 0);
     expect(champ(e, 'leona').hp).toBe(3);
   });
 
   it('cambiar un objeto por otro con menos vida se rechaza si dejaría a 0', () => {
     const e = createExpedition(1);
-    e.inventory.push('titanic', 'ring'); // +30 y +10 de vida en el mismo hueco
+    e.inventory.push('titanic', 'visage'); // +30 y +25 de vida en el mismo hueco
     equip(e, 'yasuo', 'titanic');
-    champ(e, 'yasuo').hp = 10;
-    expect(() => equip(e, 'yasuo', 'ring', 0)).toThrow(/sin vida/);
+    champ(e, 'yasuo').hp = 5;
+    expect(() => equip(e, 'yasuo', 'visage', 0)).toThrow(/sin vida/);
     expect(e.gear.yasuo[0]).toBe('titanic');
-    expect(e.inventory).toEqual(['ring']);
+    expect(e.inventory).toEqual(['visage']);
   });
 
   it('equipar y quitar en bucle no cura gratis', () => {
     const e = createExpedition(1);
     champ(e, 'leona').hp = 5;
-    e.inventory.push('blade');
+    e.inventory.push('ruby');
     for (let i = 0; i < 6; i++) {
-      equip(e, 'leona', 'blade');
+      equip(e, 'leona', 'ruby');
       unequip(e, 'leona', 0);
     }
     expect(champ(e, 'leona').hp).toBe(5);
@@ -156,12 +156,12 @@ describe('vida máxima', () => {
 
   it('cambiar un objeto de vida por otro mueve la vida actual por la diferencia', () => {
     const e = createExpedition(1);
-    e.inventory.push('blade', 'titanic'); // +15 y +30 de vida, en el mismo hueco
-    equip(e, 'leona', 'blade');
+    e.inventory.push('ruby', 'titanic'); // +20 y +30 de vida, en el mismo hueco
+    equip(e, 'leona', 'ruby');
     const hp = champ(e, 'leona').hp;
     equip(e, 'leona', 'titanic', 0);
-    expect(champ(e, 'leona').hp).toBe(hp + 15);
-    equip(e, 'leona', 'blade', 0);
+    expect(champ(e, 'leona').hp).toBe(hp + 10);
+    equip(e, 'leona', 'ruby', 0);
     expect(champ(e, 'leona').hp).toBe(hp);
   });
 
