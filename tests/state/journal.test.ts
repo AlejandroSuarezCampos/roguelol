@@ -21,9 +21,10 @@ const economy = (g: ReturnType<typeof createGameStore>) => {
   return JSON.stringify({ gold: e.run.gold, deck: e.deck, belt: e.run.belt, mist: e.run.mist, champs: e.run.champions, wounds: e.wounds, inv: e.inventory });
 };
 
-function intoBattle(store: StorageLike, seed = 3, difficulty: 'normal' | 'nightmare' = 'normal') {
+function intoBattle(store: StorageLike, seed = 3, ascension = 0) {
   const g = open(store);
-  g.newExpedition(seed, difficulty);
+  g.getState().meta.maxAscension = ascension;
+  g.newExpedition(seed, ascension);
   g.startExpedition();
   g.chooseNode(availableNodes(g.getState().expedition!)[0].id);
   return g;
@@ -68,9 +69,9 @@ describe('reanudar a mitad de un nodo', () => {
     expect(shape(reloaded)).toBe(shape(g));
   });
 
-  it('la muerte permanente de Pesadilla no se deshace recargando', () => {
+  it('la muerte permanente no se deshace recargando', () => {
     const store = mem();
-    const g = intoBattle(store, 5, 'nightmare');
+    const g = intoBattle(store, 5, 10);
     for (let i = 0; i < 40 && g.getState().combat!.outcome === 'ongoing' && !g.getState().combat!.units.some((u) => u.side === 'ally' && u.downed); i++) g.endTurn();
     const downed = g.getState().combat!.units.filter((u) => u.side === 'ally' && u.downed).map((u) => u.id);
     expect(downed.length).toBeGreaterThan(0);

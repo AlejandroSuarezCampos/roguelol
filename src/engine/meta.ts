@@ -1,6 +1,7 @@
 import { PERKS, PERK_IDS, type PerkId } from '../data/perks';
 import type { Expedition } from './expedition';
 import { CONFIG } from './config';
+import { MAX_ASCENSION } from '../data/ascension';
 
 /** Ventajas que se aplican al crear una expedición (salen de los niveles de las mejoras). */
 export interface Perks {
@@ -18,12 +19,15 @@ export interface MetaHistory {
   retreats: number;
   bestFloor: number;
   combatsWon: number;
-  nightmareDeaths: number;
+  /** Campeones muertos para siempre (Ascensión 10). */
+  deaths: number;
 }
 
 /** Progreso que persiste entre expediciones. */
 export interface MetaState {
   shards: number;
+  /** Nivel de Ascensión más alto desbloqueado (se desbloquea el siguiente al ganar en el más alto). */
+  maxAscension: number;
   perks: Record<PerkId, number>;
   bestiary: Record<string, { seen: number; defeated: number }>;
   history: MetaHistory;
@@ -31,21 +35,22 @@ export interface MetaState {
 
 export const newMeta = (): MetaState => ({
   shards: 0,
+  maxAscension: 0,
   perks: { vigor: 0, provisions: 0, belt: 0, mastery: 0 },
   bestiary: {},
-  history: { runs: 0, victories: 0, defeats: 0, retreats: 0, bestFloor: 0, combatsWon: 0, nightmareDeaths: 0 },
+  history: { runs: 0, victories: 0, defeats: 0, retreats: 0, bestFloor: 0, combatsWon: 0, deaths: 0 },
 });
 
 const M = CONFIG.meta;
 
 /**
- * Esquirlas de una expedición: pisos, combates, élites y victoria (×1,5 en Pesadilla), mínimo 5. Retirarse no penaliza, salvo si no
+ * Esquirlas de una expedición: pisos, combates, élites y victoria (+10 % por nivel de Ascensión), mínimo 5. Retirarse no penaliza, salvo si no
  * se ganó ni un combate: entrar y retirarse al instante no da nada (si no, se podrían sacar Esquirlas sin jugar).
  */
 export function shardsFor(e: Expedition): number {
   if (e.status === 'retreat' && e.stats.combats === 0) return 0;
   const base = M.perFloor * e.visited.length + M.perCombat * e.stats.combats + M.perElite * e.stats.elites + (e.status === 'victory' ? M.victoryBonus : 0);
-  const mult = e.difficulty === 'nightmare' ? M.nightmareMultiplier : 1;
+  const mult = 1 + M.perAscension * e.ascension;
   return Math.max(M.minShards, Math.round(base * mult));
 }
 
@@ -61,7 +66,8 @@ export function recordRun(meta: MetaState, e: Expedition): { shards: number } {
   else if (e.status === 'defeat') h.defeats++;
   else h.retreats++;
   h.combatsWon += e.stats.combats;
-  h.nightmareDeaths += e.difficulty === 'nightmare' ? e.dead.length : 0;
+  h.deaths += e.dead.length;
+  if (e.status === 'victory' && e.ascension >= meta.maxAscension && meta.maxAscension < MAX_ASCENSION) meta.maxAscension = e.ascension + 1;
   const floors = e.visited.map((id) => e.map.nodes.find((n) => n.id === id)!.floor + 1);
   h.bestFloor = Math.max(h.bestFloor, ...floors, 0);
   for (const [id, c] of Object.entries(e.encounters)) {

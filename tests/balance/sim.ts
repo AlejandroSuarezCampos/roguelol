@@ -1,15 +1,15 @@
 import { createExpedition } from '../../src/engine/expedition';
-import type { DifficultyId } from '../../src/data/difficulty';
 import { playExpedition } from './bot';
 
 const N = Number(process.argv[2] ?? 300);
-for (const difficulty of (process.argv[3] ? [process.argv[3]] : ['normal', 'nightmare']) as DifficultyId[]) {
+/** Uso: `npm run balance -- [expediciones] [nivel de Ascensión]` (por defecto, 0 y 10). */
+for (const level of process.argv[3] ? [Number(process.argv[3])] : [0, 10]) {
   const by: Record<string, { n: number; won: number; turns: number }> = {};
   const status: Record<string, number> = {};
   let floors = 0;
   let deaths = 0;
   for (let i = 0; i < N; i++) {
-    const e = createExpedition(1000 + i, difficulty);
+    const e = createExpedition(1000 + i, level);
     const r = playExpedition(e, 7 * i + 1);
     deaths += e.dead.length;
     status[r.status] = (status[r.status] ?? 0) + 1;
@@ -21,6 +21,6 @@ for (const difficulty of (process.argv[3] ? [process.argv[3]] : ['normal', 'nigh
       b.turns += f.turns;
     }
   }
-  console.log(`\n== ${difficulty} · expediciones: ${N}`, status, `piso medio: ${(floors / N).toFixed(2)}`, `muertes por run: ${(deaths / N).toFixed(2)}`);
+  console.log(`\n== Ascensión ${level} · expediciones: ${N}`, status, `piso medio: ${(floors / N).toFixed(2)}`, `muertes por run: ${(deaths / N).toFixed(2)}`);
   for (const [k, b] of Object.entries(by)) console.log(k.padEnd(7), `combates ${b.n}`, `victorias ${(100 * b.won / b.n).toFixed(0)}%`, `turnos medios ${(b.turns / b.n).toFixed(1)}`);
 }

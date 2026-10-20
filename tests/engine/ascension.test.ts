@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CARDS } from '../../src/data/cards';
-import { DIFFICULTIES } from '../../src/data/difficulty';
+import { ASCENSION_LEVELS, MAX_ASCENSION, ascensionMods } from '../../src/data/ascension';
 import { ENEMIES } from '../../src/data/enemies';
 import { CONFIG } from '../../src/engine/config';
 import { combatFromExpedition, createExpedition, finishCombat, generateMap, livingWounds, rest, type Expedition } from '../../src/engine/expedition';
@@ -9,7 +9,8 @@ import { Rng } from '../../src/engine/rng';
 import { openShop, removalPrice } from '../../src/engine/shop';
 import { applyDamage } from '../../src/engine/units';
 
-const N = DIFFICULTIES.nightmare;
+const TOP = MAX_ASCENSION;
+const N = ascensionMods(TOP);
 
 const won = (e: Expedition, kind: 'combat' | 'elite' | 'boss' = 'combat') => {
   const s = combatFromExpedition(e, kind);
@@ -18,49 +19,65 @@ const won = (e: Expedition, kind: 'combat' | 'elite' | 'boss' = 'combat') => {
   return s;
 };
 
-describe('definiciones', () => {
-  it('Pesadilla es más dura que Normal en cada modificador', () => {
-    const n = DIFFICULTIES.normal;
-    expect(n.permadeath).toBe(false);
-    expect(N.permadeath).toBe(true);
-    expect(N.enemyHp).toBeGreaterThan(n.enemyHp);
-    expect(N.enemyAttack).toBeGreaterThan(n.enemyAttack);
-    expect(N.restWeight).toBeLessThan(n.restWeight);
-    expect(N.restHeal).toBeLessThan(n.restHeal);
-    expect(N.gold).toBeLessThan(n.gold);
-    expect(N.potionDrop).toBeLessThan(n.potionDrop);
-    expect(N.shopPrice).toBeGreaterThan(n.shopPrice);
+describe('niveles', () => {
+  it('son 10, numerados y acumulativos: cada nivel es igual o más duro que el anterior', () => {
+    expect(ASCENSION_LEVELS.map((l) => l.level)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    for (let l = 1; l <= TOP; l++) {
+      const a = ascensionMods(l - 1);
+      const b = ascensionMods(l);
+      for (const k of ['combat', 'elite', 'boss'] as const) {
+        expect(b.enemyHp[k]).toBeGreaterThanOrEqual(a.enemyHp[k]);
+        expect(b.enemyAttack[k]).toBeGreaterThanOrEqual(a.enemyAttack[k]);
+      }
+      expect(b.eliteWeight).toBeGreaterThanOrEqual(a.eliteWeight);
+      expect(b.restWeight).toBeLessThanOrEqual(a.restWeight);
+      expect(b.restHeal).toBeLessThanOrEqual(a.restHeal);
+      expect(b.gold).toBeLessThanOrEqual(a.gold);
+      expect(b.shopPrice).toBeGreaterThanOrEqual(a.shopPrice);
+      expect(JSON.stringify(b), `nivel ${l} no cambia nada`).not.toBe(JSON.stringify(a));
+    }
   });
 
-  it('una expedición es Normal salvo que se pida otra', () => {
-    expect(createExpedition(1).difficulty).toBe('normal');
-    expect(createExpedition(1, 'nightmare').difficulty).toBe('nightmare');
+  it('sin Ascensión no hay modificadores y solo el nivel 10 trae la muerte permanente', () => {
+    const z = ascensionMods(0);
+    expect(z.enemyHp).toEqual({ combat: 1, elite: 1, boss: 1 });
+    expect(z.restHeal).toBe(CONFIG.expedition.rest.healFraction);
+    expect(ascensionMods(9).permadeath).toBe(false);
+    expect(N.permadeath).toBe(true);
+  });
+
+  it('una expedición no tiene Ascensión salvo que se pida, y empieza con el estrés del nivel', () => {
+    expect(createExpedition(1).ascension).toBe(0);
+    const e = createExpedition(1, 6);
+    expect(e.ascension).toBe(6);
+    expect(e.run.champions.every((c) => c.stress === ascensionMods(6).startStress)).toBe(true);
+    expect(createExpedition(1).run.champions.every((c) => c.stress === 0)).toBe(true);
   });
 });
 
 describe('modificadores', () => {
-  it('Pesadilla escala vida, ataque y bloqueo de los enemigos; Normal no toca nada', () => {
+  it('la Ascensión escala vida, ataque y bloqueo de los enemigos según el encuentro; sin ella no toca nada', () => {
     const normal = combatFromExpedition(createExpedition(4), 'combat');
-    const hard = combatFromExpedition(createExpedition(4, 'nightmare'), 'combat');
+    const hard = combatFromExpedition(createExpedition(4, TOP), 'combat');
     const foe = (s: typeof normal) => s.units.filter((u) => u.side === 'enemy')[0];
-    expect(foe(hard).maxHp).toBe(Math.round(foe(normal).maxHp * N.enemyHp));
+    expect(foe(hard).maxHp).toBe(Math.round(foe(normal).maxHp * N.enemyHp.combat));
     const def = (s: typeof normal) => s.enemyDefs[s.enemyOf[foe(s).id]];
     const base = ENEMIES[normal.enemyOf[foe(normal).id]];
     expect(def(normal).script).toEqual(base.script);
     base.script.forEach((i, k) => {
       const h = def(hard).script[k];
-      if (i.kind === 'attack' || i.kind === 'block') expect((h as typeof i).amount).toBe(Math.round(i.amount * N.enemyAttack));
+      if (i.kind === 'attack' || i.kind === 'block') expect((h as typeof i).amount).toBe(Math.round(i.amount * N.enemyAttack.combat));
       else expect(h).toEqual(i);
     });
   });
 
   it('el escalado no modifica los datos globales de enemigos', () => {
     const before = JSON.stringify(ENEMIES);
-    combatFromExpedition(createExpedition(4, 'nightmare'), 'elite');
+    combatFromExpedition(createExpedition(4, TOP), 'elite');
     expect(JSON.stringify(ENEMIES)).toBe(before);
   });
 
-  it('el mapa de Pesadilla tiene menos descansos a mitad de camino, pero conserva el previo al jefe', () => {
+  it('en Ascensión alta hay menos descansos a mitad de camino, pero conserva el previo al jefe', () => {
     const rests = (w: number) => {
       let n = 0;
       for (let seed = 1; seed <= 200; seed++) {
@@ -73,8 +90,17 @@ describe('modificadores', () => {
     expect(rests(N.restWeight)).toBeLessThan(rests(1) * 0.8);
   });
 
+  it('en Ascensión alta hay más élites', () => {
+    const elites = (w: number) => {
+      let n = 0;
+      for (let seed = 1; seed <= 200; seed++) n += generateMap(new Rng(seed), 1, w).nodes.filter((x) => x.type === 'elite').length;
+      return n;
+    };
+    expect(elites(N.eliteWeight)).toBeGreaterThan(elites(1) * 1.3);
+  });
+
   it('el descanso cura menos', () => {
-    const e = createExpedition(3, 'nightmare');
+    const e = createExpedition(3, TOP);
     e.run.champions[0].hp = 10;
     rest(e, 'heal');
     expect(e.run.champions[0].hp).toBe(10 + Math.floor(e.run.champions[0].maxHp * N.restHeal));
@@ -82,11 +108,11 @@ describe('modificadores', () => {
 
   it('el oro del botín baja y el comerciante sube sus precios', () => {
     const normal = finishCombat(createExpedition(5), won(createExpedition(5)), 'combat')!;
-    const e = createExpedition(5, 'nightmare');
+    const e = createExpedition(5, TOP);
     const hard = finishCombat(e, won(e), 'combat')!;
     expect(hard.gold).toBeLessThan(normal.gold);
     const shopN = openShop(createExpedition(5));
-    const eh = createExpedition(5, 'nightmare');
+    const eh = createExpedition(5, TOP);
     const shopH = openShop(eh);
     expect(shopH.cards[0].price).toBe(Math.round(shopN.cards[0].price * N.shopPrice));
     expect(removalPrice(eh)).toBe(Math.round(CONFIG.shop.removeCard * N.shopPrice));
@@ -97,7 +123,7 @@ describe('modificadores', () => {
     for (let i = 0; i < 300; i++) {
       const a = createExpedition(i);
       if (finishCombat(a, won(a), 'combat')!.potion) normal++;
-      const b = createExpedition(i, 'nightmare');
+      const b = createExpedition(i, TOP);
       if (finishCombat(b, won(b), 'combat')!.potion) hard++;
     }
     expect(hard).toBeLessThan(normal * 0.8);
@@ -110,7 +136,7 @@ describe('muerte permanente', () => {
     applyDamage(s, lux, 9999);
   };
 
-  it('en Normal, el derribado sobrevive con una herida grave', () => {
+  it('sin muerte permanente, el derribado sobrevive con una herida grave', () => {
     const e = createExpedition(2);
     const s = won(e);
     downLux(s);
@@ -120,8 +146,8 @@ describe('muerte permanente', () => {
     expect(e.dead).toEqual([]);
   });
 
-  it('en Pesadilla, el que sigue derribado muere: sale del equipo, deja su gear y se llevan sus cartas', () => {
-    const e = createExpedition(2, 'nightmare');
+  it('en Ascensión 10, el que sigue derribado muere: sale del equipo, deja su gear y se llevan sus cartas', () => {
+    const e = createExpedition(2, TOP);
     e.inventory.push('rabadon');
     equip(e, 'lux', 'rabadon');
     const deckBefore = e.deck.length;
@@ -138,7 +164,7 @@ describe('muerte permanente', () => {
   });
 
   it('el reanimado en combate sobrevive pero con una herida grave', () => {
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     const s = won(e);
     downLux(s);
     const lux = s.units.find((u) => u.id === 'lux')!;
@@ -160,7 +186,7 @@ describe('muerte permanente', () => {
   });
 
   it('si mueren los cuatro, derrota', () => {
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     const s = won(e);
     for (const u of s.units) if (u.side === 'ally') applyDamage(s, u, 9999);
     s.outcome = 'won'; // victoria por daño simultáneo: todos caídos igualmente
@@ -170,7 +196,7 @@ describe('muerte permanente', () => {
   });
 
   it('el siguiente combate se juega con quien queda, sin el muerto', () => {
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     const s = won(e);
     downLux(s);
     finishCombat(e, s, 'combat');
@@ -180,7 +206,7 @@ describe('muerte permanente', () => {
   });
 
   it('no se puede equipar a un campeón muerto', () => {
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     const s = won(e);
     downLux(s);
     finishCombat(e, s, 'combat');
@@ -195,7 +221,7 @@ describe('cartas de campeones muertos', () => {
     const { EVENTS } = await import('../../src/data/events');
     const { resolveChoice } = await import('../../src/engine/events');
     for (let seed = 1; seed <= 40; seed++) {
-      const e = createExpedition(seed, 'nightmare');
+      const e = createExpedition(seed, TOP);
       const s = won(e);
       applyDamage(s, s.units.find((u) => u.id === 'lux')!, 9999);
       applyDamage(s, s.units.find((u) => u.id === 'soraka')!, 9999);
@@ -211,7 +237,7 @@ describe('cartas de campeones muertos', () => {
 
   it('claimCard rechaza una carta de un campeón muerto', async () => {
     const { claimCard } = await import('../../src/engine/expedition');
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     const s = won(e);
     applyDamage(s, s.units.find((u) => u.id === 'lux')!, 9999);
     finishCombat(e, s, 'combat');
@@ -221,7 +247,7 @@ describe('cartas de campeones muertos', () => {
 
 describe('heridas de campeones muertos', () => {
   it('no cuentan para tratar heridas: ni en el descanso ni en el comerciante', () => {
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     e.wounds.lux = 2;
     e.dead.push('lux');
     e.run.champions = e.run.champions.filter((c) => c.id !== 'lux');
@@ -235,7 +261,7 @@ describe('heridas de campeones muertos', () => {
 describe('mazo pequeño tras muertes', () => {
   it('el mínimo del comerciante es 3 cartas por campeón vivo', async () => {
     const { removeCard, openShop, minDeckFor } = await import('../../src/engine/shop');
-    const e = createExpedition(2, 'nightmare');
+    const e = createExpedition(2, TOP);
     for (const dead of ['lux', 'soraka'] as const) {
       e.dead.push(dead);
       e.run.champions = e.run.champions.filter((c) => c.id !== dead);

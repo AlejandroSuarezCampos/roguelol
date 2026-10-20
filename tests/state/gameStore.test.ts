@@ -430,30 +430,37 @@ describe('reliquias en la interfaz', () => {
   });
 });
 
-describe('dificultad', () => {
-  it('se elige en la preparación y se conserva el orden del equipo', () => {
+describe('Ascensión', () => {
+  const unlocked = (n = 10) => {
     const g = createGameStore();
-    g.newExpedition(5);
+    g.getState().meta.maxAscension = n;
+    return g;
+  };
+
+  it('se elige en la preparación y se conserva el orden del equipo', () => {
+    const g = unlocked();
+    g.newExpedition(5, 0);
     g.reorderTeam('soraka', 1);
-    g.setDifficulty('nightmare');
+    g.setAscension(4);
     const e = g.getState().expedition!;
-    expect(e.difficulty).toBe('nightmare');
+    expect(e.ascension).toBe(4);
     expect(e.run.champions.find((c) => c.id === 'soraka')!.pos).toBe(1);
     expect(e.run.omen).toBe(createExpedition(5).run.omen); // mismo presagio: misma semilla
   });
 
-  it('no se puede cambiar una vez empezada la expedición', () => {
-    const g = createGameStore();
-    g.newExpedition(5);
+  it('no se puede cambiar una vez empezada ni pasar de lo desbloqueado', () => {
+    const g = unlocked(2);
+    g.newExpedition(5, 0);
+    g.setAscension(3);
+    expect(g.getState().expedition!.ascension).toBe(0);
     g.startExpedition();
-    g.setDifficulty('nightmare');
-    expect(g.getState().expedition!.difficulty).toBe('normal');
+    g.setAscension(1);
+    expect(g.getState().expedition!.ascension).toBe(0);
   });
 
-  it('una expedición nueva puede empezar en Pesadilla', () => {
-    const g = createGameStore();
-    g.newExpedition(5, 'nightmare');
-    expect(g.getState().expedition!.difficulty).toBe('nightmare');
+  it('una expedición nueva empieza en el nivel más alto desbloqueado, y nunca por encima', () => {
+    expect((() => { const g = unlocked(3); g.newExpedition(5); return g.getState().expedition!.ascension; })()).toBe(3);
+    expect((() => { const g = unlocked(3); g.newExpedition(5, 9); return g.getState().expedition!.ascension; })()).toBe(3);
   });
 });
 
@@ -497,7 +504,8 @@ describe('metaprogresión en el store', () => {
     expect(e.run.gold).toBe(PERKS.provisions.values[0]);
     expect(e.run.champions[0].maxHp).toBeGreaterThan(0);
     expect(e.perks.hp).toBe(PERKS.vigor.values[0]);
-    g.setDifficulty('nightmare');
+    g.getState().meta.maxAscension = 1;
+    g.setAscension(1);
     expect(g.getState().expedition!.perks.hp).toBe(PERKS.vigor.values[0]);
   });
 
@@ -531,7 +539,8 @@ describe('metaprogresión en el store', () => {
 describe('robustez de las acciones de botín', () => {
   it('equipar el botín en un campeón muerto no recoge nada ni cierra la elección', () => {
     const g = createGameStore();
-    g.newExpedition(3, 'nightmare');
+    g.getState().meta.maxAscension = 10;
+    g.newExpedition(3, 10);
     g.startExpedition();
     g.chooseNode(availableNodes(g.getState().expedition!)[0].id);
     win(g);

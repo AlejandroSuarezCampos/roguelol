@@ -1,9 +1,8 @@
 import { deckCardDef } from '../data/cards';
-import { DIFFICULTIES } from '../data/difficulty';
 import { RELIC_LIST } from '../data/relics';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
-import { cardPool, claimPotion } from './expedition';
+import { cardPool, claimPotion, modsOf } from './expedition';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
@@ -28,8 +27,8 @@ export interface ShopState {
   potions: ShopPotion[];
 }
 
-/** Precio con el modificador de la dificultad. */
-const priced = (e: Expedition, base: number): number => Math.round(base * DIFFICULTIES[e.difficulty].shopPrice);
+/** Precio con el modificador de la Ascensión. */
+const priced = (e: Expedition, base: number): number => Math.round(base * modsOf(e).shopPrice);
 
 /** Abre el comerciante del nodo actual. El stock sale de la semilla de la run y no cambia al reabrir. */
 export function openShop(e: Expedition): ShopState {

@@ -33,9 +33,9 @@ describe('equilibrio con bot', () => {
   });
 });
 
-describe('Pesadilla con bot', () => {
+describe('Ascensión 10 con bot', () => {
   const runs = Array.from({ length: 80 }, (_, i) => {
-    const e = createExpedition(1000 + i, 'nightmare');
+    const e = createExpedition(1000 + i, 10);
     return { e, r: playExpedition(e, 7 * i + 1) };
   });
 
@@ -57,7 +57,7 @@ describe('Pesadilla con bot', () => {
 
 describe('mejoras permanentes con bot', () => {
   const maxPerks = { hp: PERKS.vigor.values[2], gold: PERKS.provisions.values[2], potions: PERKS.belt.values[2], upgradedCards: PERKS.mastery.values[2] };
-  const maxed = Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 'normal', maxPerks), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
+  const maxed = Array.from({ length: 80 }, (_, i) => playExpedition(createExpedition(1000 + i, 0, maxPerks), 7 * i + 1)).filter((r) => r.status === 'victory').length / 80;
 
   it('con todo al máximo ayudan, pero no hacen trivial la expedición (spec §14)', () => {
     expect(maxed).toBeGreaterThan(normalWinRate);

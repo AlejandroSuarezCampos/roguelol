@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { DIFFICULTIES } from '../data/difficulty';
-import type { Expedition } from '../engine/expedition';
+import { modsOf, type Expedition } from '../engine/expedition';
 import { game } from '../state/gameStore';
 import { ConfirmModal } from './ConfirmModal';
 import { Icon } from './Icon';
 
-/** Botón de retirada con su confirmación: muestra cuánto oro se conserva y qué se pierde, según la dificultad. */
+/** Botón de retirada con su confirmación: muestra cuánto oro se conserva y qué se pierde, según la Ascensión. */
 export function RetreatButton({ e, disabled }: { e: Expedition; disabled?: boolean }) {
   const [open, setOpen] = useState(false);
-  const pct = DIFFICULTIES[e.difficulty].retreatGold;
+  const pct = modsOf(e).retreatGold;
   const kept = Math.floor(e.run.gold * pct);
   return (
     <>
@@ -23,7 +22,7 @@ export function RetreatButton({ e, disabled }: { e: Expedition; disabled?: boole
           <p>
             Pierdes <b>la recompensa de la victoria</b> y la expedición termina ahora. Esto no se puede deshacer.
           </p>
-          {e.difficulty === 'nightmare' && <p className="sub">En Pesadilla la penalización es mayor.</p>}
+          {pct < 0.5 && <p className="sub">En esta Ascensión la penalización es mayor.</p>}
         </ConfirmModal>
       )}
     </>

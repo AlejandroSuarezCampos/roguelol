@@ -247,9 +247,9 @@ describe('pociones del botín', () => {
   });
 });
 
-describe('retirada y dificultad', () => {
-  it('en Pesadilla se conserva menos oro al retirarse', () => {
-    const e = createExpedition(4, 'nightmare');
+describe('retirada y Ascensión', () => {
+  it('en Ascensión 9 o más se conserva menos oro al retirarse', () => {
+    const e = createExpedition(4, 10);
     e.run.gold = 100;
     retreat(e);
     expect(e.run.gold).toBe(25);

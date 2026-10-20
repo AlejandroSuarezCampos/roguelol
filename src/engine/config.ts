@@ -39,7 +39,7 @@ export const CONFIG = {
   /** Tesoro: oro que trae el cofre si ya se tienen todas las reliquias. */
   chest: { fallbackGold: 150 },
   /** Metaprogresión (spec §14): Esquirlas por expedición. */
-  meta: { perFloor: 3, perCombat: 2, perElite: 5, victoryBonus: 40, nightmareMultiplier: 1.5, minShards: 5 },
+  meta: { perFloor: 3, perCombat: 2, perElite: 5, victoryBonus: 40, perAscension: 0.1, minShards: 5 },
   gear: {
     /** Huecos de objeto por campeón, como en el LoL. */
     slots: 6,

@@ -10,7 +10,10 @@ import { game } from '../../src/state/gameStore';
 const go = (fn: () => void) => act(fn);
 
 beforeEach(() => {
-  go(() => game.toMenu());
+  go(() => {
+    game.getState().meta.maxAscension = 0; // el progreso es global: cada test empieza sin Ascensión desbloqueada
+    game.toMenu();
+  });
 });
 
 function toBattle(seed = 3) {
@@ -188,10 +191,11 @@ describe('botín y descanso', () => {
 });
 
 describe('confirmación de retirada', () => {
-  it('explica el oro que se conserva según la dificultad, y cancelar no hace nada', async () => {
+  it('explica el oro que se conserva según la Ascensión, y cancelar no hace nada', async () => {
     const user = userEvent.setup();
     go(() => {
-      game.newExpedition(3, 'nightmare');
+      game.getState().meta.maxAscension = 10;
+      game.newExpedition(3, 10);
       game.startExpedition();
       game.getState().expedition!.run.gold = 80;
       game.notify(null);
@@ -201,7 +205,7 @@ describe('confirmación de retirada', () => {
     const d = screen.getByRole('alertdialog');
     expect(d).toHaveTextContent(/25%/);
     expect(d).toHaveTextContent(/20 de 80/);
-    expect(d).toHaveTextContent(/Pesadilla/);
+    expect(d).toHaveTextContent(/esta Ascensión/);
     await user.click(within(d).getByRole('button', { name: 'Volver' }));
     expect(game.getState().expedition!.status).toBe('active');
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
@@ -457,23 +461,39 @@ describe('reliquias en pantalla', () => {
   });
 });
 
-describe('Pesadilla en pantalla', () => {
-  it('la preparación explica la muerte permanente al elegir Pesadilla y se puede volver a Normal', async () => {
+describe('Ascensión en pantalla', () => {
+  it('la preparación solo deja elegir niveles desbloqueados y explica la muerte permanente en el 10', async () => {
     const user = userEvent.setup();
-    go(() => game.newExpedition(2));
+    go(() => {
+      game.getState().meta.maxAscension = 10;
+      game.newExpedition(2, 9);
+    });
     render(<App />);
+    expect(game.getState().expedition!.ascension).toBe(9);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('radio', { name: /Pesadilla/ }));
+    await user.click(screen.getByRole('button', { name: 'Subir Ascensión' }));
+    expect(game.getState().expedition!.ascension).toBe(10);
     expect(screen.getByRole('alert')).toHaveTextContent(/muere para siempre/);
-    expect(game.getState().expedition!.difficulty).toBe('nightmare');
-    expect(screen.getAllByText('Pesadilla').length).toBeGreaterThan(0);
-    await user.click(screen.getByRole('radio', { name: /Normal/ }));
+    expect(screen.getByRole('button', { name: 'Subir Ascensión' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Bajar Ascensión' }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('sin niveles desbloqueados no se puede subir', () => {
+    go(() => {
+      game.getState().meta.maxAscension = 0;
+      game.newExpedition(2);
+    });
+    render(<App />);
+    expect(screen.getByText('Sin Ascensión')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Subir Ascensión' })).toBeDisabled();
+    expect(screen.getByText(/Gana una expedición en Ascensión 0/)).toBeInTheDocument();
   });
 
   it('en combate avisa de quién morirá si sigue derribado', () => {
     go(() => {
-      game.newExpedition(3, 'nightmare');
+      game.getState().meta.maxAscension = 10;
+      game.newExpedition(3, 10);
       game.startExpedition();
       game.chooseNode(availableNodes(game.getState().expedition!)[0].id);
       const lux = game.getState().combat!.units.find((u) => u.id === 'lux')!;
@@ -485,7 +505,7 @@ describe('Pesadilla en pantalla', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/Lux está derribado/);
   });
 
-  it('en Normal no hay aviso de muerte', () => {
+  it('sin muerte permanente no hay aviso de muerte', () => {
     go(() => {
       game.newExpedition(3);
       game.startExpedition();
@@ -502,7 +522,8 @@ describe('Pesadilla en pantalla', () => {
   it('Equipo y Resultado marcan a los muertos', async () => {
     const user = userEvent.setup();
     go(() => {
-      game.newExpedition(3, 'nightmare');
+      game.getState().meta.maxAscension = 10;
+      game.newExpedition(3, 10);
       game.startExpedition();
       const e = game.getState().expedition!;
       e.dead.push('lux');
@@ -685,9 +706,10 @@ describe('atajos de teclado con ventanas abiertas', () => {
 });
 
 describe('posiciones tras una muerte', () => {
-  function nightmareWithGap() {
+  function permadeathWithGap() {
     go(() => {
-      game.newExpedition(3, 'nightmare');
+      game.getState().meta.maxAscension = 10;
+      game.newExpedition(3, 10);
       game.startExpedition();
       const e = game.getState().expedition!;
       e.dead.push('leona'); // la posición 1 queda vacía
@@ -699,7 +721,7 @@ describe('posiciones tras una muerte', () => {
 
   it('en Equipo se puede reordenar gratis, también hacia un hueco', async () => {
     const user = userEvent.setup();
-    nightmareWithGap();
+    permadeathWithGap();
     render(<App />);
     await user.click(screen.getByRole('button', { name: /^Equipo/ }));
     await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
@@ -711,7 +733,7 @@ describe('posiciones tras una muerte', () => {
 
   it('en combate, el modo intercambio ofrece mover un aliado al hueco', async () => {
     const user = userEvent.setup();
-    nightmareWithGap();
+    permadeathWithGap();
     go(() => game.chooseNode(availableNodes(game.getState().expedition!)[0].id));
     render(<App />);
     await user.click(screen.getByRole('button', { name: /Intercambiar/ }));

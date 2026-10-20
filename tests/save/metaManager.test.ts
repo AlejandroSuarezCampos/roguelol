@@ -44,6 +44,7 @@ describe('guardado del progreso permanente', () => {
     ['una mejora que no existe', (r: any) => delete r.meta.perks.vigor],
     ['un bestiario con basura', (r: any) => (r.meta.bestiary.wolf = { seen: 'x' })],
     ['un historial incompleto', (r: any) => delete r.meta.history.runs],
+    ['una Ascensión de 11', (r: any) => (r.meta.maxAscension = 11)],
     ['otra versión', (r: any) => (r.version = 99)],
   ])('rechaza %s', (_n, tamper) => {
     const store = memory();
@@ -53,6 +54,22 @@ describe('guardado del progreso permanente', () => {
     tamper(raw);
     store.setItem(META_KEY, JSON.stringify(raw));
     expect(m.load().corrupt).not.toBeNull();
+  });
+
+  it('un progreso de la versión 1 (con Pesadilla) se migra sin perder Esquirlas ni historial', () => {
+    const store = memory();
+    const old = newMeta() as any;
+    delete old.maxAscension;
+    const { deaths, ...history } = old.history;
+    old.shards = 77;
+    old.history = { ...history, runs: 3, nightmareDeaths: 2 };
+    store.setItem(META_KEY, JSON.stringify({ version: 1, meta: old }));
+    const r = createMetaManager(store).load();
+    expect(r.corrupt).toBeNull();
+    expect(r.meta.shards).toBe(77);
+    expect(r.meta.maxAscension).toBe(0);
+    expect(r.meta.history).toMatchObject({ runs: 3, deaths: 2 });
+    void deaths;
   });
 
   it('sin almacenamiento, o con uno que falla, nada lanza', () => {

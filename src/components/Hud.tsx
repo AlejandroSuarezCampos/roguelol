@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DIFFICULTIES } from '../data/difficulty';
+import { ASCENSION_LEVELS } from '../data/ascension';
 import { MIST_INFO, OMEN_INFO } from '../data/glossary';
 import { mistTier } from '../engine/mist';
 import type { Expedition } from '../engine/expedition';
@@ -23,12 +23,12 @@ export function MistBadge({ mist }: { mist: number }) {
   );
 }
 
-export function DifficultyBadge({ difficulty }: { difficulty: Expedition['difficulty'] }) {
-  if (difficulty === 'normal') return null;
-  const d = DIFFICULTIES[difficulty];
+export function AscensionBadge({ level }: { level: number }) {
+  if (!level) return null;
+  const rules = ASCENSION_LEVELS.filter((l) => l.level <= level).map((l) => `${l.level}. ${l.text}`).join(' · ');
   return (
-    <span className="tag bad" title={`${d.name}: ${d.summary}`}>
-      <Icon name="down" /> {d.name}
+    <span className="tag bad" title={`Ascensión ${level}: ${rules}`}>
+      <Icon name="up" /> Ascensión {level}
     </span>
   );
 }
@@ -62,7 +62,7 @@ export function Hud({ icon, title, subtitle, center, e, children }: HudProps) {
       </div>
       {center}
       <div className="hudr">
-        {e && <DifficultyBadge difficulty={e.difficulty} />}
+        {e && <AscensionBadge level={e.ascension} />}
         {e && <OmenBadge omen={e.run.omen} />}
         {e && <MistBadge mist={e.run.mist} />}
         {e && (

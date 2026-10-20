@@ -17,11 +17,30 @@ describe('Esquirlas', () => {
     expect(shardsFor(e)).toBe(3 * 4 + 2 * 3 + 5 + 40);
   });
 
-  it('en Pesadilla se multiplican por 1,5', () => {
-    const e = createExpedition(1, 'nightmare');
+  it('cada nivel de Ascensión suma un 10 %', () => {
+    const e = createExpedition(1, 5);
     e.visited = ['a', 'b'];
     e.stats = { combats: 2, elites: 0 };
     expect(shardsFor(e)).toBe(Math.round((3 * 2 + 2 * 2) * 1.5));
+  });
+
+  it('ganar en el nivel más alto desbloqueado desbloquea el siguiente (hasta el 10); perder o ganar por debajo, no', () => {
+    const m = newMeta();
+    const run = (asc: number, status: 'victory' | 'defeat') => {
+      const e = createExpedition(1, asc);
+      e.stats = { combats: 1, elites: 0 };
+      e.status = status;
+      recordRun(m, e);
+    };
+    run(0, 'defeat');
+    expect(m.maxAscension).toBe(0);
+    run(0, 'victory');
+    expect(m.maxAscension).toBe(1);
+    run(0, 'victory');
+    expect(m.maxAscension).toBe(1);
+    m.maxAscension = 10;
+    run(10, 'victory');
+    expect(m.maxAscension).toBe(10);
   });
 
   it('retirarse no penaliza las Esquirlas', () => {
@@ -95,12 +114,12 @@ describe('mejoras permanentes', () => {
 describe('aplicar las ventajas al empezar', () => {
   it('sin mejoras la expedición es idéntica a la de antes', () => {
     const a = createExpedition(3);
-    const b = createExpedition(3, 'normal', NO_PERKS);
+    const b = createExpedition(3, 0, NO_PERKS);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
   it('vida máxima, oro, pociones y cartas mejoradas', () => {
-    const e = createExpedition(3, 'normal', { hp: 10, gold: 50, potions: 2, upgradedCards: 3 });
+    const e = createExpedition(3, 0, { hp: 10, gold: 50, potions: 2, upgradedCards: 3 });
     for (const c of e.run.champions) {
       expect(c.maxHp).toBe(CHAMPIONS[c.id].maxHp + 10);
       expect(c.hp).toBe(c.maxHp);
@@ -113,14 +132,14 @@ describe('aplicar las ventajas al empezar', () => {
   });
 
   it('la vida extra sigue contando tras una herida', () => {
-    const e = createExpedition(3, 'normal', { ...NO_PERKS, hp: 10 });
+    const e = createExpedition(3, 0, { ...NO_PERKS, hp: 10 });
     e.wounds.lux = 1;
     expect(maxHpFor(e, 'lux')).toBe(Math.round(CHAMPIONS.lux.maxHp * 0.9) + 10);
   });
 
   it('elegir cartas mejoradas no altera el combate reproducible de la run', () => {
     const plain = createExpedition(3);
-    const perked = createExpedition(3, 'normal', { ...NO_PERKS, upgradedCards: 2 });
+    const perked = createExpedition(3, 0, { ...NO_PERKS, upgradedCards: 2 });
     const a = combatFromExpedition(plain, 'combat');
     const b = combatFromExpedition(perked, 'combat');
     expect(b.units.filter((u) => u.side === 'enemy').map((u) => u.id)).toEqual(a.units.filter((u) => u.side === 'enemy').map((u) => u.id));
@@ -173,12 +192,12 @@ describe('recordRun', () => {
     expect(defeated).toBeGreaterThan(0);
   });
 
-  it('cuenta las muertes de Pesadilla y el resultado', () => {
+  it('cuenta las muertes permanentes y el resultado', () => {
     const m = newMeta();
-    const e = createExpedition(5, 'nightmare');
+    const e = createExpedition(5, 10);
     e.dead.push('lux', 'soraka');
     e.status = 'defeat';
     recordRun(m, e);
-    expect(m.history).toMatchObject({ defeats: 1, nightmareDeaths: 2 });
+    expect(m.history).toMatchObject({ defeats: 1, deaths: 2 });
   });
 });

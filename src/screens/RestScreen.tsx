@@ -4,9 +4,8 @@ import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { TeamStrip } from '../components/TeamStrip';
 import { applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
-import { DIFFICULTIES } from '../data/difficulty';
 import { CONFIG } from '../engine/config';
-import { livingWounds, type RestAction } from '../engine/expedition';
+import { livingWounds, modsOf, type RestAction } from '../engine/expedition';
 import { game, useGame } from '../state/gameStore';
 
 const R = CONFIG.expedition.rest;
@@ -19,7 +18,7 @@ export function RestScreen() {
   if (!e) return null;
   const woundsTotal = livingWounds(e);
   const options: { id: RestAction; icon: string; name: string; text: string; disabled: boolean; extra?: boolean }[] = [
-    { id: 'heal', icon: 'heal', name: 'Descansar', text: `Cura el ${Math.round(DIFFICULTIES[e.difficulty].restHeal * 100)}% de la vida máxima a quienes siguen en pie.`, disabled: e.restUsed },
+    { id: 'heal', icon: 'heal', name: 'Descansar', text: `Cura el ${Math.round(modsOf(e).restHeal * 100)}% de la vida máxima a quienes siguen en pie.`, disabled: e.restUsed },
     { id: 'calm', icon: 'stress', name: 'Meditar', text: `Reduce ${R.stressRelief} de estrés a todo el equipo.`, disabled: e.restUsed },
     {
       id: 'treat', icon: 'wound', name: 'Tratar herida',

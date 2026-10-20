@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import type { DifficultyId } from '../data/difficulty';
 import type { EventDef } from '../data/events';
 import type { EncounterKind } from '../data/enemies';
 import { cardOf, forcedTarget, playCard as enginePlayCard } from '../engine/cards';
@@ -191,16 +190,17 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     },
 
     // ——— flujo general ———
-    newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1, difficulty: DifficultyId = 'normal') {
+    /** Nueva expedición en el nivel de Ascensión más alto desbloqueado (o el indicado, recortado a lo desbloqueado). */
+    newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1, ascension = meta.maxAscension) {
       state = initial(meta, state.saved);
-      emit({ screen: 'prep', expedition: createExpedition(seed, difficulty, perksFor(meta)) });
+      emit({ screen: 'prep', expedition: createExpedition(seed, Math.max(0, Math.min(ascension, meta.maxAscension)), perksFor(meta)) });
     },
-    /** Cambia la dificultad en la preparación (misma semilla, así que el Presagio no cambia; el mapa sí). */
-    setDifficulty(difficulty: DifficultyId) {
+    /** Cambia la Ascensión en la preparación (misma semilla, así que el Presagio no cambia; el mapa sí). Solo niveles desbloqueados. */
+    setAscension(level: number) {
       const e = state.expedition;
-      if (!e || state.screen !== 'prep' || e.difficulty === difficulty) return;
+      if (!e || state.screen !== 'prep' || e.ascension === level || level < 0 || level > meta.maxAscension) return;
       const order = e.run.champions.map((c) => [c.id, c.pos] as const);
-      const fresh = createExpedition(e.seed, difficulty, perksFor(meta));
+      const fresh = createExpedition(e.seed, level, perksFor(meta));
       for (const [id, pos] of order) fresh.run.champions.find((c) => c.id === id)!.pos = pos;
       emit({ expedition: fresh });
     },

@@ -1,6 +1,6 @@
 import { CARD_LIST, CARDS, STARTER_DECK, baseCardId, deckCardDef, isUpgradedId, upgradedId } from '../data/cards';
 import { GEAR, GEAR_LIST } from '../data/gear';
-import { DIFFICULTIES, type DifficultyId } from '../data/difficulty';
+import { ascensionMods, type AscensionMods } from '../data/ascension';
 import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../data/champions';
 import { BASE_GOLD, ENCOUNTERS, ENEMIES, type EncounterKind } from '../data/enemies';
 import { alliesAfter, startCombat } from './combat';
@@ -40,10 +40,11 @@ export interface Expedition {
   recorded: boolean;
   /** Enemigos vistos y derrotados en esta expedición (alimenta el bestiario). */
   encounters: Record<string, { seen: number; defeated: number }>;
-  /** Semilla con la que se creó (para recrear la preparación al cambiar de dificultad). */
+  /** Semilla con la que se creó (para recrear la preparación al cambiar de Ascensión). */
   seed: number;
-  difficulty: DifficultyId;
-  /** Campeones muertos para siempre (Pesadilla). Ya no están en `run.champions`. */
+  /** Nivel de Ascensión (0 = sin Ascensión). Sus modificadores salen de `modsOf`. */
+  ascension: number;
+  /** Campeones muertos para siempre (Ascensión 10). Ya no están en `run.champions`. */
   dead: ChampionId[];
   run: RunState;
   /** Ids de CardDef del mazo combinado del equipo. */
@@ -97,7 +98,7 @@ const F = CONFIG.expedition;
  * penúltimo de descanso y el último, el jefe. Élites desde el piso 4; descansos, comerciantes (uno por piso como mucho), eventos y
  * santuarios repartidos por el resto. Siempre hay un comerciante en 2–6, otro en 8–12 y un evento en 1–6.
  */
-export function generateMap(rng: Rng, restWeight = 1): ExpeditionMap {
+export function generateMap(rng: Rng, restWeight = 1, eliteWeight = 1): ExpeditionMap {
   const nodes: MapNode[] = [];
   const byFloor: MapNode[][] = [];
   let shrines = 0;
@@ -105,7 +106,7 @@ export function generateMap(rng: Rng, restWeight = 1): ExpeditionMap {
     const count = f === F.floors - 1 ? 1 : 2 + rng.int(3);
     const row: MapNode[] = [];
     for (let i = 0; i < count; i++) {
-      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight, shrines < F.maxShrines);
+      const type = pickType(rng, f, row.some((n) => n.type === 'shop'), restWeight, eliteWeight, shrines < F.maxShrines);
       if (type === 'shrine') shrines++;
       row.push({ id: `n${f}-${i}`, floor: f, x: (i + 0.5) / count, type, next: [] });
     }
@@ -141,24 +142,29 @@ function ensureType(nodes: MapNode[], rng: Rng, type: NodeType, from: number, to
   if (candidates.length) rng.pick(candidates).type = type;
 }
 
-function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number, shrineLeft: boolean): NodeType {
+function pickType(rng: Rng, floor: number, shopInFloor: boolean, restWeight: number, eliteWeight: number, shrineLeft: boolean): NodeType {
   if (floor === F.floors - 1) return 'boss';
   if (floor === F.floors - 2) return 'rest';
   if (floor === F.chestFloor) return 'chest';
   if (floor === 0) return 'combat';
   const late = floor <= F.floors - 3; // nada especial justo antes del descanso final
   const r = rng.next();
-  if (floor >= 4 && r < 0.13) return 'elite';
-  if (floor >= 4 && late && r < 0.13 + 0.13 * restWeight) return 'rest';
+  const elite = 0.13 * eliteWeight;
+  if (floor >= 4 && r < elite) return 'elite';
+  if (floor >= 4 && late && r < elite + 0.13 * restWeight) return 'rest';
   if (floor >= 2 && late && !shopInFloor && r < 0.34) return 'shop';
   if (late && r < 0.56) return 'event';
   if (floor >= 2 && late && shrineLeft && r < 0.6) return 'shrine';
   return 'combat';
 }
 
-export function createExpedition(seed: number, difficulty: DifficultyId = 'normal', perks: Perks = NO_PERKS): Expedition {
+/** Modificadores de la Ascensión de la expedición. */
+export const modsOf = (e: Pick<Expedition, 'ascension'>): AscensionMods => ascensionMods(e.ascension);
+
+export function createExpedition(seed: number, ascension = 0, perks: Perks = NO_PERKS): Expedition {
+  const mods = ascensionMods(ascension);
   const champions: RunChampion[] = CHAMPION_IDS.map((id) => ({
-    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp + perks.hp, maxHp: CHAMPIONS[id].maxHp + perks.hp, stress: 0, downed: false,
+    id, name: CHAMPIONS[id].name, pos: CHAMPIONS[id].startPos, hp: CHAMPIONS[id].maxHp + perks.hp, maxHp: CHAMPIONS[id].maxHp + perks.hp, stress: mods.startStress, downed: false,
   }));
   const run = createRun(seed, champions);
   run.gold = perks.gold;
@@ -168,9 +174,9 @@ export function createExpedition(seed: number, difficulty: DifficultyId = 'norma
   const picks = new Rng(seed ^ 0x5bd1e995).shuffle(deck.map((_, i) => i)).slice(0, perks.upgradedCards);
   for (const i of picks) deck[i] = upgradedId(deck[i]);
   // El mapa sale de una semilla derivada para que no consuma tiradas de la run.
-  const map = generateMap(new Rng(seed ^ 0x9e3779b9), DIFFICULTIES[difficulty].restWeight);
+  const map = generateMap(new Rng(seed ^ 0x9e3779b9), mods.restWeight, mods.eliteWeight);
   return {
-    perks: { ...perks }, recorded: false, encounters: {}, seed, difficulty, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
+    perks: { ...perks }, recorded: false, encounters: {}, seed, ascension, dead: [], run, deck, map, currentId: null, visited: [], status: 'active',
     gear: emptyGear(), inventory: [], inCombat: false,
     wounds: { leona: 0, yasuo: 0, lux: 0, soraka: 0 }, restUsed: false, stoked: false, shop: null, chest: null, removals: 0, seenEvents: [], stats: { combats: 0, elites: 0 },
   };
@@ -221,7 +227,7 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
   const { run } = e;
   e.inCombat = true;
   const encounter = run.rng.pick(ENCOUNTERS[kind]);
-  const diff = DIFFICULTIES[e.difficulty];
+  const diff = modsOf(e);
   const mods = combatMods(run.mist, kind === 'boss');
   for (const en of encounter) (e.encounters[en.defId] ??= { seen: 0, defeated: 0 }).seen++;
   return startCombat({
@@ -232,9 +238,9 @@ export function combatFromExpedition(e: Expedition, kind: EncounterKind): Combat
     enemies: encounter.map((en, i) => ({ uid: `e${i + 1}`, defId: en.defId, pos: en.pos, boss: kind === 'boss' && i === 0 })),
     deck: e.deck,
     cards: CARDS,
-    enemyDefs: scaleEnemies(ENEMIES, diff.enemyAttack),
+    enemyDefs: scaleEnemies(ENEMIES, diff.enemyAttack[kind]),
     omen: run.omen,
-    mods: { ...mods, hpMultiplier: mods.hpMultiplier * diff.enemyHp },
+    mods: { ...mods, hpMultiplier: mods.hpMultiplier * diff.enemyHp[kind] },
     belt: run.belt,
     relics: run.relics,
   });
@@ -250,7 +256,7 @@ function applyWound(e: Expedition, c: RunChampion, recover: boolean): void {
   }
 }
 
-/** Muerte permanente (Pesadilla): sale del equipo, su gear vuelve al inventario y sus cartas salen del mazo. */
+/** Muerte permanente (Ascensión 10): sale del equipo, su gear vuelve al inventario y sus cartas salen del mazo. */
 function killChampion(e: Expedition, c: RunChampion): void {
   e.run.champions = e.run.champions.filter((x) => x !== c);
   e.dead.push(c.id);
@@ -276,7 +282,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
     e.status = 'defeat';
     return null;
   }
-  const diff = DIFFICULTIES[e.difficulty];
+  const diff = modsOf(e);
   const relicNotes = combatEndNotes(e); // antes de las heridas: los derribados no se curan
   for (const c of [...e.run.champions]) {
     if (c.downed) diff.permadeath ? killChampion(e, c) : applyWound(e, c, true);
@@ -382,7 +388,7 @@ export function rest(e: Expedition, action: RestAction, deckIndex?: number): voi
   if (e.restUsed) throw new Error('Ya descansaste en esta parada');
   if (action === 'heal') {
     for (const c of e.run.champions)
-      if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + Math.floor(c.maxHp * DIFFICULTIES[e.difficulty].restHeal));
+      if (!c.downed) c.hp = Math.min(c.maxHp, c.hp + Math.floor(c.maxHp * modsOf(e).restHeal));
   } else if (action === 'upgrade') {
     if (deckIndex === undefined) throw new Error('Elige una carta');
     upgradeCard(e, deckIndex);
@@ -397,7 +403,7 @@ export function rest(e: Expedition, action: RestAction, deckIndex?: number): voi
 /** Retirada: acaba la expedición y conserva solo parte del oro. */
 export function retreat(e: Expedition): void {
   const before = e.run.gold;
-  e.run.gold = Math.floor(before * DIFFICULTIES[e.difficulty].retreatGold);
+  e.run.gold = Math.floor(before * modsOf(e).retreatGold);
   e.retreat = { before, kept: e.run.gold };
   e.status = 'retreat';
 }

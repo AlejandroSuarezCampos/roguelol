@@ -29,7 +29,7 @@ export function canSwap(s: CombatState, a: Pos, b: Pos): string | null {
 
 /**
  * Intercambio de dos posiciones adyacentes: una vez por turno, por energía; no cuenta como carta.
- * Si una de las dos está vacía (un campeón murió en Pesadilla) el aliado simplemente se mueve a ella.
+ * Si una de las dos está vacía (un campeón murió para siempre) el aliado simplemente se mueve a ella.
  */
 export function swapAllies(s: CombatState, a: Pos, b: Pos): void {
   const why = canSwap(s, a, b);

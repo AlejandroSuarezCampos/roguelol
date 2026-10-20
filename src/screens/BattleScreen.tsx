@@ -11,6 +11,7 @@ import { CHAMPIONS } from '../data/champions';
 import { bonusActive, cardOf, forcedTarget } from '../engine/cards';
 import { CONFIG } from '../engine/config';
 import { byPos, canSwap, living } from '../engine/formation';
+import { modsOf } from '../engine/expedition';
 import { POTIONS } from '../engine/potions';
 import type { CardInstance, Pos, Unit } from '../engine/types';
 import { cardAvailability } from '../state/selectors';
@@ -165,11 +166,11 @@ export function BattleScreen() {
         )}
       </div>
 
-      {e.difficulty === 'nightmare' && !over && allies.some((a) => a.downed) && (
+      {modsOf(e).permadeath && !over && allies.some((a) => a.downed) && (
         <p className="warnbox red deathwarn" role="alert">
           <Icon name="down" />
           <span>
-            <b>Pesadilla:</b> {allies.filter((a) => a.downed).map((a) => a.name).join(' y ')} {allies.filter((a) => a.downed).length > 1 ? 'están derribados' : 'está derribado'}. Si{' '}
+            <b>Muerte permanente:</b> {allies.filter((a) => a.downed).map((a) => a.name).join(' y ')} {allies.filter((a) => a.downed).length > 1 ? 'están derribados' : 'está derribado'}. Si{' '}
             {allies.filter((a) => a.downed).length > 1 ? 'siguen' : 'sigue'} así al terminar el combate, {allies.filter((a) => a.downed).length > 1 ? 'morirán' : 'morirá'} para siempre. Reanimar (Renacer) los salva con una herida grave.
           </span>
         </p>
@@ -183,7 +184,7 @@ export function BattleScreen() {
               const m = unitMode(u);
               return <Fighter key={u.id} unit={u} s={s} mode={m.mode} tag={m.tag} fx={fx.filter((f) => f.unitId === u.id)} onClick={() => clickUnit(u)} />;
             }
-            // Hueco dejado por un campeón muerto (Pesadilla): en modo intercambio se puede avanzar o retroceder a él.
+            // Hueco dejado por un campeón muerto para siempre: en modo intercambio se puede avanzar o retroceder a él.
             const from = swapMode && swapFrom ? s.units.find((x) => x.id === swapFrom) : undefined;
             if (!from || over) return null;
             const why = canSwap(s, from.pos, p);

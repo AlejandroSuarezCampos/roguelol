@@ -5,13 +5,14 @@ import { HpBar, StressMeter } from '../components/Meters';
 import { CHAMPIONS } from '../data/champions';
 import { CRISIS_INFO, OMEN_INFO } from '../data/glossary';
 import { CRISIS } from '../data/champions';
-import { DIFFICULTIES, type DifficultyId } from '../data/difficulty';
+import { ASCENSION_LEVELS } from '../data/ascension';
 import { CONFIG } from '../engine/config';
+import { modsOf } from '../engine/expedition';
 import type { Pos } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
 
 export function PartySetupScreen() {
-  const { expedition: e } = useGame();
+  const { expedition: e, meta } = useGame();
   if (!e) return null;
   const order = [...e.run.champions].sort((a, b) => b.pos - a.pos); // 4 → 1: el frente mira al centro
   const omen = OMEN_INFO[e.run.omen];
@@ -79,23 +80,39 @@ export function PartySetupScreen() {
               </div>
             </div>
             <fieldset className="diffpick">
-              <legend className="fd">Dificultad</legend>
-              {(Object.keys(DIFFICULTIES) as DifficultyId[]).map((id) => (
-                <label key={id} className={`diffopt ${e.difficulty === id ? 'on' : ''} ${id}`}>
-                  <input type="radio" name="difficulty" checked={e.difficulty === id} onChange={() => game.setDifficulty(id)} />
-                  <b>{DIFFICULTIES[id].name}</b>
-                  <small>{DIFFICULTIES[id].summary}</small>
-                </label>
-              ))}
+              <legend className="fd">Ascensión</legend>
+              <div className="row">
+                <button className="btn sm" aria-label="Bajar Ascensión" disabled={e.ascension === 0} onClick={() => game.setAscension(e.ascension - 1)}>
+                  −
+                </button>
+                <b aria-live="polite">{e.ascension ? `Ascensión ${e.ascension}` : 'Sin Ascensión'}</b>
+                <button className="btn sm" aria-label="Subir Ascensión" disabled={e.ascension >= meta.maxAscension} onClick={() => game.setAscension(e.ascension + 1)}>
+                  +
+                </button>
+              </div>
+              <small className="sub">
+                {meta.maxAscension < ASCENSION_LEVELS.length
+                  ? `Gana una expedición en Ascensión ${meta.maxAscension} para desbloquear la ${meta.maxAscension + 1}.`
+                  : 'Has desbloqueado todos los niveles.'}
+              </small>
+              {e.ascension > 0 && (
+                <ol className="sub ascrules">
+                  {ASCENSION_LEVELS.filter((l) => l.level <= e.ascension).map((l) => (
+                    <li key={l.level} value={l.level}>
+                      {l.text}
+                    </li>
+                  ))}
+                </ol>
+              )}
             </fieldset>
-            {e.difficulty === 'normal' ? (
+            {!modsOf(e).permadeath ? (
               <div className="warnbox">
                 <Icon name="wound" />
                 <div>
                   <b>Herida grave</b>
                   <p className="sub">
                     Un campeón derribado al ganar un combate sobrevive con una herida grave: −{CONFIG.expedition.wound.maxHpLoss * 100}% de vida máxima (hasta{' '}
-                    {CONFIG.expedition.wound.cap}). Se trata en el descanso o en el comerciante.
+                    {CONFIG.expedition.wound.cap}). Se trata en el descanso.
                   </p>
                 </div>
               </div>
@@ -108,11 +125,6 @@ export function PartySetupScreen() {
                     Si un campeón <b>sigue derribado</b> cuando termina un combate, <b>muere para siempre</b>: sale del equipo y sus cartas salen del mazo.
                     Si lo reanimas antes del final, sobrevive con una herida grave. Sin tiradas ocultas.
                   </p>
-                  <ul className="sub">
-                    <li>Enemigos con +{Math.round((DIFFICULTIES.nightmare.enemyHp - 1) * 100)}% de vida y +{Math.round((DIFFICULTIES.nightmare.enemyAttack - 1) * 100)}% de daño.</li>
-                    <li>Menos descansos en el mapa; descansar cura el {DIFFICULTIES.nightmare.restHeal * 100}%.</li>
-                    <li>Oro −{Math.round((1 - DIFFICULTIES.nightmare.gold) * 100)}%, menos pociones y precios +{Math.round((DIFFICULTIES.nightmare.shopPrice - 1) * 100)}%.</li>
-                  </ul>
                 </div>
               </div>
             )}

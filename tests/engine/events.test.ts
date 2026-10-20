@@ -34,7 +34,7 @@ describe('datos de eventos', () => {
 
 describe('sin cartas de esa rareza', () => {
   it('con un solo campeón vivo sin épicas, el evento da otra carta (o ninguna) y no falla', () => {
-    const e = createExpedition(1, 'nightmare');
+    const e = createExpedition(1, 10);
     e.run.champions = e.run.champions.filter((c) => c.id === 'yasuo'); // Yasuo no tiene cartas épicas
     e.dead.push('leona', 'lux', 'soraka');
     e.deck = e.deck.filter((id) => CARDS[id].owner === 'yasuo');

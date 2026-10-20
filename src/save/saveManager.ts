@@ -1,6 +1,6 @@
 import { CARDS, baseCardId } from '../data/cards';
 import { CHAMPION_IDS } from '../data/champions';
-import { DIFFICULTIES } from '../data/difficulty';
+import { ascensionMods, isAscension } from '../data/ascension';
 import { GEAR } from '../data/gear';
 import { RELICS } from '../data/relics';
 import { CONFIG } from '../engine/config';
@@ -71,11 +71,11 @@ function problem(x: any): string | null {
   for (const p of r.belt) if (p !== null && !(isObj(p) && p.id in POTIONS && typeof p.spent === 'boolean')) return 'poción';
   const champs = r.champions;
   if (!Array.isArray(champs) || champs.length < 1 || champs.length > CHAMPION_IDS.length) return 'campeones';
-  if (!(x.difficulty in DIFFICULTIES)) return 'dificultad';
+  if (!isAscension(x.ascension)) return 'Ascensión';
   if (!isNum(x.seed)) return 'semilla';
   if (!Array.isArray(x.dead) || !x.dead.every((id: unknown) => CHAMPION_IDS.includes(id as never))) return 'muertos';
   if (new Set([...champs.map((c: any) => c?.id), ...x.dead]).size !== CHAMPION_IDS.length || champs.length + x.dead.length !== CHAMPION_IDS.length) return 'campeones vivos y muertos';
-  if (x.dead.length && !DIFFICULTIES[x.difficulty as keyof typeof DIFFICULTIES].permadeath) return 'muertos sin muerte permanente';
+  if (x.dead.length && !ascensionMods(x.ascension).permadeath) return 'muertos sin muerte permanente';
   if (new Set(champs.map((c: any) => c?.id)).size !== champs.length || !champs.every((c: any) => CHAMPION_IDS.includes(c?.id))) return 'campeón repetido o desconocido';
   if (new Set(champs.map((c: any) => c.pos)).size !== champs.length || !champs.every((c: any) => [1, 2, 3, 4].includes(c.pos))) return 'posiciones';
   for (const c of champs) {

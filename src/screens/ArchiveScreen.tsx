@@ -102,7 +102,7 @@ export function ArchiveScreen() {
               <dt>Retiradas</dt><dd>{h.retreats}</dd>
               <dt>Mejor piso alcanzado</dt><dd>{h.bestFloor}</dd>
               <dt>Combates ganados</dt><dd>{h.combatsWon}</dd>
-              <dt>Campeones perdidos en Pesadilla</dt><dd>{h.nightmareDeaths}</dd>
+              <dt>Campeones perdidos para siempre</dt><dd>{h.deaths}</dd>
             </dl>
           </section>
         )}
