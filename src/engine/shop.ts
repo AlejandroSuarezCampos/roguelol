@@ -1,9 +1,9 @@
 import { deckCardDef } from '../data/cards';
 import { DIFFICULTIES } from '../data/difficulty';
-import { GEAR_LIST } from '../data/gear';
+import { RELIC_LIST } from '../data/relics';
 import { CONFIG } from './config';
 import type { Expedition } from './expedition';
-import { cardPool, claimPotion, healWound, livingWounds } from './expedition';
+import { cardPool, claimPotion } from './expedition';
 import { POTIONS } from './potions';
 import type { PotionId } from './types';
 
@@ -17,17 +17,15 @@ export interface ShopPotion {
   price: number;
   sold: boolean;
 }
-export interface ShopGear {
-  gearId: string;
+export interface ShopRelic {
+  id: string;
   price: number;
   sold: boolean;
 }
 export interface ShopState {
   cards: ShopCard[];
-  gear: ShopGear[];
+  relics: ShopRelic[];
   potions: ShopPotion[];
-  /** Una herida tratada por visita basta: el servicio se vende una vez. */
-  woundTreated: boolean;
 }
 
 /** Precio con el modificador de la dificultad. */
@@ -37,10 +35,13 @@ const priced = (e: Expedition, base: number): number => Math.round(base * DIFFIC
 export function openShop(e: Expedition): ShopState {
   if (e.shop) return e.shop;
   const rng = e.run.rng;
-  const cards = rng.shuffle(cardPool(e)).slice(0, 3).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
+  const cards = rng.shuffle(cardPool(e)).slice(0, CONFIG.shop.cards).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
   const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: priced(e, CONFIG.shop.potionPrice[id]), sold: false }));
-  const gear = rng.shuffle(GEAR_LIST).slice(0, 2).map((g) => ({ gearId: g.id, price: priced(e, CONFIG.shop.gearPrice[g.rarity]), sold: false }));
-  e.shop = { cards, gear, potions, woundTreated: false };
+  const relics = rng
+    .shuffle(RELIC_LIST.filter((r) => !e.run.relics.includes(r.id)))
+    .slice(0, CONFIG.shop.relics)
+    .map((r) => ({ id: r.id, price: priced(e, CONFIG.shop.relicPrice[r.rarity]), sold: false }));
+  e.shop = { cards, relics, potions };
   return e.shop;
 }
 
@@ -74,29 +75,17 @@ export function buyPotion(e: Expedition, index: number, slot?: number): void {
   item.sold = true;
 }
 
-export function buyGear(e: Expedition, index: number): void {
-  const item = stock(e).gear[index];
-  if (!item) throw new Error('Ese objeto no está en venta');
+export function buyRelic(e: Expedition, index: number): void {
+  const item = stock(e).relics[index];
+  if (!item) throw new Error('Esa reliquia no está en venta');
   if (item.sold) throw new Error('Vendido');
   pay(e, item.price);
   item.sold = true;
-  e.inventory.push(item.gearId);
-}
-
-export function treatWoundAtShop(e: Expedition): void {
-  const s = stock(e);
-  if (s.woundTreated) throw new Error('Vendido');
-  if (livingWounds(e) === 0) throw new Error('Nadie tiene heridas');
-  pay(e, treatWoundPrice(e));
-  healWound(e);
-  s.woundTreated = true;
+  e.run.relics.push(item.id);
 }
 
 /** Mínimo de cartas del mazo: 3 por campeón vivo. */
 export const minDeckFor = (e: Expedition): number => CONFIG.shop.minDeckPerChampion * e.run.champions.length;
-
-/** Precio de «Tratar herida» con el modificador de la dificultad. */
-export const treatWoundPrice = (e: Expedition): number => priced(e, CONFIG.shop.treatWound);
 
 export const removalPrice = (e: Expedition): number => priced(e, CONFIG.shop.removeCard + e.removals * CONFIG.shop.removeCardStep);
 

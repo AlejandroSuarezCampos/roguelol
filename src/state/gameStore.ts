@@ -15,7 +15,7 @@ import { choiceBlocked, pickEvent, resolveChoice, type EventOutcome } from '../e
 import { swapAllies } from '../engine/formation';
 import { usePotion as engineUsePotion, usePotionOnMap } from '../engine/potions';
 import { reorder } from '../engine/run';
-import { buyCard as engineBuyCard, buyGear as engineBuyGear, buyPotion as engineBuyPotion, openShop, removeCard as engineRemoveCard, treatWoundAtShop } from '../engine/shop';
+import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, buyRelic as engineBuyRelic, openShop, removeCard as engineRemoveCard } from '../engine/shop';
 import type { ChampionId, CombatState, Pos } from '../engine/types';
 import { buyPerk as engineBuyPerk, newMeta, perksFor, recordRun, type MetaState } from '../engine/meta';
 import type { PerkId } from '../data/perks';
@@ -479,11 +479,8 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       const slot = slotArg ?? undefined;
       shopAction(() => engineBuyPotion(state.expedition!, index, slot), ['buyPotion', index, slot]);
     },
-    buyGear(index: number) {
-      shopAction(() => engineBuyGear(state.expedition!, index), ['buyGear', index]);
-    },
-    treatWound() {
-      shopAction(() => treatWoundAtShop(state.expedition!), ['treatWound']);
+    buyRelic(index: number) {
+      shopAction(() => engineBuyRelic(state.expedition!, index), ['buyRelic', index]);
     },
     removeCard(deckIndex: number) {
       shopAction(() => engineRemoveCard(state.expedition!, deckIndex), ['removeCard', deckIndex]);

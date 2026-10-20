@@ -34,7 +34,7 @@ export interface JournalEntry {
 }
 export const JOURNAL_ACTIONS = [
   'chooseNode', 'playCard', 'swap', 'usePotion', 'endTurn', 'concludeCombat', 'claimCard', 'claimGear', 'claimPotion',
-  'restAction', 'buyCard', 'buyPotion', 'buyGear', 'treatWound', 'removeCard', 'chooseEventOption', 'takeChestOffer',
+  'restAction', 'buyCard', 'buyPotion', 'buyRelic', 'removeCard', 'chooseEventOption', 'takeChestOffer',
 ] as const;
 const MAX_JOURNAL = 20000;
 

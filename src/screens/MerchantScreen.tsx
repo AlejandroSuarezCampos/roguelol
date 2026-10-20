@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../components/Card';
-import { GearItem } from '../components/GearItem';
-import { GEAR } from '../data/gear';
+import { RELICS, RELIC_RARITY_LABEL } from '../data/relics';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { CARDS, applyUpgrade, deckCardDef, isUpgradedId } from '../data/cards';
-import { livingWounds } from '../engine/expedition';
 import { POTIONS } from '../engine/potions';
-import { minDeckFor, removalPrice, treatWoundPrice } from '../engine/shop';
+import { minDeckFor, removalPrice } from '../engine/shop';
 import { game, useGame } from '../state/gameStore';
 
 function Price({ price, gold, sold, label, onBuy }: { price: number; gold: number; sold?: boolean; label: string; onBuy: () => void }) {
@@ -36,7 +34,6 @@ export function MerchantScreen() {
   if (!e || !e.shop) return null;
   const shop = e.shop;
   const gold = e.run.gold;
-  const woundTotal = livingWounds(e);
   const beltFull = !e.run.belt.includes(null);
   const price = removalPrice(e);
   return (
@@ -55,16 +52,19 @@ export function MerchantScreen() {
           </div>
         </section>
         <section className="sw">
-          <h3 className="fd">Objetos</h3>
+          <h3 className="fd">Reliquias</h3>
           <div className="wares">
-            {shop.gear.map((g, i) => (
-              <div key={i} className={`ware ${g.sold ? 'sold' : ''}`}>
+            {shop.relics.map((r, i) => (
+              <div key={i} className={`ware ${r.sold ? 'sold' : ''}`}>
                 <div className="wcons wide">
-                  <GearItem id={g.gearId} />
+                  <Icon name="relic" />
+                  <b>{RELICS[r.id].name}</b>
+                  <small>{RELIC_RARITY_LABEL[RELICS[r.id].rarity]} · {RELICS[r.id].text}</small>
                 </div>
-                <Price price={g.price} gold={gold} sold={g.sold} label={GEAR[g.gearId].name} onBuy={() => game.buyGear(i)} />
+                <Price price={r.price} gold={gold} sold={r.sold} label={RELICS[r.id].name} onBuy={() => game.buyRelic(i)} />
               </div>
             ))}
+            {!shop.relics.length && <p className="sub">Ya tienes todas las reliquias.</p>}
           </div>
         </section>
         <section className="sw">
@@ -85,14 +85,6 @@ export function MerchantScreen() {
         <section className="sw">
           <h3 className="fd">Servicios</h3>
           <div className="wares">
-            <div className={`ware ${shop.woundTreated ? 'sold' : ''}`}>
-              <div className="wcons">
-                <Icon name="wound" />
-                <b>Tratar herida</b>
-                <small>{woundTotal ? 'Quita una herida al campeón más herido.' : 'Nadie tiene heridas.'}</small>
-              </div>
-              <Price price={treatWoundPrice(e)} gold={gold} sold={shop.woundTreated || woundTotal === 0} label="Tratar herida" onBuy={() => game.treatWound()} />
-            </div>
             <div className="ware">
               <div className="wcons">
                 <Icon name="x" />

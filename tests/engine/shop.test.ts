@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CARDS } from '../../src/data/cards';
 import { CONFIG } from '../../src/engine/config';
 import { createExpedition } from '../../src/engine/expedition';
-import { GEAR } from '../../src/data/gear';
-import { buyCard, buyGear, buyPotion, openShop, removeCard, removalPrice, treatWoundAtShop } from '../../src/engine/shop';
+import { RELICS, RELIC_LIST } from '../../src/data/relics';
+import { buyCard, buyPotion, buyRelic, openShop, removeCard, removalPrice } from '../../src/engine/shop';
 
 const fresh = (gold = 500) => {
   const e = createExpedition(11);
@@ -13,10 +13,13 @@ const fresh = (gold = 500) => {
 };
 
 describe('stock del comerciante', () => {
-  it('ofrece 3 cartas y 3 pociones distintas con precio, y es reproducible con la semilla', () => {
+  it('como en Slay the Spire: 6 cartas, 3 reliquias y 3 pociones distintas con precio, y es reproducible con la semilla', () => {
     const e = fresh();
-    expect(e.shop!.cards).toHaveLength(3);
-    expect(new Set(e.shop!.cards.map((c) => c.defId)).size).toBe(3);
+    expect(e.shop!.cards).toHaveLength(CONFIG.shop.cards);
+    expect(new Set(e.shop!.cards.map((c) => c.defId)).size).toBe(CONFIG.shop.cards);
+    expect(e.shop!.relics).toHaveLength(3);
+    expect(new Set(e.shop!.relics.map((r) => r.id)).size).toBe(3);
+    for (const r of e.shop!.relics) expect(r.price).toBe(CONFIG.shop.relicPrice[RELICS[r.id].rarity]);
     expect(e.shop!.potions).toHaveLength(3);
     expect(new Set(e.shop!.potions.map((p) => p.id)).size).toBe(3);
     for (const c of e.shop!.cards) expect(c.price).toBe(CONFIG.shop.cardPrice[CARDS[c.defId].rarity]);
@@ -67,17 +70,6 @@ describe('compras', () => {
     expect(e.run.gold).toBe(gold - first.price);
   });
 
-  it('tratar una herida cuesta oro y falla si nadie la tiene', () => {
-    const e = fresh(100);
-    expect(() => treatWoundAtShop(e)).toThrow(/herida/i);
-    e.wounds.lux = 1;
-    e.run.champions[2].maxHp = 40;
-    treatWoundAtShop(e);
-    expect(e.wounds.lux).toBe(0);
-    expect(e.run.gold).toBe(100 - CONFIG.shop.treatWound);
-    expect(e.run.champions[2].maxHp).toBe(45);
-  });
-
   it('eliminar una carta sube de precio cada vez', () => {
     const e = fresh(500);
     expect(removalPrice(e)).toBe(CONFIG.shop.removeCard);
@@ -97,26 +89,26 @@ describe('compras', () => {
   });
 });
 
-describe('gear en venta', () => {
-  it('ofrece 2 objetos con el precio de su rareza', () => {
-    const e = fresh();
-    expect(e.shop!.gear).toHaveLength(2);
-    expect(new Set(e.shop!.gear.map((g) => g.gearId)).size).toBe(2);
-    for (const g of e.shop!.gear) expect(g.price).toBe(CONFIG.shop.gearPrice[GEAR[g.gearId].rarity]);
-  });
-
-  it('comprar gear lo manda al inventario y no se compra dos veces', () => {
-    const e = fresh(500);
-    const item = e.shop!.gear[0];
-    buyGear(e, 0);
-    expect(e.inventory).toEqual([item.gearId]);
-    expect(e.run.gold).toBe(500 - item.price);
-    expect(() => buyGear(e, 0)).toThrow(/vendid/i);
+describe('reliquias en venta', () => {
+  it('comprar una reliquia la añade a la expedición y no se compra dos veces', () => {
+    const e = fresh(1000);
+    const item = e.shop!.relics[0];
+    buyRelic(e, 0);
+    expect(e.run.relics).toEqual([item.id]);
+    expect(e.run.gold).toBe(1000 - item.price);
+    expect(() => buyRelic(e, 0)).toThrow(/vendid/i);
   });
 
   it('sin oro no compra', () => {
     const e = fresh(1);
-    expect(() => buyGear(e, 1)).toThrow(/oro/i);
-    expect(e.inventory).toHaveLength(0);
+    expect(() => buyRelic(e, 1)).toThrow(/oro/i);
+    expect(e.run.relics).toHaveLength(0);
+  });
+
+  it('no ofrece reliquias que ya se tienen, y con pocas libres ofrece menos', () => {
+    const e = createExpedition(11);
+    e.run.relics = RELIC_LIST.slice(0, RELIC_LIST.length - 1).map((r) => r.id);
+    openShop(e);
+    expect(e.shop!.relics.map((r) => r.id)).toEqual([RELIC_LIST.at(-1)!.id]);
   });
 });

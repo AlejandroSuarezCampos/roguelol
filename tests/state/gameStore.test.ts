@@ -598,14 +598,14 @@ describe('tesoro y santuario', () => {
     return g;
   }
 
-  it('el tesoro abre su pantalla, se elige una oferta una sola vez y se vuelve al mapa', () => {
+  it('el tesoro abre su pantalla, se coge una sola vez y se vuelve al mapa', () => {
     const g = enter('chest');
     expect(g.getState().screen).toBe('chest');
     const chest = g.getState().expedition!.chest!;
-    expect(chest.offers).toHaveLength(3);
+    expect(chest.offers).toHaveLength(1);
     g.takeChestOffer(0);
-    expect(g.getState().expedition!.run.gold).toBe(90);
-    g.takeChestOffer(1);
+    expect(g.getState().expedition!.run.relics).toHaveLength(1);
+    g.takeChestOffer(0);
     expect(g.getState().hint).toMatch(/cerrado/);
     g.leaveChest();
     expect(g.getState().screen).toBe('map');
@@ -618,7 +618,7 @@ describe('tesoro y santuario', () => {
     expect(g.getState().event!.id).toMatch(/^shrine_/);
   });
 
-  it('recargar en un tesoro no permite volver a elegir', () => {
+  it('recargar en un tesoro no permite volver a cogerlo', () => {
     const data = new Map<string, string>();
     const store = { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v), removeItem: (k: string) => void data.delete(k) };
     const g = createGameStore({ save: createSaveManager(store) });
@@ -629,13 +629,13 @@ describe('tesoro y santuario', () => {
     e.map.nodes.find((n) => n.id === first.id)!.type = 'chest';
     g.reorderTeam('leona', 1); // vuelve a guardar el punto seguro con el nodo ya convertido en tesoro
     g.chooseNode(first.id);
-    g.takeChestOffer(2);
-    const inventory = [...g.getState().expedition!.inventory];
+    g.takeChestOffer(0);
+    const relics = [...g.getState().expedition!.run.relics];
     const reloaded = createGameStore({ save: createSaveManager(store) });
     reloaded.continueExpedition();
     expect(reloaded.getState().screen).toBe('chest');
-    expect(reloaded.getState().expedition!.chest!.taken).toBe(2);
-    expect(reloaded.getState().expedition!.inventory).toEqual(inventory);
+    expect(reloaded.getState().expedition!.chest!.taken).toBe(0);
+    expect(reloaded.getState().expedition!.run.relics).toEqual(relics);
     reloaded.takeChestOffer(0);
     expect(reloaded.getState().hint).toMatch(/cerrado/);
   });

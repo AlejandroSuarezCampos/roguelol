@@ -281,26 +281,20 @@ describe('comerciante', () => {
   });
 });
 
-describe('precios del comerciante según la dificultad', () => {
-  it('«Tratar herida» muestra y cobra el precio con el modificador de Pesadilla', async () => {
+describe('reliquias del comerciante', () => {
+  it('se ven con su precio y se compran', async () => {
     const user = userEvent.setup();
+    goToNode('shop');
     go(() => {
-      game.newExpedition(2, 'nightmare');
-      game.startExpedition();
-      const e = game.getState().expedition!;
-      const target = e.map.nodes.find((n) => n.type === 'shop')!;
-      e.currentId = 'n0-0';
-      e.map.nodes.find((n) => n.id === 'n0-0')!.next = [target.id];
-      e.wounds.leona = 1;
-      e.run.gold = 31;
-      game.chooseNode(target.id);
+      game.getState().expedition!.run.gold = 999;
+      game.notify(null);
     });
     render(<App />);
-    const buy = screen.getByRole('button', { name: /Comprar Tratar herida por 31 de oro/ });
-    expect(buy).toBeEnabled();
-    await user.click(buy);
-    expect(game.getState().expedition!.run.gold).toBe(0);
-    expect(game.getState().expedition!.wounds.leona).toBe(0);
+    expect(screen.getByRole('heading', { name: 'Reliquias' })).toBeInTheDocument();
+    const item = game.getState().expedition!.shop!.relics[0];
+    const { RELICS } = await import('../../src/data/relics');
+    await user.click(screen.getByRole('button', { name: new RegExp(`^Comprar ${RELICS[item.id].name} por ${item.price}`) }));
+    expect(game.getState().expedition!.run.relics).toEqual([item.id]);
   });
 });
 
@@ -400,21 +394,6 @@ describe('gear y pantalla de equipo', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Lux' }));
     expect(game.getState().expedition!.gear.lux.weapon).toBe('rabadon');
     expect(screen.getByText('Elegido')).toBeInTheDocument();
-  });
-
-  it('el comerciante vende objetos', async () => {
-    const user = userEvent.setup();
-    goToNode('shop');
-    go(() => {
-      game.getState().expedition!.run.gold = 999;
-      game.notify(null);
-    });
-    render(<App />);
-    expect(screen.getByRole('heading', { name: 'Objetos' })).toBeInTheDocument();
-    const item = game.getState().expedition!.shop!.gear[0];
-    const { GEAR } = await import('../../src/data/gear');
-    await user.click(screen.getByRole('button', { name: new RegExp(`^Comprar ${GEAR[item.gearId].name} por`) }));
-    expect(game.getState().expedition!.inventory).toEqual([item.gearId]);
   });
 });
 
@@ -755,21 +734,14 @@ describe('pantalla del tesoro', () => {
     });
   }
 
-  it('muestra las 3 ofertas, pide confirmar y cierra el cofre', async () => {
+  it('muestra la reliquia, se abre sin elegir y se vuelve al mapa', async () => {
     const user = userEvent.setup();
     enterChest();
     render(<App />);
-    expect(screen.getAllByRole('button', { name: 'Llevármelo' })).toHaveLength(3);
-    await user.click(screen.getAllByRole('button', { name: 'Llevármelo' })[0]);
-    const dialog = screen.getByRole('alertdialog');
-    expect(dialog).toHaveTextContent(/perderás las otras dos/);
-    await user.click(within(dialog).getByRole('button', { name: 'Volver' }));
-    expect(game.getState().expedition!.chest!.taken).toBeNull();
-    await user.click(screen.getAllByRole('button', { name: 'Llevármelo' })[0]);
-    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Llevármelo' }));
-    expect(game.getState().expedition!.run.gold).toBe(90);
-    expect(screen.getByText('El cofre se ha cerrado.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Llevármelo' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Abrir el cofre' }));
+    expect(game.getState().expedition!.run.relics).toHaveLength(1);
+    expect(screen.getByText('Te lo has llevado.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Abrir el cofre' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar' }));
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
   });
@@ -780,6 +752,6 @@ describe('pantalla del tesoro', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: 'Dejar el cofre' }));
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
-    expect(game.getState().expedition!.run.gold).toBe(0);
+    expect(game.getState().expedition!.run.relics).toHaveLength(0);
   });
 });

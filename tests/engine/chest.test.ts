@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { GEAR } from '../../src/data/gear';
 import { RELIC_LIST } from '../../src/data/relics';
 import { CONFIG } from '../../src/engine/config';
 import { createExpedition, generateMap } from '../../src/engine/expedition';
@@ -32,64 +31,50 @@ describe('mapa con tesoro y santuario', () => {
   });
 });
 
-describe('ofertas del tesoro', () => {
-  it('son tres, distintas y visibles: oro, una reliquia y un objeto raro o legendario', () => {
+describe('contenido del tesoro', () => {
+  it('trae una sola reliquia que aún no se tiene', () => {
     const e = createExpedition(4);
+    e.run.relics.push(RELIC_LIST[0].id);
     const chest = openChest(e);
-    expect(chest.offers.map((o) => o.kind).sort()).toEqual(['gear', 'gold', 'relic']);
-    const gold = chest.offers.find((o) => o.kind === 'gold')!;
-    expect(gold.kind === 'gold' && gold.amount).toBe(CONFIG.chest.gold);
-    const relic = chest.offers.find((o) => o.kind === 'relic')!;
-    expect(RELIC_LIST.map((r) => r.id)).toContain(relic.kind === 'relic' ? relic.id : '');
-    const gear = chest.offers.find((o) => o.kind === 'gear')!;
-    expect(gear.kind === 'gear' && GEAR[gear.id].rarity).not.toBe('common');
+    expect(chest.offers).toHaveLength(1);
+    const o = chest.offers[0];
+    expect(o.kind).toBe('relic');
+    expect(o.kind === 'relic' && o.id).not.toBe(RELIC_LIST[0].id);
   });
 
-  it('abrirlo otra vez no regenera las ofertas y es reproducible con la semilla', () => {
+  it('abrirlo otra vez no lo regenera y es reproducible con la semilla', () => {
     const e = createExpedition(4);
     const a = openChest(e);
     expect(openChest(e)).toBe(a);
-    const f = createExpedition(4);
-    expect(openChest(f).offers).toEqual(a.offers);
+    expect(openChest(createExpedition(4)).offers).toEqual(a.offers);
   });
 
-  it('si ya se tienen todas las reliquias, la oferta de reliquia se cambia por más oro', () => {
+  it('si ya se tienen todas las reliquias, trae oro', () => {
     const e = createExpedition(4);
     e.run.relics = RELIC_LIST.map((r) => r.id);
-    const chest = openChest(e);
-    expect(chest.offers.every((o) => o.kind !== 'relic')).toBe(true);
-    expect(chest.offers).toHaveLength(3);
-    expect(chest.offers.filter((o) => o.kind === 'gold')).toHaveLength(2);
+    expect(openChest(e).offers).toEqual([{ kind: 'gold', amount: CONFIG.chest.fallbackGold }]);
   });
 });
 
-describe('elegir una oferta', () => {
-  it('el oro se suma', () => {
+describe('coger el contenido', () => {
+  it('la reliquia se añade a la expedición y el oro se suma', () => {
     const e = createExpedition(4);
-    const chest = openChest(e);
-    takeChestOffer(e, chest.offers.findIndex((o) => o.kind === 'gold'));
-    expect(e.run.gold).toBe(CONFIG.chest.gold);
-  });
-
-  it('la reliquia se añade a la expedición y el objeto, al inventario', () => {
-    const e = createExpedition(4);
-    const chest = openChest(e);
-    const r = chest.offers.find((o) => o.kind === 'relic')!;
-    takeChestOffer(e, chest.offers.indexOf(r));
-    expect(e.run.relics).toContain(r.kind === 'relic' ? r.id : '');
+    const o = openChest(e).offers[0];
+    takeChestOffer(e, 0);
+    expect(e.run.relics).toContain(o.kind === 'relic' ? o.id : '');
     const f = createExpedition(4);
-    const c2 = openChest(f);
-    const g = c2.offers.find((o) => o.kind === 'gear')!;
-    takeChestOffer(f, c2.offers.indexOf(g));
-    expect(f.inventory).toEqual([g.kind === 'gear' ? g.id : '']);
+    f.run.relics = RELIC_LIST.map((r) => r.id);
+    openChest(f);
+    takeChestOffer(f, 0);
+    expect(f.run.gold).toBe(CONFIG.chest.fallbackGold);
   });
 
-  it('solo se elige una vez y el índice debe ser válido', () => {
+  it('solo se coge una vez y fuera de un tesoro no se puede', () => {
     const e = createExpedition(4);
     openChest(e);
     expect(() => takeChestOffer(e, 7)).toThrow(/oferta/i);
     takeChestOffer(e, 0);
-    expect(() => takeChestOffer(e, 1)).toThrow(/cerrado/i);
+    expect(() => takeChestOffer(e, 0)).toThrow(/cerrado/i);
     expect(() => takeChestOffer(createExpedition(4), 0)).toThrow(/tesoro/i);
   });
 });

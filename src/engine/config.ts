@@ -36,8 +36,8 @@ export const CONFIG = {
     wound: { maxHpLoss: 0.1, cap: 3, recoverHpFraction: 0.25 },
   },
   relics: { maxActivationsPerDrain: 30 },
-  /** Tesoro: oro de la oferta de oro y de la de reserva si ya se tienen todas las reliquias. */
-  chest: { gold: 90, fallbackGold: 150 },
+  /** Tesoro: oro que trae el cofre si ya se tienen todas las reliquias. */
+  chest: { fallbackGold: 150 },
   /** Metaprogresión (spec §14): Esquirlas por expedición. */
   meta: { perFloor: 3, perCombat: 2, perElite: 5, victoryBonus: 40, nightmareMultiplier: 1.5, minShards: 5 },
   gear: {
@@ -50,10 +50,12 @@ export const CONFIG = {
     },
   },
   shop: {
-    gearPrice: { common: 60, rare: 110, legendary: 160 },
+    /** Como en Slay the Spire: 6 cartas, 3 reliquias, 3 pociones y eliminar cartas. */
+    cards: 6,
+    relics: 3,
+    relicPrice: { common: 120, rare: 170, legendary: 230 },
     cardPrice: { common: 50, rare: 80, epic: 120 },
     potionPrice: { health: 35, refillable: 40, iron: 50, sorcery: 45 },
-    treatWound: 25,
     removeCard: 75,
     removeCardStep: 25,
     /** No se puede dejar el mazo por debajo de esto por cada campeón vivo (= cartas por campeón y turno). */

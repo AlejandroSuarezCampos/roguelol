@@ -11,7 +11,7 @@ import { choiceBlocked, pickEvent, resolveChoice } from '../../src/engine/events
 import { compareGear, equip } from '../../src/engine/gear';
 import type { ChampionId } from '../../src/engine/types';
 import { POTIONS, usePotion, usePotionOnMap, whyCannotUse } from '../../src/engine/potions';
-import { buyCard, buyGear, buyPotion, openShop, treatWoundAtShop } from '../../src/engine/shop';
+import { buyCard, buyPotion, buyRelic, openShop } from '../../src/engine/shop';
 
 interface Option {
   uid: string;
@@ -120,11 +120,8 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
     } else if (node.type === 'shop') {
       visitShop(e, rng);
     } else if (node.type === 'chest') {
-      const chest = openChest(e);
-      const gear = chest.offers.findIndex((o) => o.kind === 'gear' && aliveIds(e).some((c) => gearScore(e, c, o.id) > 0));
-      const relic = chest.offers.findIndex((o) => o.kind === 'relic');
-      takeChestOffer(e, gear >= 0 ? gear : relic >= 0 ? relic : chest.offers.findIndex((o) => o.kind === 'gold'));
-      equipBest(e);
+      openChest(e);
+      takeChestOffer(e, 0);
     } else if (node.type === 'event' || node.type === 'shrine') {
       const ev = pickEvent(e, node.type);
       const ok = ev.choices.map((c, i) => ({ c, i })).filter(({ c }) => !choiceBlocked(e, c));
@@ -190,7 +187,7 @@ function drinkOnMap(e: Expedition): void {
   });
 }
 
-/** Compra heridas tratadas, una poción curativa y, con lo que sobre, cartas (nunca deja el oro por debajo de 0). */
+/** Compra alguna reliquia, pociones curativas y, con lo que sobre, cartas (nunca deja el oro por debajo de 0). */
 function visitShop(e: Expedition, rng: Rng): void {
   const shop = openShop(e);
   const tryBuy = (fn: () => void) => {
@@ -200,10 +197,8 @@ function visitShop(e: Expedition, rng: Rng): void {
       /* sin oro o sin hueco: el bot simplemente no compra */
     }
   };
-  if (livingWounds(e) > 0) tryBuy(() => treatWoundAtShop(e));
+  shop.relics.forEach((_, i) => rng.next() < 0.5 && tryBuy(() => buyRelic(e, i)));
   shop.potions.forEach((p, i) => POTIONS[p.id].healing && !p.sold && tryBuy(() => buyPotion(e, i)));
-  shop.gear.forEach((_, i) => tryBuy(() => buyGear(e, i)));
-  equipBest(e);
   rng.shuffle(shop.cards.map((_, i) => i)).forEach((i) => rng.next() < 0.7 && tryBuy(() => buyCard(e, i)));
 }
 
