@@ -15,7 +15,7 @@ Abre http://localhost:5188. La barra inferior «PROTOTIPO» salta entre pantalla
 
 Arte de campeones, objetos y monstruos © Riot Games (Data Dragon / CommunityDragon), enlazado, no incluido. Fondos e iconos: arte original.
 
-## App React (fase 1)
+## App React
 
 Rebanada jugable sobre el motor real: Menú → Preparación → Mapa → {Combate, Élite, Jefe → Botín, Descanso, Comerciante, Evento, Tesoro, Santuario} → Resultado, con pantalla de Equipo (gear y mazo) desde el mapa, forja de cartas en el descanso y guardado automático de la expedición (`localStorage`, versionado y con recuperación de datos dañados). Spec: [`docs/superpowers/specs/2026-10-19-react-fase1-design.md`](docs/superpowers/specs/2026-10-19-react-fase1-design.md).
 
@@ -40,7 +40,7 @@ Expedición de 3 actos (Barón Nashor, Dragón anciano y Viego), con reliquias d
 
 Dificultad: una sola, con 10 niveles de Ascensión acumulativos como en Slay the Spire (el 10 trae la muerte permanente). Se desbloquean ganando. Todos los modificadores están en `src/data/ascension.ts`.
 
-Fuera de esta fase: pasivas de gear y campeones nuevos.
+Estado del MVP y auditoría de la spec: [`docs/AUDITORIA-MVP.md`](docs/AUDITORIA-MVP.md). Traspaso: [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
 ## Motor de reglas (TypeScript)
 
