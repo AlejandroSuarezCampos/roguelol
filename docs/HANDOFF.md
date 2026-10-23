@@ -36,7 +36,7 @@ Planes y specs de cada pieza (todos hechos): ver la carpeta `docs/superpowers/` 
 
 ## Siguientes pasos
 
-1. **Validación humana** (lo único que impide dar el MVP por cerrado, ver [`AUDITORIA-MVP.md`](AUDITORIA-MVP.md)): jugar varias expediciones para juzgar equilibrio y diversión, ver el arte real de Riot, probar en móvil y con lector de pantalla.
+1. **Plan de la versión final:** [`PLAN-VERSION-FINAL.md`](PLAN-VERSION-FINAL.md). Empieza por la **validación humana** (lo único que impide dar el MVP por cerrado, ver [`AUDITORIA-MVP.md`](AUDITORIA-MVP.md)): jugar varias expediciones para juzgar equilibrio y diversión, ver el arte real de Riot, probar en móvil y con lector de pantalla.
 2. **Revisar las decisiones** que tomó Claude por su cuenta: tablas «Decisiones de Claude» de [`specs/2026-10-20-revision-fase1.md`](superpowers/specs/2026-10-20-revision-fase1.md) y de [`specs/2026-10-20-contenido-fase2.md`](superpowers/specs/2026-10-20-contenido-fase2.md).
 3. Endurecer `tests/e2e/full.mjs` (esperar al botón «Continuar» del botín).
 4. Más contenido: eventos, santuarios, enemigos por acto, campeones, logros, reglas de campaña (spec §14), dragones de hextech/químtech.
