@@ -14,7 +14,14 @@ await page.evaluate(() => {
   e.run.relics.push('stone', 'bowl', 'heart');
   e.run.gold = 400;
 });
-const shot = async (name) => { await page.waitForTimeout(250); await page.screenshot({ path: `${out}/${w}x${h}-${name}.png` }); };
+const overflowing = [];
+const shot = async (name) => {
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${out}/${w}x${h}-${name}.png` });
+  // La página no debe desbordar en horizontal (el contenedor de la pantalla puede hacer scroll vertical).
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (over > 1) overflowing.push(`${name} (+${over}px)`);
+};
 await shot('map');
 await page.evaluate(() => window.__game.openTeam());
 await shot('team');
@@ -24,5 +31,16 @@ await page.evaluate(() => {
   const first = e.map.nodes.find((n) => n.floor === 0); first.type = 'shop'; g.chooseNode(first.id);
 });
 await shot('shop');
-console.log('errores:', s.errors());
+await page.goto('http://localhost:4173/?debug');
+await page.evaluate(() => {
+  const g = window.__game;
+  g.newExpedition(7);
+  g.startExpedition();
+  const first = g.getState().expedition.map.nodes.find((n) => n.floor === 0);
+  first.type = 'combat';
+  g.chooseNode(first.id);
+});
+await shot('combat');
+console.log('errores:', s.errors(), '| desbordan en horizontal:', overflowing);
 await s.close();
+if (overflowing.length || s.errors().length) process.exitCode = 1;

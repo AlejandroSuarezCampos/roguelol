@@ -35,6 +35,20 @@ describe('menú y preparación', () => {
     expect(screen.getByText('Mapa de expedición')).toBeInTheDocument();
   });
 
+  it('copia de seguridad: un archivo inválido se rechaza con su motivo y uno válido pide confirmar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const input = screen.getByLabelText('Archivo de copia') as HTMLInputElement;
+    await user.upload(input, new File(['no es json'], 'x.json', { type: 'application/json' }));
+    await user.click(await screen.findByRole('button', { name: 'Restaurar' }));
+    expect(await screen.findByText(/JSON inválido/)).toBeInTheDocument();
+    const valid = JSON.stringify({ format: 'shattered-runeterra-backup', version: 1, run: null, meta: null });
+    await user.upload(input, new File([valid], 'y.json', { type: 'application/json' }));
+    expect(await screen.findByText('¿Restaurar la copia?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Volver' }));
+    expect(screen.queryByText('¿Restaurar la copia?')).not.toBeInTheDocument();
+  });
+
   it('Equipo, Desbloqueos y Archivo abren su pantalla y se vuelve al menú', async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -23,6 +23,16 @@ Sin esto el resto se construye a ciegas.
 
 ## Fase 1 — Equilibrio y estabilidad (1–2 semanas)
 
+**Estado (2026-10-23):** parte técnica hecha; el ajuste de equilibrio espera a la fase 0.
+- ✅ `tests/e2e/full.mjs` endurecido: la causa del fallo era que el botón del final de acto se llama «Ir al acto N» y el script solo buscaba «Continuar»/«Ver resultado»; ahora también falla con código de salida ≠ 0 si no termina o hay errores de consola.
+- ✅ Exportar/importar partida (`src/save/backup.ts`, botones en el menú, 6 tests): valida todo en memoria antes de escribir.
+- ✅ Migraciones: las del progreso permanente (v1→v2→v3) ya tenían tests; las expediciones antiguas (≤v6) **no se migran por diseño** y se apartan, con test.
+- ✅ Reanudar a mitad de nodo: ya cubierto en `tests/state/journal.test.ts` (combate, botín, evento, tienda, descanso, tesoro).
+- ✅ `tests/e2e/sizes.mjs` comprueba desbordamiento horizontal. **Hallazgo para la fase 5:** el combate a 390×844 sale recortado (enemigos fuera de pantalla, sin scroll), que el comprobador de desbordamiento no detecta.
+- ⏳ Ajuste de `src/data/` y búsqueda de combinaciones rotas: tras la fase 0.
+
+Plan original de la fase:
+
 - Ajustar `src/data/` según la fase 0; objetivo orientativo: humano medio ≈35–45 % en A0, bot ≈25 % como suelo. Los objetivos exactos los fija el usuario.
 - Revisar combinaciones rotas (reliquias × pasivas de gear × cartas de robar/convertir) con el bot y simulaciones por semilla.
 - Endurecer `tests/e2e/full.mjs` (espera explícita del botón «Continuar»), añadir e2e de móvil y de recarga a mitad de nodo en cada tipo de nodo.

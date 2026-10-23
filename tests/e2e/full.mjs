@@ -59,10 +59,11 @@ for (let step = 0; step < max; step++) {
       await once('62-gear-choose');
       await page.locator('.gearpick').first().click();
       await once('63-gear-compare');
-      await page.locator('.equipon .btn').first().click();
+      await page.locator('.equipon .btn:not([disabled])').first().click();
     }
     if (await page.getByRole('button', { name: 'Recoger', exact: true }).count()) await page.getByRole('button', { name: 'Recoger', exact: true }).click();
-    await page.getByRole('button', { name: /Continuar|Ver resultado/ }).click();
+    // La pantalla puede haber cambiado entre mirar y pulsar (p. ej. un modal): se reevalúa en la vuelta siguiente en vez de fallar.
+    await page.getByRole('button', { name: /Continuar|Ver resultado|Ir al acto/ }).click({ timeout: 3000 }).catch(() => {});
     continue;
   }
   if (await page.locator('.screen.chestscreen').count()) {
@@ -95,5 +96,7 @@ for (let step = 0; step < max; step++) {
 }
 await shot('99-final');
 console.log('nodos recorridos:', fights, '| errores de consola:', s.errors());
-console.log('pantalla final:', await page.locator('.screen.result').count() ? 'resultado' : 'sin terminar');
+const finished = (await page.locator('.screen.result').count()) > 0;
+console.log('pantalla final:', finished ? 'resultado' : 'sin terminar');
 await s.close();
+if (!finished || s.errors().length) process.exitCode = 1;

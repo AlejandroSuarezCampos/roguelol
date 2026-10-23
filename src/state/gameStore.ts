@@ -569,6 +569,8 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
 export type GameStore = ReturnType<typeof createGameStore>;
 
 const storage = browserStorage();
+/** Almacenamiento del navegador (o null), para la copia de seguridad del menú. */
+export const appStorage = storage;
 export const game = createGameStore({ save: createSaveManager(storage), meta: createMetaManager(storage) });
 
 export function useGame(store: GameStore = game): GameState {

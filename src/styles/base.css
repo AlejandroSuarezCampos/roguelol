@@ -68,3 +68,4 @@ body.calm *,body.calm *::before,body.calm *::after{animation:none!important;tran
 .st{display:inline-flex;align-items:center;gap:2px;font:700 11px var(--fb);padding:1px 5px;background:rgba(1,10,19,.8);border:1px solid currentColor;border-radius:10px;color:var(--ink)}
 .st i{font-style:normal;font-weight:600}
 .st.mark{color:var(--magic)}.st.burn{color:var(--danger)}.st.charge{color:var(--sel)}.st.stun{color:#ffe27a}
+.backup{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:10px}
