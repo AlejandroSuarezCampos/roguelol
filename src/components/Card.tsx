@@ -21,11 +21,11 @@ interface Props {
   bonus?: boolean;
   hotkey?: number;
   onClick?: () => void;
-  size?: 'hand' | 'big';
+  size?: 'std' | 'big';
 }
 
 /** Carta: orbe de coste, estandarte con nombre (color = rareza), arte, caja de texto y pie con dueño y rareza. */
-export function Card({ card, cost, upgraded, selected, reason, bonus, hotkey, onClick, size = 'hand' }: Props) {
+export function Card({ card, cost, upgraded, selected, reason, bonus, hotkey, onClick, size = 'std' }: Props) {
   const owner = CHAMPIONS[card.owner];
   const label = `${card.name}, coste ${cost}, ${TYPE_LABEL[card.type]}, ${TARGET_LABEL[card.target]}, de ${owner.name}, ${RARITY_LABEL[card.rarity]}. ${card.text}${bonus ? ' Bonus de posición activo.' : ''}${reason ? ` No jugable: ${reason}.` : ''}`;
   return (

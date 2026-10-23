@@ -1,9 +1,9 @@
 /* combate — escena estilo Slay the Spire: personajes sobre el escenario, sin cajas */
-.cb{--bot:clamp(196px,29vh,258px);height:100%;min-height:0;padding:0;gap:0;position:relative;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr) var(--bot);animation:none}
+.cb{--bot:clamp(196px,29vh,258px);grid-template-columns:minmax(0,1fr);height:100%;min-height:0;padding:0;gap:0;position:relative;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr) var(--bot);animation:none}
 .cb .hud{grid-row:1}
 .turnb{position:absolute;left:50%;transform:translateX(-50%);color:var(--ink2);text-transform:uppercase;letter-spacing:.2em;font-size:11px;padding:5px 24px;border-block:1px solid var(--gold2);background:linear-gradient(90deg,transparent,#010a13 20%,#010a13 80%,transparent)}
 .turnb b{color:var(--gold-hi);font-size:18px;margin-left:6px;letter-spacing:.05em}
-.cbtop{grid-row:2;display:flex;align-items:center;gap:12px;padding:8px 18px 0;z-index:9;position:relative}
+.cbtop{grid-row:2;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 18px 0;z-index:9;position:relative}
 .btn.sm{min-height:30px;padding:4px 12px;font-size:11.5px}
 .stage{grid-row:3;position:relative;min-height:0;container-type:size;display:flex;align-items:flex-end;justify-content:space-between;padding:0 3% 56px;gap:5%}
 .scene{position:absolute;inset:0;pointer-events:none;
@@ -161,3 +161,39 @@
 .rellist li .ic{width:24px;height:24px;color:var(--gold);margin-top:2px}
 .rellist li.rare .ic{color:#9cc8ff}.rellist li.legendary .ic{color:#ffd77a}
 .rellist b{color:var(--gold-hi)}.rellist small{color:var(--ink3)}
+/* móvil en vertical: enemigos arriba y equipo debajo (filas), controles en dos filas sobre la mano */
+@media (max-width:700px){
+ .cb{--bot:268px}
+ .turnb{position:static;transform:none;padding:0 6px;border:0;background:none;margin-left:auto;font-size:10px}.turnb b{font-size:16px}
+ .hudr{flex:1 1 100%;margin-left:0;justify-content:flex-start}.hudr .btn{min-height:34px;padding:2px 10px;font-size:11px;margin-left:auto}.hudr .tag{font-size:10.5px;padding:2px 6px}
+ .stage{flex-direction:column-reverse;align-items:stretch;justify-content:space-evenly;padding:0 8px 40px;gap:0}
+ .team{flex:none;gap:6px;align-items:flex-end}
+ .ftr{--fw:clamp(52px,min(21vw,(50cqh - 150px)/1.46),104px)}
+ .ftr .bars{width:calc(var(--fw) + 8px)}
+ .shd{width:21px;height:23px;margin-right:-7px}.shd b{font-size:9px}
+ .ftr .hpbar{height:13px}.ftr .hpbar span{font-size:9px;gap:2px}
+ .ftr .stress .lbl{font-size:9px}
+ .nml{font-size:10.5px;line-height:1.05;min-height:22px;max-width:calc(var(--fw)*1.3);margin-inline:auto}
+ .intents{min-height:50px}
+ .intent .ii{width:36px;height:36px}.intent .ii .ic{width:20px;height:20px}.intent .ii b{font-size:16px}
+ .intent .it{font-size:10.5px}
+ .slotempty{margin-bottom:40px;padding:6px 8px;font-size:11px}
+ .cbb .pile{bottom:auto;top:8px;width:46px;height:46px}.cbb .pile small{display:none}
+ .pile.draw{left:8px}.pile.disc{right:8px}
+ .orb{left:64px;bottom:auto;top:2px;width:58px;height:58px;border-width:2px}
+ .orb b{font-size:19px}.orb small{display:none}
+ .endbtn{left:130px;right:62px;bottom:auto;top:10px;min-height:44px;padding:8px 10px;font-size:13px;letter-spacing:.06em}
+ .swapbtn{left:8px;bottom:auto;top:64px;min-height:40px;z-index:4}
+ .playbtn{right:8px;bottom:auto;top:64px;min-height:40px;padding:6px 18px;z-index:4}
+ .hand{bottom:10px;max-width:100%;overflow-x:auto;justify-content:flex-start;padding:20px 8px 0;left:0;transform:none;width:100%}
+ .hand .card{--cw:clamp(96px,28vw,118px)}
+ .hand .slot{margin:0 -6px;flex:none}
+ .hint{top:-36px;left:3%;right:3%;transform:none;max-width:none;font-size:12px;white-space:normal;text-align:center;padding:4px 10px}
+ .deathwarn{top:96px}
+ .btn,.pile,.rel{min-height:44px}
+ .rel{min-width:44px}
+}
+/* pantallas bajas (móvil apaisado o muy pequeño): el combate deja de encajar en una sola pantalla y se desplaza en vertical */
+@media (max-height:700px){
+ .cb{height:auto;min-height:100%;overflow:visible;grid-template-rows:auto auto minmax(340px,auto) var(--bot)}
+}

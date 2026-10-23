@@ -69,3 +69,5 @@ body.calm *,body.calm *::before,body.calm *::after{animation:none!important;tran
 .st i{font-style:normal;font-weight:600}
 .st.mark{color:var(--magic)}.st.burn{color:var(--danger)}.st.charge{color:var(--sel)}.st.stun{color:#ffe27a}
 .backup{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:10px}
+/* móvil: la barra superior pasa a dos filas en vez de salirse de la pantalla */
+@media (max-width:700px){.hud{flex-wrap:wrap;padding:6px 10px;gap:4px 8px}.where small{display:none}.hudr{flex-wrap:wrap;gap:6px}.screen{padding:14px 12px}}
