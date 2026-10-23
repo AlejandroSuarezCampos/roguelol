@@ -17,7 +17,7 @@ import { useGame } from '../state/gameStore';
 export function App() {
   const { screen } = useGame();
   return (
-    <div className="app">
+    <main className="app">
       {screen === 'menu' && <MainMenuScreen />}
       {screen === 'prep' && <PartySetupScreen />}
       {screen === 'result' && <ResultsScreen />}
@@ -32,6 +32,6 @@ export function App() {
       {screen === 'upgrades' && <UpgradesScreen />}
       {screen === 'archive' && <ArchiveScreen />}
       {screen === 'roster' && <RosterScreen />}
-    </div>
+    </main>
   );
 }

@@ -19,7 +19,7 @@ body.calm *,body.calm *::before,body.calm *::after{animation:none!important;tran
 /* superficies: marco hextech fino con remate en rombo */
 .panel{background:linear-gradient(180deg,rgba(14,26,44,.92),rgba(1,10,19,.94));border:1px solid var(--line2);box-shadow:inset 0 1px 0 rgba(200,170,110,.12),var(--sh);padding:16px;position:relative}
 .panel::before{content:"";position:absolute;top:-4px;left:50%;width:7px;height:7px;background:var(--bg);border:1px solid var(--gold);transform:translateX(-50%) rotate(45deg)}
-.panel h3{font:700 13px var(--fd);text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(120,90,40,.5);display:flex;align-items:center;gap:8px}
+.panel .sh{font:700 13px var(--fd);text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(120,90,40,.5);display:flex;align-items:center;gap:8px}
 .ttl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(120,90,40,.45)}
 .ttl h1{font-size:28px;text-transform:uppercase;background:linear-gradient(180deg,#f0e6d2,#c8aa6e);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sub{color:var(--ink2);font-size:13px}
@@ -44,7 +44,7 @@ body.calm *,body.calm *::before,body.calm *::after{animation:none!important;tran
  background:linear-gradient(180deg,rgba(1,10,19,.96),rgba(1,10,19,.8));border-bottom:1px solid var(--line2);box-shadow:0 1px 0 rgba(200,170,110,.12),0 6px 20px rgba(0,0,0,.5)}
 .crest{width:30px;height:30px;transform:rotate(45deg);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;background:#0a1428;margin:0 4px;flex:none}
 .crest .ic{transform:rotate(-45deg);color:var(--gold)}
-.where b{display:block;color:var(--gold-hi);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.where b,.where .t{display:block;font:inherit;color:var(--gold-hi);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
 .where small{color:var(--ink2);font-size:12px}
 .hudr{margin-left:auto;display:flex;align-items:center;gap:8px}
 .goldc{color:#f5d36e;font-weight:700;margin-right:8px;display:flex;gap:5px;align-items:center}

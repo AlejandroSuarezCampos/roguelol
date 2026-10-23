@@ -30,9 +30,9 @@ export function RewardScreen() {
       <Hud icon="chest" title="Botín" subtitle={boss ? 'Jefe vencido' : 'Combate ganado'} e={e} />
       <div className="reward-body">
         <section className="panel rewardlist">
-          <h3>
+          <h2 className="sh">
             <Icon name="chest" /> Recompensas
-          </h3>
+          </h2>
           <ul>
             <li className="done">
               <Icon name="gold" /> <b>{r.gold} de oro</b> <span className="tag ok">Recogido</span>
@@ -107,9 +107,9 @@ export function RewardScreen() {
           </div>
         </section>
         <section className="panel summary">
-          <h3>
+          <h2 className="sh">
             <Icon name="book" /> Resumen
-          </h3>
+          </h2>
           <p className="sub">Oro total: <b>{e.run.gold}</b></p>
           <p className="sub">Mazo: <b>{e.deck.length}</b> cartas</p>
           <p className="sub">Niebla: <b>{e.run.mist}</b></p>

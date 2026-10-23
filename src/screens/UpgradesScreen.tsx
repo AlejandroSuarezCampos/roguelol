@@ -63,7 +63,7 @@ export function UpgradesScreen() {
         </p>
         {(['champion', 'starter', 'card', 'relic'] as UnlockKind[]).map((kind) => (
           <section key={kind}>
-            <h3 className="fd">{UNLOCK_KIND_LABEL[kind]}</h3>
+            <h2 className="fd sh">{UNLOCK_KIND_LABEL[kind]}</h2>
             <div className="perklist">
               {UNLOCKS.filter((u) => u.kind === kind).map((u) => {
                 const owned = meta.unlocked.includes(u.id);
@@ -78,8 +78,8 @@ export function UpgradesScreen() {
                       </span>
                     ) : (
                       <>
-                        <button className={`btn ${can ? 'pri' : ''}`} disabled={!can} onClick={() => game.buyUnlock(u.id)} aria-label={`Desbloquear ${label} por ${u.cost} Esquirlas`}>
-                          Desbloquear · {u.cost} Esquirlas
+                        <button className={`btn ${can ? 'pri' : ''}`} disabled={!can} onClick={() => game.buyUnlock(u.id)}>
+                          Desbloquear · {u.cost} Esquirlas <span className="sr">({label})</span>
                         </button>
                         {!can && <small className="need">Faltan {u.cost - meta.shards}</small>}
                       </>

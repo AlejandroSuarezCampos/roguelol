@@ -122,7 +122,7 @@
 .shop{padding:0;gap:0}
 .shop.scene-bg{background:linear-gradient(180deg,rgba(1,10,19,.45),rgba(1,10,19,.88)),var(--shop-bg) center/cover fixed}
 .stall{display:flex;flex-direction:column;gap:18px;padding:22px 32px}
-.sw h3{font-size:16px;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(120,90,40,.5)}
+.sw .sh{font-size:16px;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(120,90,40,.5)}
 .wares{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
 .ware{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
 .ware.sold{opacity:.45;filter:grayscale(.8)}
@@ -181,7 +181,7 @@
 .statlist{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;margin:0}
 .statrow{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(120,90,40,.4);padding:3px 0}
 .statrow dd{font-weight:700;margin:0}
-.teamscreen h4{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin:12px 0 6px}
+.teamscreen h3,.roster h3{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin:12px 0 6px}
 .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .gslot{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line2);background:rgba(1,10,19,.5);min-height:84px}
 .gslot .empty{margin:auto}
@@ -214,7 +214,7 @@
 .perk{display:flex;flex-direction:column;gap:8px}
 .perk header{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .perk header .ic{width:28px;height:28px;color:var(--gold)}
-.perk header h3{margin:0;border:0;padding:0}
+.perk header .sh{margin:0;border:0;padding:0}
 .perk .pips{margin-left:auto;display:flex;gap:4px}
 .pips i{width:12px;height:12px;border:1px solid var(--gold2);transform:rotate(45deg);display:inline-block}
 .pips i.on{background:var(--gold)}
@@ -226,7 +226,7 @@
 .grid4{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 .entry{display:flex;flex-direction:column;gap:6px}
 .entry .port.big{width:100%;aspect-ratio:1;max-height:200px}
-.entry h3{margin:6px 0 0;border:0;padding:0}
+.entry .sh{margin:6px 0 0;border:0;padding:0}
 .entry.locked{opacity:.6}
 .port.mystery{display:flex;align-items:center;justify-content:center;color:var(--ink3)}
 .port.mystery .ic{width:48px;height:48px}

@@ -41,7 +41,7 @@ export function MerchantScreen() {
       <Hud icon="shop" title="Comerciante errante" subtitle="Una tienda entre la Niebla" e={e} />
       <div className="stall">
         <section className="sw">
-          <h3 className="fd">Cartas</h3>
+          <h2 className="fd sh">Cartas</h2>
           <div className="wares">
             {shop.cards.map((c, i) => (
               <div key={i} className={`ware ${c.sold ? 'sold' : ''}`}>
@@ -52,7 +52,7 @@ export function MerchantScreen() {
           </div>
         </section>
         <section className="sw">
-          <h3 className="fd">Reliquias</h3>
+          <h2 className="fd sh">Reliquias</h2>
           <div className="wares">
             {shop.relics.map((r, i) => (
               <div key={i} className={`ware ${r.sold ? 'sold' : ''}`}>
@@ -68,7 +68,7 @@ export function MerchantScreen() {
           </div>
         </section>
         <section className="sw">
-          <h3 className="fd">Pociones</h3>
+          <h2 className="fd sh">Pociones</h2>
           <div className="wares">
             {shop.potions.map((p, i) => (
               <div key={i} className={`ware ${p.sold ? 'sold' : ''}`}>
@@ -83,7 +83,7 @@ export function MerchantScreen() {
           </div>
         </section>
         <section className="sw">
-          <h3 className="fd">Servicios</h3>
+          <h2 className="fd sh">Servicios</h2>
           <div className="wares">
             <div className="ware">
               <div className="wcons">
@@ -106,7 +106,7 @@ export function MerchantScreen() {
       {slotFor !== null && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Cinturón lleno">
           <div className="panel">
-            <h3><Icon name="potion" /> Cinturón lleno</h3>
+            <h2 className="sh"><Icon name="potion" /> Cinturón lleno</h2>
             <p className="sub">Elige qué poción sustituir por {POTIONS[shop.potions[slotFor].id].name}.</p>
             <div className="row">
               {e.run.belt.map((p, i) => (
@@ -123,7 +123,7 @@ export function MerchantScreen() {
       {removing && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Eliminar una carta">
           <div className="panel">
-            <h3><Icon name="x" /> Eliminar una carta ({price} de oro)</h3>
+            <h2 className="sh"><Icon name="x" /> Eliminar una carta ({price} de oro)</h2>
             <ul className="pilelist">
               {deckRows.map(({ id, def, up, first, n }) => (
                 <li key={id}>

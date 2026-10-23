@@ -33,17 +33,17 @@ export function PartySetupScreen() {
       <Hud icon="flag" title="Preparación" subtitle="Islas de la Sombra" e={e} />
       <div className="setup-body">
         <section className="panel region">
-          <h3>
+          <h2 className="sh">
             <Icon name="map" /> Región
-          </h3>
+          </h2>
           <div className="regimg" />
           <b className="fd">Islas de la Sombra</b>
           <p className="sub">La Niebla Negra lo cubre todo. Cada paso la espesa; los caídos no descansan.</p>
         </section>
         <section className="panel party">
-          <h3>
+          <h2 className="sh">
             <Icon name="team" /> Orden de combate
-          </h3>
+          </h2>
           {available.length > PARTY_SIZE && (
             <div className="partypick" role="group" aria-label="Campeones de la expedición">
               <small className="sub">Elige {PARTY_SIZE} campeones ({picked.length}/{PARTY_SIZE}):</small>
@@ -61,7 +61,7 @@ export function PartySetupScreen() {
               const def = CHAMPIONS[c.id];
               const crisis = CRISIS_INFO[CRISIS[c.id]];
               return (
-                <article key={c.id} className="slotcard" role="listitem" aria-label={`${c.name}, posición ${c.pos}`}>
+                <div key={c.id} className="slotcard" role="listitem" aria-label={`${c.name}, posición ${c.pos}`}>
                   <header>
                     <span className="pn" aria-hidden>{c.pos}</span>
                     <small>{c.pos === 1 ? 'Frente' : c.pos === 4 ? 'Fondo' : `Posición ${c.pos}`}</small>
@@ -85,15 +85,15 @@ export function PartySetupScreen() {
                       →
                     </button>
                   </div>
-                </article>
+                </div>
               );
             })}
           </div>
         </section>
         <section className="panel rules">
-          <h3>
+          <h2 className="sh">
             <Icon name="help" /> Reglas de la run
-          </h3>
+          </h2>
           <div className="col">
             <div className="warnbox">
               <Icon name="down" />

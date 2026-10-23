@@ -27,11 +27,11 @@ interface Props {
 /** Carta: orbe de coste, estandarte con nombre (color = rareza), arte, caja de texto y pie con dueño y rareza. */
 export function Card({ card, cost, upgraded, selected, reason, bonus, hotkey, onClick, size = 'std' }: Props) {
   const owner = CHAMPIONS[card.owner];
-  const label = `${card.name}, coste ${cost}, ${TYPE_LABEL[card.type]}, ${TARGET_LABEL[card.target]}, de ${owner.name}, ${RARITY_LABEL[card.rarity]}. ${card.text}${bonus ? ' Bonus de posición activo.' : ''}${reason ? ` No jugable: ${reason}.` : ''}`;
+  // El nombre accesible es el texto visible (WCAG 2.5.3) más, al final, el contexto que solo se ve en el dibujo.
+  const extra = `Coste ${cost} de energía.${bonus ? ' Bonus de posición activo.' : ''}${reason ? ` No jugable: ${reason}.` : ''}`;
   return (
     <button
       className={`card t-${card.type} ${card.rarity} ${selected ? 'sel' : ''} ${reason ? 'dis' : ''} ${size}`}
-      aria-label={label}
       aria-pressed={selected ?? false}
       aria-disabled={reason ? true : undefined}
       data-why={reason ?? undefined}
@@ -62,6 +62,7 @@ export function Card({ card, cost, upgraded, selected, reason, bonus, hotkey, on
         </span>
       </span>
       {upgraded && <span className="upb">Mejorada</span>}
+      <span className="sr">. {extra}</span>
       {hotkey !== undefined && <span className="hk" aria-hidden>{hotkey}</span>}
     </button>
   );

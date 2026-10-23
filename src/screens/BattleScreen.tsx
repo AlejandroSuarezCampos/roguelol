@@ -175,7 +175,7 @@ export function BattleScreen() {
           </span>
         </p>
       )}
-      <main className="stage" aria-label="Escenario de combate">
+      <section className="stage" aria-label="Escenario de combate">
         <div className="scene" aria-hidden />
         <div className="team">
           {([4, 3, 2, 1] as Pos[]).map((p) => {
@@ -202,14 +202,15 @@ export function BattleScreen() {
             return <Fighter key={u.id} unit={u} s={s} mode={m.mode} tag={m.tag} fx={fx.filter((f) => f.unitId === u.id)} onClick={() => clickUnit(u)} />;
           })}
         </div>
-      </main>
+      </section>
 
       <section className="cbb" aria-label="Mano y acciones">
         <p className="hint" role="status">{context}</p>
-        <button className="pile draw" onClick={() => setPile('draw')} aria-label={`Mazo de robo: ${s.drawPile.length} cartas`}>
+        <button className="pile draw" onClick={() => setPile('draw')}>
           <Icon name="card" />
-          <b>{s.drawPile.length}</b>
+          <b>{s.drawPile.length}</b>{' '}
           <small>Robo</small>
+          <span className="sr">. Mazo de robo: {s.drawPile.length} cartas</span>
         </button>
         <div className="orb" role="img" aria-label={`Energía ${s.energy} de ${CONFIG.energyPerTurn}`}>
           <b>
@@ -258,19 +259,20 @@ export function BattleScreen() {
         <button className="btn pri endbtn" disabled={over} onClick={() => game.endTurn()}>
           Terminar turno
         </button>
-        <button className="pile disc" onClick={() => setPile('discard')} aria-label={`Descarte: ${s.discard.length} cartas`}>
+        <button className="pile disc" onClick={() => setPile('discard')}>
           <Icon name="card" />
-          <b>{s.discard.length}</b>
+          <b>{s.discard.length}</b>{' '}
           <small>Descarte</small>
+          <span className="sr">. {s.discard.length} cartas en el descarte</span>
         </button>
       </section>
 
       {pile && (
         <div className="modal" role="dialog" aria-modal="true" aria-label={pile === 'draw' ? 'Mazo de robo' : 'Descarte'} onClick={() => setPile(null)}>
           <div className="panel" onClick={(ev) => ev.stopPropagation()}>
-            <h3>
+            <h2 className="sh">
               <Icon name="card" /> {pile === 'draw' ? 'Mazo de robo (orden oculto)' : 'Descarte'}
-            </h3>
+            </h2>
             <PileList cards={pile === 'draw' ? s.drawPile : s.discard} />
             <button className="btn" onClick={() => setPile(null)}>
               Cerrar

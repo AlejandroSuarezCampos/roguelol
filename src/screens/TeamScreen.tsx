@@ -68,9 +68,9 @@ export function TeamScreen() {
           })}
         </nav>
         <section className="panel sheet">
-          <h3>
+          <h2 className="sh">
             <Icon name="team" /> {def.name} · {def.role}
-          </h3>
+          </h2>
           <div className="sheetrow">
             <ChampionPortrait id={sel} className="big" />
             <div className="col grow">
@@ -98,7 +98,7 @@ export function TeamScreen() {
               </div>
             </div>
           </div>
-          <h4 className="fd">Estadísticas finales</h4>
+          <h3 className="fd">Estadísticas finales</h3>
           <dl className="statlist">
             {lines.map((l) => (
               <div key={l.key} className="statrow">
@@ -110,9 +110,9 @@ export function TeamScreen() {
           <p className="sub small">Base + gear. Son las mismas que usa el combate.</p>
         </section>
         <section className="panel gearpanel">
-          <h3>
+          <h2 className="sh">
             <Icon name="relic" /> Gear
-          </h3>
+          </h2>
           {replacing && (
             <p className="sub" role="status">
               Huecos llenos: elige qué objeto sustituir por <b>{GEAR[replacing].name}</b>.{' '}
@@ -142,7 +142,7 @@ export function TeamScreen() {
               </div>
             ))}
           </div>
-          <h4 className="fd">Inventario ({e.inventory.length})</h4>
+          <h3 className="fd">Inventario ({e.inventory.length})</h3>
           {e.inventory.length === 0 && <p className="sub">Sin objetos. Los sueltan los combates, las élites y los jefes.</p>}
           <ul className="inv">
             {e.inventory.map((id, i) => (
@@ -158,15 +158,15 @@ export function TeamScreen() {
         </section>
       </div>
       <section className="panel deckview">
-        <h3>
+        <h2 className="sh">
           <Icon name="relic" /> Reliquias ({e.run.relics.length})
-        </h3>
+        </h2>
         <RelicList relics={e.run.relics} />
       </section>
       <section className="panel deckview">
-        <h3>
+        <h2 className="sh">
           <Icon name="card" /> Mazo de {def.name} ({ownCount} de {e.deck.length})
-        </h3>
+        </h2>
         <ul className="pilelist cols">
           {own.map(({ id, def: d, up, n }) => (
             <li key={id}>

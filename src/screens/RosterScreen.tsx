@@ -45,9 +45,9 @@ export function RosterScreen() {
           ))}
         </nav>
         <section className="panel sheet">
-          <h3>
+          <h2 className="sh">
             <Icon name="team" /> {c.name} · {c.role}
-          </h3>
+          </h2>
           <div className="sheetrow">
             <ChampionPortrait id={sel} className="big" />
             <div className="col grow">
@@ -60,7 +60,7 @@ export function RosterScreen() {
               <p className="sub small">{crisis.text}</p>
             </div>
           </div>
-          <h4 className="fd">Objeto inicial</h4>
+          <h3 className="fd">Objeto inicial</h3>
           {starters.length ? (
             <div className="col" role="radiogroup" aria-label={`Objeto inicial de ${c.name}`}>
               <label className="row">
@@ -77,7 +77,7 @@ export function RosterScreen() {
           ) : (
             <p className="sub">Desbloquea objetos iniciales en Desbloqueos para elegir con cuál empieza cada campeón.</p>
           )}
-          <h4 className="fd">Estadísticas base</h4>
+          <h3 className="fd">Estadísticas base</h3>
           <dl className="statlist">
             {statLines(base, 0, true).map((l) => (
               <div key={l.key} className="statrow">
@@ -88,9 +88,9 @@ export function RosterScreen() {
           </dl>
         </section>
         <section className="panel cardsview">
-          <h3>
+          <h2 className="sh">
             <Icon name="card" /> Cartas de {c.name}
-          </h3>
+          </h2>
           <label className="row">
             <input type="checkbox" checked={upgraded} onChange={(ev) => setUpgraded(ev.target.checked)} /> Ver versión mejorada
           </label>

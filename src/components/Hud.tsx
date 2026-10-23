@@ -57,7 +57,7 @@ export function Hud({ icon, title, subtitle, center, e, children }: HudProps) {
     <header className="hud">
       <Crest icon={icon} />
       <div className="where">
-        <b>{title}</b>
+        <h1 className="t">{title}</h1>
         {subtitle && <small>{subtitle}</small>}
       </div>
       {center}

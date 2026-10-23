@@ -36,9 +36,9 @@ export function ResultsScreen() {
       )}
       <div className="result-grid">
         <section className="panel">
-          <h3>
+          <h2 className="sh">
             <Icon name="team" /> Equipo
-          </h3>
+          </h2>
           <div className="row team-end">
             {e.dead.map((id) => (
               <article key={id} className="slotcard dead">
@@ -59,9 +59,9 @@ export function ResultsScreen() {
           </div>
         </section>
         <section className="panel">
-          <h3>
+          <h2 className="sh">
             <Icon name="book" /> Estadísticas
-          </h3>
+          </h2>
           <dl className="stats">
             <dt>Acto alcanzado</dt><dd>{e.act + 1} de {CONFIG.expedition.acts}</dd>
             <dt>Nodos recorridos</dt><dd>{floors}</dd>

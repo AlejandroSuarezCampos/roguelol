@@ -103,11 +103,11 @@ export function ExpeditionMapScreen() {
             })}
           </div>
         </div>
-        <aside className="mapside">
+        <aside className="mapside" tabIndex={0} aria-label="Equipo y reliquias">
           <section className="panel">
-            <h3>
+            <h2 className="sh">
               <Icon name="team" /> Equipo
-            </h3>
+            </h2>
             <TeamStrip e={e} armed={selectedPotion !== null} onPick={selectedPotion !== null ? (id) => game.drinkPotion(id) : undefined} />
             <div className="row">
               <Icon name="potion" />
@@ -116,9 +116,9 @@ export function ExpeditionMapScreen() {
             <p className="sub">{selectedPotion !== null ? 'Elige a quién curar.' : 'Selecciona una poción curativa para usarla.'}</p>
           </section>
           <section className="panel">
-            <h3>
+            <h2 className="sh">
               <Icon name="flag" /> {sel ? NODE_INFO[sel.type].name : 'Siguiente paso'}
-            </h3>
+            </h2>
             {sel && prev ? (
               <div className="col">
                 <p className="sub">{NODE_INFO[sel.type].text}</p>
@@ -136,15 +136,15 @@ export function ExpeditionMapScreen() {
             {hint && <p className="hint-msg" role="status">{hint}</p>}
           </section>
           <section className="panel">
-            <h3>
+            <h2 className="sh">
               <Icon name="relic" /> Reliquias ({e.run.relics.length})
-            </h3>
+            </h2>
             <RelicList relics={e.run.relics} empty="Las élites sueltan reliquias." />
           </section>
           <section className="panel legend">
-            <h3>
+            <h2 className="sh">
               <Icon name="book" /> Leyenda
-            </h3>
+            </h2>
             <ul>
               {(['combat', 'elite', 'rest', 'shop', 'event', 'chest', 'shrine', 'boss'] as const).map((t) => (
                 <li key={t}>

@@ -15,7 +15,6 @@ export function TeamStrip({ e, onPick, armed }: { e: Expedition; onPick?: (id: E
           className={`tcard ${c.downed ? 'down' : ''} ${armed && !c.downed ? 'armed' : ''}`}
           disabled={!onPick}
           onClick={() => onPick?.(c.id)}
-          aria-label={`${c.name}: vida ${c.hp} de ${c.maxHp}, estrés ${c.stress}${e.wounds[c.id] ? `, ${e.wounds[c.id]} heridas` : ''}${c.downed ? ', derribado' : ''}`}
         >
           <ChampionPortrait id={c.id} className="mini" />
           <span className="tinfo">
@@ -25,6 +24,7 @@ export function TeamStrip({ e, onPick, armed }: { e: Expedition; onPick?: (id: E
             <HpBar hp={c.hp} max={c.maxHp} />
             <StressMeter value={c.stress} />
           </span>
+          <span className="sr">. Vida {c.hp} de {c.maxHp}, estrés {c.stress}{e.wounds[c.id] ? `, ${e.wounds[c.id]} heridas` : ''}{c.downed ? ', derribado' : ''}</span>
         </button>
       ))}
       {e.dead.length > 0 && (

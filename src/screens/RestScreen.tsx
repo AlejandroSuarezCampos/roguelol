@@ -33,9 +33,9 @@ export function RestScreen() {
       <Hud icon="rest" title="Descanso" subtitle="Una hoguera entre la Niebla" e={e} />
       <div className="rest-body">
         <section className="panel">
-          <h3>
+          <h2 className="sh">
             <Icon name="rest" /> Elige una acción
-          </h3>
+          </h2>
           <div className="opts">
             {options.map((o) => (
               <button key={o.id} className={`opt ${o.extra ? 'extra' : ''}`} disabled={o.disabled} onClick={() => (o.id === 'upgrade' ? (setPick(null), setForging(true)) : game.restAction(o.id))}>
@@ -54,9 +54,9 @@ export function RestScreen() {
           </div>
         </section>
         <section className="panel">
-          <h3>
+          <h2 className="sh">
             <Icon name="team" /> Equipo
-          </h3>
+          </h2>
           <TeamStrip e={e} />
         </section>
       </div>

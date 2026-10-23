@@ -54,7 +54,7 @@ describe('menú y preparación', () => {
     render(<App />);
     for (const [name, heading] of [[/^Equipo/, 'Equipo'], [/^Desbloqueos/, 'Desbloqueos'], [/^Archivo/, 'Archivo']] as const) {
       await user.click(screen.getByRole('button', { name }));
-      expect(screen.getByText(heading, { selector: '.where b' })).toBeInTheDocument();
+      expect(screen.getByText(heading, { selector: '.where .t' })).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'Volver al menú' }));
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Shattered/);
     }
@@ -606,13 +606,13 @@ describe('metaprogresión en pantalla', () => {
       game.openMenuScreen('upgrades');
     });
     render(<App />);
-    expect(screen.getByRole('button', { name: /Desbloquear Hoja de Doran por 30 Esquirlas/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Desbloquear · 30 Esquirlas \(Hoja de Doran\)/ })).toBeDisabled();
     expect(screen.getAllByText(/^Faltan \d+/).length).toBeGreaterThan(0);
     go(() => {
       game.getState().meta.shards = 100;
       game.notify(null);
     });
-    await user.click(screen.getByRole('button', { name: /Desbloquear Hoja de Doran/ }));
+    await user.click(screen.getByRole('button', { name: /Desbloquear.*\(Hoja de Doran\)/ }));
     expect(game.getState().meta.unlocked).toContain('starter:blade');
     expect(screen.getByLabelText(/70 Esquirlas/)).toBeInTheDocument();
     expect(screen.getAllByText('Desbloqueado').length).toBe(1);

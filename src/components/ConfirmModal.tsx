@@ -22,9 +22,9 @@ export function ConfirmModal({ title, children, confirmLabel, cancelLabel = 'Vol
   return (
     <div className="modal" role="alertdialog" aria-modal="true" aria-label={title} onClick={onCancel}>
       <div className="panel" onClick={(ev) => ev.stopPropagation()}>
-        <h3>
+        <h2 className="sh">
           <Icon name="warn" /> {title}
-        </h3>
+        </h2>
         <div className="col">{children}</div>
         <div className="row">
           <button className="btn" onClick={onCancel} autoFocus={danger}>

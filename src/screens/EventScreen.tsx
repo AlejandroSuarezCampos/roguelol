@@ -58,9 +58,9 @@ export function EventScreen() {
       {pending !== null && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Confirmar">
           <div className="panel">
-            <h3>
+            <h2 className="sh">
               <Icon name="warn" /> {event.choices[pending].label}
-            </h3>
+            </h2>
             <p className="warnbox red">
               <Icon name="warn" /> <span>Perderás la oportunidad para siempre.</span>
             </p>

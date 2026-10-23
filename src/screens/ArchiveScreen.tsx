@@ -48,7 +48,7 @@ export function ArchiveScreen() {
               return (
                 <article key={id} className="panel entry">
                   <ChampionPortrait id={id} className="big" />
-                  <h3>{c.name}</h3>
+                  <h2 className="sh">{c.name}</h2>
                   <p className="sub">{c.role}</p>
                   <p className="sub">Rasgos: {c.traits.join(' · ')}</p>
                   <span className="tag warn" title={crisis.text}>
@@ -67,14 +67,14 @@ export function ArchiveScreen() {
                 return (
                   <article key={d.id} className="panel entry locked" aria-label="Enemigo sin descubrir">
                     <div className="port big mystery" aria-hidden><Icon name="lock" /></div>
-                    <h3>???</h3>
+                    <h2 className="sh">???</h2>
                     <p className="sub">Aún no te has enfrentado a este enemigo.</p>
                   </article>
                 );
               return (
                 <article key={d.id} className="panel entry">
                   <Portrait src={ENEMY_ART[d.id]} mono={d.name[0]} color={ENEMY_COLOR[d.id] ?? '#fff'} fit="monster" className="big" />
-                  <h3>{d.name}</h3>
+                  <h2 className="sh">{d.name}</h2>
                   <p className="sub">
                     Visto {b.seen} {b.seen === 1 ? 'vez' : 'veces'} · derrotado {b.defeated}
                   </p>
