@@ -49,6 +49,18 @@ describe('menú y preparación', () => {
     expect(screen.queryByText('¿Restaurar la copia?')).not.toBeInTheDocument();
   });
 
+  it('accesibilidad: las casillas activan movimiento reducido y alto contraste y se recuerdan', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByLabelText('Reducir movimiento'));
+    await user.click(screen.getByLabelText('Alto contraste'));
+    expect(document.body).toHaveClass('calm', 'hc');
+    expect(JSON.parse(localStorage.getItem('shattered-runeterra:settings')!)).toEqual({ calm: true, contrast: true });
+    await user.click(screen.getByLabelText('Reducir movimiento'));
+    await user.click(screen.getByLabelText('Alto contraste'));
+    expect(document.body).not.toHaveClass('calm');
+  });
+
   it('Equipo, Desbloqueos y Archivo abren su pantalla y se vuelve al menú', async () => {
     const user = userEvent.setup();
     render(<App />);

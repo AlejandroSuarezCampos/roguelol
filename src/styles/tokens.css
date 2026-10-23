@@ -1,7 +1,7 @@
 /* Tokens del sistema visual (de design/styles.css). Base: cliente de LoL — azul abisal, oro hextech y acento teal. */
 :root {
   --bg: #010a13; --bg2: #091428; --panel: #0a1428; --panel2: #0e1a2c; --panel3: #1e2328; --line: #1e2d3d; --line2: #463714;
-  --gold: #c8aa6e; --gold2: #785a28; --gold-hi: #f0e6d2; --ink: #f0e6d2; --ink2: #a09b8c; --ink3: #6b6a63;
+  --gold: #c8aa6e; --gold2: #785a28; --gold-hi: #f0e6d2; --ink: #f0e6d2; --ink2: #a09b8c; --ink3: #8d8c83;
   --hp: #e5594f; --block: #6cabee; --stress: #bb8cf5; --wound: #e0698e; --magic: #0ac8b9; --danger: #ff8c3a;
   --ok: #7ddc92; --bad: #ff5f5f; --sel: #f5d36e;
   --r-common: #8d94a3; --r-rare: #5b9cf0; --r-epic: #b46bf0;

@@ -3,6 +3,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { Icon } from '../components/Icon';
 import { exportBackup, importBackup } from '../save/backup';
 import { appStorage, game, useGame } from '../state/gameStore';
+import { applySettings, loadSettings, saveSettings, type Settings } from '../state/settings';
 
 const SECTIONS = [
   { screen: 'roster', icon: 'team', name: 'Equipo', text: 'Campeones, cartas y objeto inicial' },
@@ -50,6 +51,28 @@ function BackupPanel() {
   );
 }
 
+/** Preferencias de accesibilidad: se aplican al instante y se recuerdan en este navegador. */
+function SettingsPanel() {
+  const [s, setS] = useState<Settings>(() => loadSettings());
+  const set = (patch: Partial<Settings>) => {
+    const next = { ...s, ...patch };
+    setS(next);
+    saveSettings(next);
+    applySettings(next);
+  };
+  return (
+    <fieldset className="settings">
+      <legend className="sr">Accesibilidad</legend>
+      <label>
+        <input type="checkbox" checked={s.calm} onChange={(ev) => set({ calm: ev.target.checked })} /> Reducir movimiento
+      </label>
+      <label>
+        <input type="checkbox" checked={s.contrast} onChange={(ev) => set({ contrast: ev.target.checked })} /> Alto contraste
+      </label>
+    </fieldset>
+  );
+}
+
 export function MainMenuScreen() {
   const { saved, notice, meta } = useGame();
   const [confirming, setConfirming] = useState(false);
@@ -94,6 +117,7 @@ export function MainMenuScreen() {
         ))}
       </div>
       <BackupPanel />
+      <SettingsPanel />
       {confirming && (
         <ConfirmModal title="¿Empezar otra expedición?" confirmLabel="Empezar otra" danger onCancel={() => setConfirming(false)} onConfirm={() => game.newExpedition()}>
           <p>Ya tienes una expedición guardada. Si empiezas otra, <b>se perderá</b>.</p>

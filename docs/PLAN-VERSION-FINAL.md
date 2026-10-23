@@ -64,6 +64,16 @@ Orden: campeones y sus cartas (con tests de datos y de balance por campeón) →
 
 ## Fase 5 — Accesibilidad y móvil (1–2 semanas)
 
+**Estado (2026-10-23):** hecha la parte técnica; falta la prueba con dispositivos y lector de pantalla reales.
+- ✅ Móvil vertical: combate con enemigos arriba y equipo debajo, controles en dos filas, mano con scroll horizontal, barra superior en dos filas, objetivos táctiles ≥44 px. Pantallas bajas (móvil apaisado o 360×640): el combate se desplaza en vertical. Se corrigieron dos causas de recorte: columnas de rejilla `1fr` que crecían con su contenido (ahora `minmax(0,1fr)`) y una colisión de clase `.hand` entre la mano y la carta.
+- ✅ `tests/e2e/mobile.mjs`: recorre menú, preparación, mapa, 8 tipos de nodo, equipo, campeones, desbloqueos y archivo, y falla si hay botones fuera de pantalla o desbordamiento (probado a 390×844, 360×640, 412×915 y 768×1024).
+- ✅ Teclado: `tests/e2e/keyboard.mjs` juega 6 turnos de combate solo con teclado (atajos 1–5, Tab hasta el objetivo, Intro, E).
+- ✅ axe-core (`tests/e2e/a11y.mjs`, requiere `npm i --no-save axe-core`): 0 violaciones en todas las pantallas (landmark `main`, un `h1` por pantalla con orden de encabezados, nombres accesibles que contienen el texto visible).
+- ✅ Preferencias en el menú: «Reducir movimiento» y «Alto contraste» (se recuerdan en el navegador). Texto secundario subido a contraste AA.
+- ⏳ Pendiente: prueba real con lector de pantalla y en móvil físico; Lighthouse (no disponible sin red); tooltips que hoy dependen del ratón (`title`); cartas legibles en móvil (el texto de la carta en la mano mide ≈9 px).
+
+Plan original de la fase:
+
 - Layout táctil completo: sin hover obligatorio, objetivos ≥44 px, arrastrar/tocar para jugar cartas.
 - Teclado completo, foco visible, roles ARIA en modales y mapa, `prefers-reduced-motion`, modo de alto contraste y paleta apta para daltonismo (no depender solo del color en estados).
 - Auditoría con lector de pantalla y Lighthouse (objetivo ≥90 en accesibilidad).
