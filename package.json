@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "balance": "tsx tests/balance/sim.ts"
+    "balance": "tsx tests/balance/sim.ts",
+    "import:lol": "tsx scripts/import-ddragon.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

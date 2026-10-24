@@ -11,10 +11,10 @@ Léelo entero antes de tocar nada en un chat nuevo.
 | Prototipo visual (`design/`) | HTML/CSS/JS sin build; referencia visual. Arte de Riot solo enlazado. |
 | Motor (`src/engine`) | Determinista con semilla: posiciones, intercambio, estrés/crisis/virtud, Presagio, Niebla Negra, botín, cinturón de pociones, intenciones, daño §5.4, gear con pasivas, reliquias con cola de eventos y tope anti-bucle, tienda, eventos, cofres, metaprogresión. |
 | App React (`src/screens`, `src/state`) | Menú → Preparación → Mapa → Combate/Élite/Jefe → Botín → Descanso/Comerciante/Evento/Tesoro/Santuario → Resultado, con Equipo, Archivo y Equipo del menú. |
-| Contenido | 5 campeones (Lulu desbloqueable), 40 cartas (todas con mejora), 28 objetos en 6 huecos con pasivas y desventajas, 21 reliquias (5 de jefe), 12 enemigos, 5 eventos y 3 santuarios; mapas de 15 pisos en 3 actos (Barón, Dragón anciano, Viego). |
+| Contenido | 5 campeones (Lulu desbloqueable), 40 cartas (todas con mejora), 60 objetos en 6 huecos con pasivas y desventajas (32 añadidos el 2026-10-24: componentes, raros y legendarios famosos del LoL), 21 reliquias (5 de jefe), 12 enemigos, 5 eventos y 3 santuarios; mapas de 15 pisos en 3 actos (Barón, Dragón anciano, Viego). |
 | Dificultad y meta | Ascensión 0–10 (nivel 10 = muerte permanente); Esquirlas y desbloqueos. |
 | Guardado | Expedición v7 (punto seguro + diario de acciones, reanuda exacto) y progreso permanente v3; los datos dañados se apartan. |
-| Pruebas | **480 tests en verde (32 ficheros)**, typecheck y build limpios; e2e con Playwright en `tests/e2e` sin errores de consola (`full.mjs` endurecido: su fallo era el botón «Ir al acto N»). |
+| Pruebas | **486 tests en verde (33 ficheros)**, typecheck y build limpios; e2e con Playwright en `tests/e2e` sin errores de consola (`full.mjs` endurecido: su fallo era el botón «Ir al acto N»). |
 | Equilibrio | Bot (`npm run balance`): gana ≈25 % en Ascensión 0 y ≈5 % en Ascensión 10. Un humano debería ganar más; falta validación humana. |
 | Git | Todo en `main` y en `origin/main`. |
 
@@ -35,6 +35,8 @@ Planes y specs de cada pieza (todos hechos): ver la carpeta `docs/superpowers/` 
 - El usuario escribe en español; documentos y mensajes de commit también.
 
 ## Siguientes pasos
+
+0. **Catálogo del LoL:** ejecutar en una máquina con internet `npm run import:lol` (`scripts/import-ddragon.ts`): baja campeones y objetos de Data Dragon a `src/data/catalog.generated.json` y avisa de los `itemId` de `src/data/gear.ts` que no existan en esa versión (los 32 nuevos se escribieron de memoria sin poder comprobarlos). Aún no hay campeones nuevos jugables: cada uno necesita su kit diseñado; el catálogo sirve para elegirlos.
 
 1. **Plan de la versión final:** [`PLAN-VERSION-FINAL.md`](PLAN-VERSION-FINAL.md). Empieza por la **validación humana** (lo único que impide dar el MVP por cerrado, ver [`AUDITORIA-MVP.md`](AUDITORIA-MVP.md)): jugar varias expediciones para juzgar equilibrio y diversión, ver el arte real de Riot, probar en móvil y con lector de pantalla.
 2. **Revisar las decisiones** que tomó Claude por su cuenta: tablas «Decisiones de Claude» de [`specs/2026-10-20-revision-fase1.md`](superpowers/specs/2026-10-20-revision-fase1.md) y de [`specs/2026-10-20-contenido-fase2.md`](superpowers/specs/2026-10-20-contenido-fase2.md).

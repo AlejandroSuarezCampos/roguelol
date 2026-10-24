@@ -99,3 +99,18 @@ describe('en la expedición', () => {
     expect(r.relicNotes).toContain('Armadura de Warmog: +12 de vida a Leona');
   });
 });
+
+describe('catálogo de objetos', () => {
+  it('hay 60 objetos con ids y iconos distintos, y cada rareza tiene su peso', () => {
+    expect(GEAR_LIST).toHaveLength(60);
+    expect(new Set(GEAR_LIST.map((g) => g.itemId)).size).toBe(GEAR_LIST.length);
+    for (const r of ['common', 'rare', 'legendary'] as const) expect(GEAR_LIST.filter((g) => g.rarity === r).length, r).toBeGreaterThanOrEqual(10);
+  });
+
+  it('el portador de cualquier objeto sobrevive a un turno entero (jugar cartas, recibir golpes, acabar turno) sin errores', () => {
+    for (const g of GEAR_LIST) {
+      const s = makeState({ gear: [{ wearer: 'leona', gearId: g.id }, { wearer: 'yasuo', gearId: g.id }], intents: { e1: [{ kind: 'attack', amount: 5, target: 1 }], e2: [{ kind: 'attack', amount: 5, target: 2 }] } });
+      expect(() => endTeamTurn(s), g.id).not.toThrow();
+    }
+  });
+});
