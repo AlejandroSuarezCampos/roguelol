@@ -9,9 +9,12 @@ import { playExpedition } from '../balance/bot';
 import { ally, enemy, give, makeState, u } from './fixtures';
 
 const SUPPORTS: ChampionId[] = ['janna', 'nami', 'sona', 'thresh'];
+/** Los demás campeones cuyo papel principal en el LoL es apoyo. */
+const MORE_SUPPORTS: ChampionId[] = ['alistar', 'bard', 'blitzcrank', 'braum', 'karma', 'milio', 'nautilus', 'pyke', 'rakan', 'rell', 'renata', 'senna', 'seraphine', 'taric', 'yuumi', 'zilean', 'zyra', 'morgana'];
+const ALL_NEW = [...SUPPORTS, ...MORE_SUPPORTS];
 
 describe('apoyos nuevos: datos', () => {
-  for (const id of SUPPORTS) {
+  for (const id of ALL_NEW) {
     it(`${CHAMPIONS[id].name}: 8 cartas con mejora, 5 de mazo inicial y bloqueado hasta desbloquearlo`, () => {
       const cards = CARD_LIST.filter((c) => c.owner === id);
       expect(cards).toHaveLength(8);
@@ -124,4 +127,31 @@ describe('apoyos nuevos: expedición', () => {
     const r = playExpedition(e, 11);
     expect(['victory', 'defeat']).toContain(r.status);
   });
+});
+
+describe('todos los apoyos del LoL', () => {
+  it('hay 26 apoyos jugables en total y los textos de sus cartas citan los números de sus efectos', () => {
+    expect(CHAMPION_IDS).toHaveLength(27);
+    for (const id of ALL_NEW) {
+      for (const c of CARD_LIST.filter((x) => x.owner === id)) {
+        for (const eff of [...c.effects, ...(c.upgrade?.effects ?? [])]) {
+          if ('amount' in eff && eff.type !== 'draw') {
+            const def = eff.type === 'damage' || eff.type === 'block' || eff.type === 'heal' || eff.type === 'reduceStress';
+            if (def) expect(`${c.text} ${c.upgrade?.text}`, `${c.id} ${eff.type}`).toContain(String(eff.amount));
+          }
+        }
+      }
+    }
+  });
+
+  for (const id of MORE_SUPPORTS) {
+    it(`${CHAMPIONS[id].name} sustituye a Soraka y el bot completa una expedición`, () => {
+      const m = newMeta();
+      m.unlocked.push(`champion:${id}`);
+      setParty(m, ['leona', 'yasuo', 'lux', id]);
+      const e = createExpedition(5, 0, setupFor(m));
+      expect(e.deck.filter((c) => CARDS[c].owner === id)).toHaveLength(5);
+      expect(['victory', 'defeat']).toContain(playExpedition(e, 5).status);
+    });
+  }
 });

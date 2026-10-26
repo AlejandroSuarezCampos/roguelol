@@ -1,20 +1,11 @@
-import type { CardDef, CardUpgrade, Effect } from '../engine/types';
+import type { CardDef, CardUpgrade } from '../engine/types';
+import { block, magic, phys, status, up } from './cardHelpers';
+import { SUPPORT_CARDS, SUPPORT_UPGRADES } from './cardsSupports';
 
 /**
  * Cartas provisionales (8 por campeón).
  * Números provisionales: se afinan con tests/balance. Los textos deben coincidir con los efectos.
  */
-const phys = (amount: number, over: Partial<Extract<Effect, { type: 'damage' }>> = {}): Effect => ({
-  type: 'damage', amount, damageType: 'physical', scaling: { stat: 'ad', ratio: 0.1 }, ...over,
-});
-const magic = (amount: number, over: Partial<Extract<Effect, { type: 'damage' }>> = {}): Effect => ({
-  type: 'damage', amount, damageType: 'magic', scaling: { stat: 'ap', ratio: 0.1 }, ...over,
-});
-const block = (amount: number, on?: 'self'): Effect => ({ type: 'block', amount, on });
-const status = (st: 'mark' | 'stun' | 'charge' | 'vulnerable' | 'burn', stacks: number, on?: 'self'): Effect => ({
-  type: 'applyStatus', status: st, stacks, on,
-});
-
 const BASE_CARDS: CardDef[] = [
   // ——— Leona: tanque, brilla en 1–2 ———
   { id: 'l1', name: 'Escudo del amanecer', owner: 'leona', cost: 1, type: 'attack', target: 'enemy', rarity: 'common', keywords: [],
@@ -183,8 +174,6 @@ const BASE_CARDS: CardDef[] = [
     text: 'Otorga 10 de bloqueo a todos los aliados.', effects: [block(10)] },
 ];
 
-const up = (text: string, extra: Partial<CardUpgrade> = {}): CardUpgrade => ({ text, ...extra });
-
 /** Mejora de cada carta: nunca peor que la base, con los mismos tipos de efecto (solo cambian números o coste). */
 const UPGRADES: Record<string, CardUpgrade> = {
   l1: up('Inflige 9 y aplica Aturdido. Desde 1–2: +3.', { effects: [phys(9), status('stun', 1)] }),
@@ -261,7 +250,7 @@ const UPGRADES: Record<string, CardUpgrade> = {
   t8: up('Otorga 10 de bloqueo a todos los aliados. Cuesta 2.', { cost: 2 }),
 };
 
-export const CARD_LIST: CardDef[] = BASE_CARDS.map((c) => ({ ...c, upgrade: UPGRADES[c.id] }));
+export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] }));
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));
 
@@ -290,4 +279,22 @@ export const STARTER_DECK: string[] = [
   'n3', 'n3', 'n2', 'n4', 'n7',
   'o4', 'o4', 'o1', 'o2', 'o8',
   't1', 't5', 't2', 't3', 't6',
+  'al1', 'al3', 'al4', 'al5', 'al8',
+  'bd1', 'bd2', 'bd3', 'bd6', 'bd8',
+  'bz1', 'bz2', 'bz3', 'bz6', 'bz8',
+  'br1', 'br2', 'br3', 'br4', 'br8',
+  'kr1', 'kr2', 'kr4', 'kr5', 'kr8',
+  'ml1', 'ml2', 'ml3', 'ml4', 'ml6',
+  'nt1', 'nt2', 'nt3', 'nt6', 'nt8',
+  'pk1', 'pk2', 'pk3', 'pk4', 'pk8',
+  'rk1', 'rk2', 'rk3', 'rk4', 'rk5',
+  're1', 're2', 're3', 're5', 're8',
+  'rg1', 'rg2', 'rg3', 'rg4', 'rg6',
+  'sn1', 'sn2', 'sn3', 'sn5', 'sn8',
+  'sf1', 'sf2', 'sf3', 'sf4', 'sf8',
+  'tr1', 'tr2', 'tr3', 'tr4', 'tr6',
+  'yu1', 'yu2', 'yu3', 'yu6', 'yu8',
+  'zl1', 'zl2', 'zl3', 'zl4', 'zl8',
+  'zy1', 'zy2', 'zy3', 'zy4', 'zy8',
+  'mg1', 'mg2', 'mg3', 'mg4', 'mg6',
 ];
