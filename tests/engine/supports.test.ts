@@ -216,7 +216,7 @@ describe('apoyos nuevos: expedición', () => {
 
 describe('todos los apoyos del LoL', () => {
   it('hay 49 campeones en total y los textos de los apoyos de sus cartas citan los números de sus efectos', () => {
-    expect(CHAMPION_IDS).toHaveLength(49);
+    expect(CHAMPION_IDS).toHaveLength(90);
     for (const id of ALL_NEW) {
       for (const c of CARD_LIST.filter((x) => x.owner === id)) {
         for (const eff of [...c.effects, ...(c.upgrade?.effects ?? [])]) {

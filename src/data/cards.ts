@@ -1,6 +1,7 @@
 import type { CardDef, CardUpgrade } from '../engine/types';
 import { block, magic, phys, status, up } from './cardHelpers';
 import { ADC_CARDS, ADC_UPGRADES } from './cardsAdc';
+import { MID_CARDS, MID_UPGRADES } from './cardsMid';
 import { SUPPORT_CARDS, SUPPORT_UPGRADES } from './cardsSupports';
 
 /**
@@ -251,7 +252,7 @@ const UPGRADES: Record<string, CardUpgrade> = {
   t8: up('Inflige 8 y aplica 1 Vulnerable a todos los enemigos. Cuesta 2.', { cost: 2 }),
 };
 
-export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS, ...ADC_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] ?? ADC_UPGRADES[c.id] }));
+export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS, ...ADC_CARDS, ...MID_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] ?? ADC_UPGRADES[c.id] ?? MID_UPGRADES[c.id] }));
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));
 
@@ -320,4 +321,45 @@ export const STARTER_DECK: string[] = [
   'vy1', 'vy2', 'vy3', 'vy5', 'vy6',
   'xy1', 'xy2', 'xy5', 'xy6', 'xy7',
   'ze1', 'ze2', 'ze3', 'ze4', 'ze6',
+  'ahr1', 'ahr2', 'ahr4', 'ahr5', 'ahr6',
+  'aka1', 'aka2', 'aka3', 'aka5', 'aka7',
+  'aks1', 'aks2', 'aks3', 'aks5', 'aks7',
+  'ani2', 'ani4', 'ani5', 'ani6', 'ani8',
+  'ann1', 'ann2', 'ann3', 'ann4', 'ann6',
+  'aso1', 'aso2', 'aso3', 'aso5', 'aso6',
+  'azi1', 'azi2', 'azi3', 'azi4', 'azi5',
+  'cas1', 'cas2', 'cas5', 'cas6', 'cas7',
+  'cor1', 'cor2', 'cor4', 'cor6', 'cor7',
+  'dia1', 'dia2', 'dia3', 'dia5', 'dia7',
+  'ekk1', 'ekk2', 'ekk3', 'ekk5', 'ekk8',
+  'fiz1', 'fiz2', 'fiz3', 'fiz5', 'fiz7',
+  'gal1', 'gal2', 'gal5', 'gal6', 'gal7',
+  'hwe1', 'hwe2', 'hwe3', 'hwe5', 'hwe6',
+  'kas1', 'kas2', 'kas3', 'kas6', 'kas8',
+  'kat1', 'kat2', 'kat3', 'kat5', 'kat6',
+  'leb1', 'leb5', 'leb6', 'leb7', 'leb8',
+  'lis1', 'lis3', 'lis5', 'lis6', 'lis7',
+  'mal1', 'mal2', 'mal3', 'mal5', 'mal6',
+  'naa1', 'naa2', 'naa3', 'naa6', 'naa7',
+  'nee1', 'nee2', 'nee5', 'nee6', 'nee7',
+  'ori1', 'ori2', 'ori3', 'ori6', 'ori7',
+  'qiy1', 'qiy2', 'qiy5', 'qiy6', 'qiy7',
+  'ryz1', 'ryz3', 'ryz5', 'ryz6', 'ryz8',
+  'syl1', 'syl3', 'syl4', 'syl6', 'syl7',
+  'syn1', 'syn5', 'syn6', 'syn7', 'syn8',
+  'tal1', 'tal2', 'tal5', 'tal6', 'tal7',
+  'tln1', 'tln2', 'tln3', 'tln5', 'tln6',
+  'twi1', 'twi2', 'twi5', 'twi6', 'twi8',
+  'vei1', 'vei2', 'vei5', 'vei6', 'vei7',
+  'vel1', 'vel2', 'vel5', 'vel6', 'vel7',
+  'vex1', 'vex2', 'vex3', 'vex5', 'vex7',
+  'vik1', 'vik3', 'vik5', 'vik6', 'vik7',
+  'vla1', 'vla2', 'vla3', 'vla5', 'vla6',
+  'xer1', 'xer2', 'xer5', 'xer6', 'xer7',
+  'yon1', 'yon2', 'yon3', 'yon5', 'yon6',
+  'zed1', 'zed2', 'zed3', 'zed5', 'zed6',
+  'zig1', 'zig2', 'zig5', 'zig6', 'zig7',
+  'zoe1', 'zoe3', 'zoe4', 'zoe5', 'zoe8',
+  'mel1', 'mel2', 'mel5', 'mel6', 'mel7',
+  'arr1', 'arr2', 'arr3', 'arr5', 'arr6',
 ];
