@@ -14,7 +14,7 @@ Léelo entero antes de tocar nada en un chat nuevo.
 | Contenido | 27 campeones (Yasuo más los 26 apoyos del LoL; todos desbloqueables salvo los 4 iniciales, 120 Esquirlas cada uno), 216 cartas (todas con mejora), 60 objetos en 6 huecos con pasivas y desventajas (32 añadidos el 2026-10-24: componentes, raros y legendarios famosos del LoL), 21 reliquias (5 de jefe), 12 enemigos, 5 eventos y 3 santuarios; mapas de 15 pisos en 3 actos (Barón, Dragón anciano, Viego). |
 | Dificultad y meta | Ascensión 0–10 (nivel 10 = muerte permanente); Esquirlas y desbloqueos. |
 | Guardado | Expedición v7 (punto seguro + diario de acciones, reanuda exacto) y progreso permanente v3; los datos dañados se apartan. |
-| Pruebas | **549 tests en verde (34 ficheros)**, typecheck y build limpios; e2e con Playwright en `tests/e2e` sin errores de consola (`full.mjs` endurecido: su fallo era el botón «Ir al acto N»). |
+| Pruebas | **536 tests en verde (34 ficheros)**, typecheck y build limpios; e2e con Playwright en `tests/e2e` sin errores de consola (`full.mjs` endurecido: su fallo era el botón «Ir al acto N»). |
 | Equilibrio | Bot (`npm run balance`): gana ≈25 % en Ascensión 0 y ≈5 % en Ascensión 10. Un humano debería ganar más; falta validación humana. |
 | Git | Todo en `main` y en `origin/main`. |
 
