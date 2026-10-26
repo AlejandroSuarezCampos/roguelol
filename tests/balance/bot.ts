@@ -154,6 +154,10 @@ const WEIGHTS: Record<ChampionId, Record<string, number>> = {
   lux: { ap: 1, hp: 0.2, mr: 0.3 },
   soraka: { ap: 0.7, hp: 0.4, mr: 0.4 },
   lulu: { ap: 0.8, hp: 0.3, mr: 0.4 },
+  janna: { ap: 0.7, hp: 0.4, mr: 0.4 },
+  nami: { ap: 0.8, hp: 0.3, mr: 0.4 },
+  sona: { ap: 0.7, hp: 0.4, mr: 0.4 },
+  thresh: { ad: 0.3, ap: 0.3, armor: 0.8, mr: 0.6, hp: 0.5 },
 };
 
 function gearScore(e: Expedition, champ: ChampionId, gearId: string): number {

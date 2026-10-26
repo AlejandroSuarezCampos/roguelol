@@ -20,6 +20,10 @@ const u = (kind: UnlockKind, ref: string, cost: number): UnlockDef => ({ id: `${
  */
 export const UNLOCKS: UnlockDef[] = [
   u('champion', 'lulu', 120),
+  u('champion', 'janna', 120),
+  u('champion', 'nami', 120),
+  u('champion', 'sona', 120),
+  u('champion', 'thresh', 120),
   u('starter', 'blade', 30),
   u('starter', 'ring', 30),
   u('starter', 'doranshield', 30),

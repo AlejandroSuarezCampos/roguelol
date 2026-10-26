@@ -7,11 +7,15 @@ export const CRISIS: Record<ChampionId, CrisisKind> = {
   lux: 'panic',
   soraka: 'despair',
   lulu: 'panic',
+  janna: 'despair',
+  nami: 'selfish',
+  sona: 'panic',
+  thresh: 'rage',
 };
 
 /** Todos los campeones del juego. Una expedición lleva 4 (`Expedition.party`). */
-export const CHAMPION_IDS: ChampionId[] = ['leona', 'yasuo', 'lux', 'soraka', 'lulu'];
-/** Equipo por defecto (los 4 disponibles desde el principio). Lulu se desbloquea con Esquirlas. */
+export const CHAMPION_IDS: ChampionId[] = ['leona', 'yasuo', 'lux', 'soraka', 'lulu', 'janna', 'nami', 'sona', 'thresh'];
+/** Equipo por defecto (los 4 disponibles desde el principio). Lulu, Janna, Nami, Sona y Thresh se desbloquean con Esquirlas. */
 export const DEFAULT_PARTY: ChampionId[] = ['leona', 'yasuo', 'lux', 'soraka'];
 export const PARTY_SIZE = 4;
 
@@ -45,5 +49,13 @@ export const CHAMPIONS: Record<ChampionId, ChampionDef> = {
     color: '#c9a3ff', bg: '#2c2a6e', stats: { ap: 50, mr: 20 }, ddragon: 'Soraka' },
   lulu: { id: 'lulu', name: 'Lulu', role: 'Apoyo / Control', traits: ['Vulnerable', 'Protección', 'Robo de cartas'], maxHp: 48, startPos: 3, sweetSpot: [3, 4],
     color: '#d9a6ff', bg: '#4a2a6e', stats: { ap: 60, mr: 15 }, ddragon: 'Lulu' },
+  janna: { id: 'janna', name: 'Janna', role: 'Apoyo / Protección', traits: ['Protección', 'Desplazamiento', 'Estrés'], maxHp: 46, startPos: 4, sweetSpot: [3, 4],
+    color: '#9fe3ff', bg: '#1d4a6b', stats: { ap: 55, mr: 20 }, ddragon: 'Janna' },
+  nami: { id: 'nami', name: 'Nami', role: 'Apoyo / Curación', traits: ['Curación', 'Marcas', 'Control'], maxHp: 48, startPos: 3, sweetSpot: [3, 4],
+    color: '#6fe0d2', bg: '#14485c', stats: { ap: 60, mr: 15 }, ddragon: 'Nami' },
+  sona: { id: 'sona', name: 'Sona', role: 'Apoyo / Acordes', traits: ['Robo de cartas', 'Curación', 'Aturdimientos'], maxHp: 45, startPos: 4, sweetSpot: [3, 4],
+    color: '#8fb8ff', bg: '#2a3a7a', stats: { ap: 55, mr: 15 }, ddragon: 'Sona' },
+  thresh: { id: 'thresh', name: 'Thresh', role: 'Apoyo / Control', traits: ['Atracción', 'Cargas', 'Protección'], maxHp: 66, startPos: 1, sweetSpot: [1, 2],
+    color: '#7be08e', bg: '#12392a', stats: { ad: 25, ap: 30, armor: 25, mr: 20 }, ddragon: 'Thresh' },
 };
 

@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 
 export type Pos = 1 | 2 | 3 | 4;
 export type Side = 'ally' | 'enemy';
-export type ChampionId = 'leona' | 'yasuo' | 'lux' | 'soraka' | 'lulu';
+export type ChampionId = 'leona' | 'yasuo' | 'lux' | 'soraka' | 'lulu' | 'janna' | 'nami' | 'sona' | 'thresh';
 export type CrisisKind = 'rage' | 'selfish' | 'panic' | 'despair';
 export type Omen = 'lament' | 'weight' | 'drift' | 'bleed';
 export type StatusId = 'mark' | 'stun' | 'shadowMark' | 'burn' | 'charge' | 'vulnerable';
