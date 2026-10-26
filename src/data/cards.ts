@@ -1,5 +1,6 @@
 import type { CardDef, CardUpgrade } from '../engine/types';
 import { block, magic, phys, status, up } from './cardHelpers';
+import { ADC_CARDS, ADC_UPGRADES } from './cardsAdc';
 import { SUPPORT_CARDS, SUPPORT_UPGRADES } from './cardsSupports';
 
 /**
@@ -250,7 +251,7 @@ const UPGRADES: Record<string, CardUpgrade> = {
   t8: up('Inflige 8 y aplica 1 Vulnerable a todos los enemigos. Cuesta 2.', { cost: 2 }),
 };
 
-export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] }));
+export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS, ...ADC_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] ?? ADC_UPGRADES[c.id] }));
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));
 
@@ -297,4 +298,26 @@ export const STARTER_DECK: string[] = [
   'zl1', 'zl2', 'zl3', 'zl4', 'zl8',
   'zy1', 'zy2', 'zy3', 'zy4', 'zy8',
   'mg1', 'mg2', 'mg3', 'mg4', 'mg6',
+  'ap1', 'ap2', 'ap3', 'ap4', 'ap5',
+  'as1', 'as2', 'as3', 'as4', 'as6',
+  'ca1', 'ca2', 'ca3', 'ca4', 'ca6',
+  'dr1', 'dr2', 'dr3', 'dr4', 'dr5',
+  'ez1', 'ez2', 'ez3', 'ez4', 'ez5',
+  'jh1', 'jh3', 'jh4', 'jh5', 'jh8',
+  'jx1', 'jx2', 'jx3', 'jx5', 'jx8',
+  'ks1', 'ks2', 'ks3', 'ks4', 'ks6',
+  'kl1', 'kl3', 'kl4', 'kl5', 'kl6',
+  'km1', 'km2', 'km3', 'km5', 'km7',
+  'lc1', 'lc2', 'lc3', 'lc4', 'lc6',
+  'mf1', 'mf2', 'mf3', 'mf4', 'mf8',
+  'nl1', 'nl2', 'nl4', 'nl7', 'nl3',
+  'sm1', 'sm2', 'sm3', 'sm5', 'sm7',
+  'sv1', 'sv2', 'sv3', 'sv5', 'sv8',
+  'sd1', 'sd2', 'sd3', 'sd4', 'sd6',
+  'ts1', 'ts2', 'ts3', 'ts5', 'ts8',
+  'tw1', 'tw2', 'tw3', 'tw5', 'tw8',
+  'vr1', 'vr2', 'vr4', 'vr7', 'vr8',
+  'vy1', 'vy2', 'vy3', 'vy5', 'vy6',
+  'xy1', 'xy2', 'xy5', 'xy6', 'xy7',
+  'ze1', 'ze2', 'ze3', 'ze4', 'ze6',
 ];
