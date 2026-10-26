@@ -66,11 +66,11 @@ describe('apoyos nuevos: cartas en combate', () => {
     expect(u(s, 'e1').pos).toBe(2);
   });
 
-  it('Thresh: Cosecha de almas da 1 Carga y Cadena fatal aturde y atrae', () => {
+  it('Thresh: Cosecha de almas da 1 Carga y Cadena fatal aturde y arrastra al frente', () => {
     const s = withSupport('thresh', 2);
     s.units = s.units.filter((x) => x.id !== 'yasuo');
     s.energy = 3;
-    const [a, b] = give(s, 't6', 't7');
+    const [a, b] = give(s, 't6', 't4');
     playCard(s, a, 'e1');
     expect(u(s, 'thresh').statuses.charge).toBe(1);
     playCard(s, b, 'e2');
@@ -105,6 +105,91 @@ describe('apoyos nuevos: cartas en combate', () => {
     const [c] = give(s, 'o7');
     playCard(s, c);
     for (const id of ['e1', 'e2']) expect([u(s, id).statuses.stun, u(s, id).statuses.vulnerable]).toEqual([1, 1]);
+  });
+});
+
+describe('apoyos con su identidad del LoL', () => {
+  const withSupport = (id: ChampionId, pos: 1 | 2 | 3 | 4 = 2) => {
+    const s = makeState({ cards: CARDS });
+    s.units = [ally('leona', 1, { hp: 20 }), ally(id, pos, { hp: 20 }), ally('lux', 3, { hp: 20 }), ally('soraka', 4, { hp: 20 }), enemy('e1', 1), enemy('e2', 2)];
+    return s;
+  };
+
+  it('Thresh: Condena consume las Cargas (almas) y suma daño por cada una', () => {
+    const s = withSupport('thresh');
+    u(s, 'thresh').statuses.charge = 3;
+    const [c] = give(s, 't7');
+    playCard(s, c, 'e1');
+    expect(u(s, 'thresh').statuses.charge ?? 0).toBe(0);
+    expect(30 - u(s, 'e1').hp).toBeGreaterThanOrEqual(5 + 12);
+  });
+
+  it('Blitzcrank: Agarre cohete arrastra al enemigo de atrás a primera fila', () => {
+    const s = withSupport('blitzcrank');
+    const [c] = give(s, 'bz1');
+    playCard(s, c, 'e2');
+    expect([u(s, 'e2').pos, u(s, 'e1').pos]).toEqual([1, 2]);
+  });
+
+  it('Blitzcrank: Agarre doble arrastra y aturde; Puño de poder gasta Cargas', () => {
+    const s = withSupport('blitzcrank');
+    s.energy = 3;
+    const [a, b] = give(s, 'bz5', 'bz2');
+    playCard(s, a, 'e2');
+    expect([u(s, 'e2').pos, u(s, 'e2').statuses.stun]).toEqual([1, 1]);
+    u(s, 'blitzcrank').statuses.charge = 2;
+    playCard(s, b, 'e1');
+    expect(u(s, 'blitzcrank').statuses.charge ?? 0).toBe(0);
+  });
+
+  it('Bard: Portal mágico reposiciona a un aliado y le da bloqueo; Meeps gasta las Cargas de los carillones', () => {
+    const s = withSupport('bard', 3);
+    s.units = s.units.filter((x) => x.id !== 'lux');
+    s.units.push(ally('lux', 3));
+    s.units = s.units.filter((x) => x.id !== 'bard');
+    s.units.push(ally('bard', 2));
+    const [p] = give(s, 'bd4');
+    playCard(s, p, 'leona');
+    expect(u(s, 'leona').pos).toBe(4);
+    expect(u(s, 'leona').block).toBe(4);
+    u(s, 'bard').statuses.charge = 2;
+    const [m] = give(s, 'bd6');
+    playCard(s, m, 'e1');
+    expect(u(s, 'bard').statuses.charge ?? 0).toBe(0);
+    expect(30 - u(s, 'e1').hp).toBeGreaterThanOrEqual(4 + 6);
+  });
+
+  it('Alistar: Cabezazo empuja y aturde; Rell: Repulsión empuja', () => {
+    const s = withSupport('alistar', 2);
+    s.energy = 3;
+    const [h] = give(s, 'al2');
+    playCard(s, h, 'e1');
+    expect([u(s, 'e1').pos, u(s, 'e1').statuses.stun]).toEqual([2, 1]);
+    const t = withSupport('rell', 2);
+    t.energy = 3;
+    const [r] = give(t, 're6');
+    playCard(t, r, 'e1');
+    expect(u(t, 'e1').pos).toBe(2);
+  });
+
+  it('Pyke: Marcado para morir marca y Muerte desde las profundidades consume las Marcas', () => {
+    const s = withSupport('pyke');
+    s.energy = 3;
+    const [a, b] = give(s, 'pk4', 'pk7');
+    playCard(s, a, 'e1');
+    expect(u(s, 'e1').statuses.mark).toBe(1);
+    playCard(s, b, 'e1');
+    expect(u(s, 'e1').statuses.mark ?? 0).toBe(0);
+  });
+
+  it('Renata: Rescate reanima a un aliado derribado', () => {
+    const s = withSupport('renata');
+    s.units.find((x) => x.id === 'lux')!.downed = true;
+    s.units.find((x) => x.id === 'lux')!.hp = 0;
+    s.energy = 3;
+    const [c] = give(s, 'rg8');
+    playCard(s, c, 'lux');
+    expect([u(s, 'lux').downed, u(s, 'lux').hp]).toEqual([false, 12]);
   });
 });
 
