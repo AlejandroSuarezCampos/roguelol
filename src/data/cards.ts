@@ -1,6 +1,7 @@
 import type { CardDef, CardUpgrade } from '../engine/types';
 import { buildExtra, type ExtraSpec } from './cardGen';
 import extraSpecs from './cardsExtra.json';
+import { MANUAL_SPECS } from './cardsManual';
 import { block, magic, phys, status, up } from './cardHelpers';
 import { ADC_CARDS, ADC_UPGRADES } from './cardsAdc';
 import { JUNGLE_CARDS, JUNGLE_UPGRADES } from './cardsJungle';
@@ -259,7 +260,7 @@ const UPGRADES: Record<string, CardUpgrade> = {
 /** Las 8 primeras cartas de cada campeón (las otras 12 son las «extra», ver `cardGen.ts`). */
 export const BASE_CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS, ...ADC_CARDS, ...MID_CARDS, ...TOP_CARDS, ...JUNGLE_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] ?? ADC_UPGRADES[c.id] ?? MID_UPGRADES[c.id] ?? TOP_UPGRADES[c.id] ?? JUNGLE_UPGRADES[c.id] }));
 
-const EXTRA = (extraSpecs as ExtraSpec[]).map(buildExtra);
+const EXTRA = [...(extraSpecs as ExtraSpec[]), ...MANUAL_SPECS].map(buildExtra);
 export const CARD_LIST: CardDef[] = [...BASE_CARD_LIST, ...EXTRA.map((x) => ({ ...x.card, upgrade: x.upgrade }))];
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));

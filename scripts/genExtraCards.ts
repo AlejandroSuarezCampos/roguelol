@@ -7,6 +7,7 @@
 import { writeFileSync } from 'node:fs';
 import { BASE_CARD_LIST } from '../src/data/cards';
 import { buildExtra, type ExtraEffect, type ExtraSpec } from '../src/data/cardGen';
+import { MANUAL_SPECS } from '../src/data/cardsManual';
 import { CHAMPION_IDS, CHAMPIONS } from '../src/data/champions';
 import type { CardDef, CardType, Pos, Rarity, TargetKind } from '../src/engine/types';
 
@@ -406,7 +407,8 @@ function generate(id: string): ExtraSpec[] {
 }
 
 const all: ExtraSpec[] = [];
-for (const id of CHAMPION_IDS) all.push(...generate(id));
+const manual = new Set(MANUAL_SPECS.map((c) => c.owner));
+for (const id of CHAMPION_IDS) if (!manual.has(id)) all.push(...generate(id));
 writeFileSync(new URL('../src/data/cardsExtra.json', import.meta.url), JSON.stringify(all) + '\n');
 const byRarity = all.reduce<Record<string, number>>((a, c) => ((a[c.rarity] = (a[c.rarity] ?? 0) + 1), a), {});
-console.log(`${all.length} cartas extra para ${CHAMPION_IDS.length} campeones`, byRarity);
+console.log(`${all.length} cartas extra generadas (${manual.size} campeones con cartas escritas a mano en cardsManual.ts)`, byRarity);

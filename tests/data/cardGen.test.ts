@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildExtra, describe as text, type ExtraSpec } from '../../src/data/cardGen';
 import { CARD_LIST } from '../../src/data/cards';
 import extra from '../../src/data/cardsExtra.json';
+import { MANUAL_SPECS } from '../../src/data/cardsManual';
 import { CHAMPIONS } from '../../src/data/champions';
 
 const spec = (over: Partial<ExtraSpec>): ExtraSpec => ({ id: 'x9', owner: 'leona', name: 'Prueba', cost: 1, type: 'attack', target: 'enemy', rarity: 'common', e: [{ k: 'dmg', n: 6, t: 'p' }], ...over });
@@ -36,7 +37,7 @@ describe('cartas extra: generador de texto y mejora', () => {
 });
 
 describe('cardsExtra.json', () => {
-  const list = extra as ExtraSpec[];
+  const list = [...(extra as ExtraSpec[]), ...MANUAL_SPECS];
 
   it('tiene 12 cartas por campeón, con ids correlativos del 9 al 20 y dueños que existen', () => {
     expect(list).toHaveLength(Object.keys(CHAMPIONS).length * 12);
