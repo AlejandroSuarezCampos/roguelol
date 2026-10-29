@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card } from '../components/Card';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { GearItem } from '../components/GearItem';
+import { ChampionFilter, NO_FILTER, matchChampion, type ChampFilter } from '../components/ChampionFilter';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { ChampionPortrait } from '../components/ChampionPortrait';
@@ -21,7 +22,7 @@ function Content({ u }: { u: UnlockDef }) {
         <ChampionPortrait id={c.id} className="mini" />
         <div className="col">
           <b>{c.name}</b>
-          <small className="sub">{c.role} · {c.traits.join(' · ')}</small>
+          <small className="sub">{[c.role, ...c.traits.filter((t) => !c.role.includes(t))].join(' · ')}</small>
           <small className="sub">Se añade a los campeones que puedes llevar (eliges 4 en la preparación).</small>
         </div>
       </div>
@@ -46,6 +47,7 @@ const nameOf = (u: UnlockDef) =>
 export function UpgradesScreen() {
   const { meta, hint } = useGame();
   const [resetting, setResetting] = useState(false);
+  const [filter, setFilter] = useState<ChampFilter>(NO_FILTER);
   return (
     <div className="screen perks scene-bg">
       <Hud icon="up" title="Desbloqueos" subtitle="Lo que la Niebla te deja recordar">
@@ -61,11 +63,15 @@ export function UpgradesScreen() {
           Las Esquirlas se ganan al terminar cada expedición (ganes o pierdas). Desbloquean contenido nuevo, no estadísticas. Los objetos iniciales
           desbloqueados se eligen para cada campeón en Equipo.
         </p>
-        {(['champion', 'starter', 'card', 'relic'] as UnlockKind[]).map((kind) => (
+        {(['champion', 'starter', 'card', 'relic'] as UnlockKind[]).map((kind) => {
+          const all = UNLOCKS.filter((u) => u.kind === kind);
+          const list = kind === 'champion' ? all.filter((u) => matchChampion(u.ref as ChampionId, filter)) : all;
+          return (
           <section key={kind}>
             <h2 className="fd sh">{UNLOCK_KIND_LABEL[kind]}</h2>
+            {kind === 'champion' && <ChampionFilter value={filter} onChange={setFilter} shown={list.length} total={all.length} />}
             <div className="perklist">
-              {UNLOCKS.filter((u) => u.kind === kind).map((u) => {
+              {list.map((u) => {
                 const owned = meta.unlocked.includes(u.id);
                 const can = !owned && meta.shards >= u.cost;
                 const label = nameOf(u);
@@ -89,7 +95,8 @@ export function UpgradesScreen() {
               })}
             </div>
           </section>
-        ))}
+          );
+        })}
         {hint && <p className="hint-msg" role="status">{hint}</p>}
         <div className="row end">
           <button className="btn dng" onClick={() => setResetting(true)}>

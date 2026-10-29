@@ -134,7 +134,7 @@ export function BattleScreen() {
           ? potionNeedsTarget
             ? `${POTIONS[potionDef.id].name}: elige un aliado.`
             : `${POTIONS[potionDef.id].name}: pulsa «Usar poción».`
-          : 'Elige una carta (teclas 1–5) o termina el turno.';
+          : `Elige una carta (teclas 1–${Math.min(Math.max(s.hand.length, 1), 9)}) o termina el turno.`;
 
   const hand = s.hand;
   const mid = (hand.length - 1) / 2;
@@ -230,13 +230,13 @@ export function BattleScreen() {
         >
           <Icon name="swap" /> Intercambiar ({CONFIG.swapCost}⚡)
         </button>
-        <div className="hand" role="group" aria-label="Mano">
+        <div className="hand" role="group" aria-label="Mano" style={{ ['--hn' as string]: hand.length }}>
           {hand.map((inst, i) => {
             const card = cardOf(s, inst);
             const a = cardAvailability(s, card);
             const off = i - mid;
             return (
-              <div key={inst.uid} className="slot" style={{ ['--r' as string]: `${off * 4}deg`, ['--y' as string]: `${Math.abs(off) ** 2 * 3}px` }}>
+              <div key={inst.uid} className="slot" style={{ ['--r' as string]: `${off * (hand.length > 6 ? 2.5 : 4)}deg`, ['--y' as string]: `${Math.abs(off) ** 2 * (hand.length > 6 ? 1 : 3)}px` }}>
                 <Card
                   card={card}
                   cost={a.cost}

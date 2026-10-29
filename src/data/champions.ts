@@ -539,3 +539,15 @@ export const CHAMPIONS: Record<ChampionId, ChampionDef> = {
     color: '#6aff7a', bg: '#14421a', stats: { ap: 45, armor: 25, mr: 25 }, ddragon: 'Zac' },
 };
 
+/** Línea del LoL en la que juega cada campeón (para filtrar listas largas). */
+export type Lane = 'Apoyo' | 'Tirador' | 'Central' | 'Superior' | 'Jungla';
+export const LANES: Record<Lane, ChampionId[]> = {
+  Apoyo: ['leona', 'lux', 'soraka', 'lulu', 'janna', 'nami', 'sona', 'thresh', 'alistar', 'bard', 'blitzcrank', 'braum', 'karma', 'milio', 'nautilus', 'pyke', 'rakan', 'rell', 'renata', 'senna', 'seraphine', 'taric', 'yuumi', 'zilean', 'zyra', 'morgana'],
+  Tirador: ['aphelios', 'ashe', 'caitlyn', 'draven', 'ezreal', 'jhin', 'jinx', 'kaisa', 'kalista', 'kogmaw', 'lucian', 'missfortune', 'nilah', 'samira', 'sivir', 'smolder', 'tristana', 'twitch', 'varus', 'vayne', 'xayah', 'zeri'],
+  Central: ['yasuo', 'ahri', 'akali', 'akshan', 'anivia', 'annie', 'aurelionsol', 'azir', 'cassiopeia', 'corki', 'diana', 'ekko', 'fizz', 'galio', 'hwei', 'kassadin', 'katarina', 'leblanc', 'lissandra', 'malzahar', 'naafiri', 'neeko', 'orianna', 'qiyana', 'ryze', 'sylas', 'syndra', 'taliyah', 'talon', 'twistedfate', 'veigar', 'velkoz', 'vex', 'viktor', 'vladimir', 'xerath', 'yone', 'zed', 'ziggs', 'zoe', 'mel', 'aurora'],
+  Superior: ['aatrox', 'ambessa', 'camille', 'chogath', 'darius', 'drmundo', 'fiora', 'gangplank', 'garen', 'gnar', 'gwen', 'illaoi', 'irelia', 'jax', 'jayce', 'kayle', 'kennen', 'kled', 'ksante', 'malphite', 'maokai', 'mordekaiser', 'nasus', 'ornn', 'pantheon', 'poppy', 'quinn', 'renekton', 'riven', 'rumble', 'sett', 'shen', 'singed', 'sion', 'tahmkench', 'teemo', 'trundle', 'tryndamere', 'urgot', 'volibear', 'yorick'],
+  Jungla: ['amumu', 'belveth', 'briar', 'elise', 'evelynn', 'fiddlesticks', 'gragas', 'graves', 'hecarim', 'ivern', 'jarvaniv', 'karthus', 'kayn', 'khazix', 'kindred', 'leesin', 'lillia', 'masteryi', 'nidalee', 'nocturne', 'nunu', 'olaf', 'rammus', 'reksai', 'rengar', 'sejuani', 'shaco', 'shyvana', 'skarner', 'udyr', 'vi', 'viego', 'warwick', 'monkeyking', 'xinzhao', 'zac'],
+};
+export const LANE_OF: Record<ChampionId, Lane> = Object.fromEntries(
+  (Object.entries(LANES) as [Lane, ChampionId[]][]).flatMap(([lane, ids]) => ids.map((id) => [id, lane])),
+) as Record<ChampionId, Lane>;

@@ -254,3 +254,10 @@
 .partypick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
 @media (max-width:700px){.lineup{grid-template-columns:repeat(2,minmax(0,1fr))}.pot{width:62px}.belt{gap:4px}.slots{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
 @media (max-width:700px){.row{flex-wrap:wrap}.sheetrow{flex-wrap:wrap}.sheetrow .port.big{width:100px}.sheetrow>*{min-width:0}}
+/* filtro de campeones */
+.cfilter{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:4px 0 8px}
+.csearch{flex:1 1 220px;min-width:160px;min-height:38px;padding:6px 12px;background:#0a1428;border:1px solid var(--gold2);color:var(--ink);font:inherit}
+.csearch::placeholder{color:var(--ink3)}
+.lanes{flex-wrap:wrap;gap:6px}
+.champlist .cfilter{position:sticky;top:0;z-index:2;background:linear-gradient(#0a1428,#0a1428ee);padding:6px 0}
+.champlist{max-height:calc(100vh - 110px);overflow:auto}

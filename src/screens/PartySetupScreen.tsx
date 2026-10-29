@@ -1,4 +1,5 @@
 import { ChampionPortrait } from '../components/ChampionPortrait';
+import { ChampionFilter, NO_FILTER, matchChampion, type ChampFilter } from '../components/ChampionFilter';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { HpBar, StressMeter } from '../components/Meters';
@@ -16,9 +17,11 @@ import { game, useGame } from '../state/gameStore';
 export function PartySetupScreen() {
   const { expedition: e, meta, hint } = useGame();
   const [draft, setDraft] = useState<ChampionId[] | null>(null);
+  const [filter, setFilter] = useState<ChampFilter>(NO_FILTER);
   if (!e) return null;
   const available = CHAMPION_IDS.filter((id) => championAvailable(meta, id));
   const picked = draft ?? e.party;
+  const shownIds = available.filter((id) => picked.includes(id) || matchChampion(id, filter));
   const toggle = (id: ChampionId) => {
     const next = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
     if (next.length === PARTY_SIZE) {
@@ -47,7 +50,8 @@ export function PartySetupScreen() {
           {available.length > PARTY_SIZE && (
             <div className="partypick" role="group" aria-label="Campeones de la expedición">
               <small className="sub">Elige {PARTY_SIZE} campeones ({picked.length}/{PARTY_SIZE}):</small>
-              {available.map((id) => (
+              {available.length > 12 && <ChampionFilter value={filter} onChange={setFilter} shown={shownIds.length} total={available.length} />}
+              {shownIds.map((id) => (
                 <button key={id} className={`btn sm ${picked.includes(id) ? 'pri' : ''}`} aria-pressed={picked.includes(id)} onClick={() => toggle(id)}>
                   {CHAMPIONS[id].name}
                 </button>

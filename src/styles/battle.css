@@ -95,10 +95,11 @@
 .pile.draw{left:40px}.pile.disc{right:40px}
 .swapbtn{position:absolute;left:40px;bottom:122px;z-index:2;min-height:32px;padding:4px 12px}
 .swapbtn.on{box-shadow:0 0 0 2px var(--sel),0 0 14px rgba(245,211,110,.5);color:var(--gold-hi)}
-.endbtn{position:absolute;right:124px;bottom:48px;z-index:4}
-.playbtn{position:absolute;right:124px;bottom:104px;z-index:4}
-.hand{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:flex-end;justify-content:center;z-index:3}
-.hand .card{--cw:clamp(118px,calc((var(--bot) - 30px)/1.44),158px)}
+.endbtn{position:absolute;right:40px;bottom:112px;z-index:4}
+.playbtn{position:absolute;right:40px;bottom:168px;z-index:4}
+.hand{position:absolute;left:230px;right:310px;bottom:14px;display:flex;align-items:flex-end;justify-content:center;z-index:3}
+/* el ancho de las cartas baja con el tamaño de la mano para que nunca llegue a tapar la energía, los mazos ni «Terminar turno» */
+.hand .card{--cw:clamp(84px,min(calc((var(--bot) - 30px)/1.44),calc((100vw - 560px)/var(--hn,5) + 14px)),158px)}
 .hand .slot{margin:0 -9px;transform:rotate(var(--r)) translateY(var(--y));transform-origin:50% 130%;transition:transform .16s;position:relative;z-index:1}
 .hand .slot:hover{transform:rotate(0) translateY(-16px) scale(1.06);z-index:5}
 .hand .slot:has(.sel){transform:rotate(0) translateY(-18px) scale(1.08);z-index:6}
@@ -185,7 +186,7 @@
  .endbtn{left:130px;right:62px;bottom:auto;top:10px;min-height:44px;padding:8px 10px;font-size:13px;letter-spacing:.06em}
  .swapbtn{left:8px;bottom:auto;top:64px;min-height:40px;z-index:4}
  .playbtn{right:8px;bottom:auto;top:64px;min-height:40px;padding:6px 18px;z-index:4}
- .hand{bottom:10px;max-width:100%;overflow-x:auto;justify-content:flex-start;padding:20px 8px 0;left:0;transform:none;width:100%}
+ .hand{bottom:10px;max-width:100%;overflow-x:auto;justify-content:flex-start;padding:20px 8px 0;left:0;right:0;transform:none;width:100%}
  .hand .card{--cw:clamp(96px,28vw,118px)}
  .hand .slot{margin:0 -6px;flex:none}
  .hint{top:-36px;left:3%;right:3%;transform:none;max-width:none;font-size:12px;white-space:normal;text-align:center;padding:4px 10px}

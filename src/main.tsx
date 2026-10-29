@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
+import { CHAMPION_IDS } from './data/champions';
 import { game } from './state/gameStore';
 import { applySettings, loadSettings } from './state/settings';
 import { IMG } from './ui/images';
@@ -20,4 +21,7 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // Atajo para pruebas e2e y depuración: `?debug` expone el store en `window.__game`.
-if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __game: typeof game }).__game = game;
+if (new URLSearchParams(location.search).has('debug')) {
+  (window as unknown as { __game: typeof game }).__game = game;
+  (window as unknown as { __ids: string[] }).__ids = CHAMPION_IDS;
+}

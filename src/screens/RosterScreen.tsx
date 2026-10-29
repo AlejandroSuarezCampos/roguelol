@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card } from '../components/Card';
 import { ChampionPortrait } from '../components/ChampionPortrait';
+import { ChampionFilter, NO_FILTER, matchChampion, type ChampFilter } from '../components/ChampionFilter';
 import { Hud } from '../components/Hud';
 import { Icon } from '../components/Icon';
 import { CARD_LIST, applyUpgrade } from '../data/cards';
@@ -19,6 +20,7 @@ export function RosterScreen() {
   const { meta } = useGame();
   const [sel, setSel] = useState<ChampionId>('leona');
   const [upgraded, setUpgraded] = useState(false);
+  const [filter, setFilter] = useState<ChampFilter>(NO_FILTER);
   const c = CHAMPIONS[sel];
   const crisis = CRISIS_INFO[CRISIS[sel]];
   const base: StatBlock = { ...DEFAULT_STATS, ...c.stats };
@@ -34,7 +36,8 @@ export function RosterScreen() {
       </Hud>
       <div className="roster-body">
         <nav className="panel champlist" aria-label="Campeones">
-          {CHAMPION_IDS.map((id) => (
+          <ChampionFilter value={filter} onChange={setFilter} shown={CHAMPION_IDS.filter((id) => id === sel || matchChampion(id, filter)).length} total={CHAMPION_IDS.length} />
+          {CHAMPION_IDS.filter((id) => id === sel || matchChampion(id, filter)).map((id) => (
             <button key={id} className={`tcard ${id === sel ? 'on' : ''}`} aria-pressed={id === sel} onClick={() => setSel(id)}>
               <ChampionPortrait id={id} className="mini" />
               <span className="tinfo">
