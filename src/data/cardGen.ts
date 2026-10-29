@@ -115,24 +115,42 @@ function phrase(e: ExtraEffect, target: TargetKind): [string, boolean] {
   }
 }
 
+/** Efectos que afectan al propio campeón y no al objetivo de la carta: en cartas de área se dicen en una frase aparte. */
+const isSelf = (e: ExtraEffect): boolean => e.k === 'mv' || e.k === 'selfdmg' || ((e.k === 'block' || e.k === 'heal' || e.k === 'st' || e.k === 'stress') && !!e.self);
+
 export function describe(eff: ExtraEffect[], target: TargetKind, ideal?: Pos[], bonus?: ExtraEffect[]): string {
   const rev = eff.find((e) => e.k === 'revive');
   if (rev) return `${phrase(rev, target)[0]}.`;
   const draw = eff.find((e) => e.k === 'draw') as { n: number } | undefined;
   const crit = eff.some((e) => e.k === 'dmg' && e.crit);
+  const area = target === 'allEnemies' || target === 'allAllies';
   let special = false;
-  const parts: string[] = [];
+  const main: string[] = [];
+  const own: string[] = [];
   for (const e of eff) {
     if (e.k === 'draw') continue;
     const [p, sp] = phrase(e, target);
     special ||= sp;
-    parts.push(p);
+    (area && isSelf(e) ? own : main).push(p);
   }
-  if (!parts.length) return `Roba ${draw!.n} carta${draw!.n > 1 ? 's' : ''}.`;
-  const low = parts.map((p, i) => (i ? p[0].toLowerCase() + p.slice(1) : p));
-  let s = low.length === 1 ? low[0] : low.length === 2 ? `${low[0]} y ${low[1]}` : `${low.slice(0, -1).join(', ')} y ${low[low.length - 1]}`;
-  if (target === 'allEnemies' && !special) s += ' a todos los enemigos';
-  if (target === 'allAllies') s += ' a todos los aliados';
+  /** «Gana 7 de bloqueo y gana 1 Carga» → «Gana 7 de bloqueo y 1 Carga» (y lo mismo con «Aplica»). */
+  const join = (parts: string[]): string => {
+    const low = parts.map((p, i) => {
+      if (!i) return p;
+      const prev = parts[i - 1];
+      if (p.startsWith('Gana ') && prev.startsWith('Gana ')) return p.slice(5);
+      if (p.startsWith('Aplica ') && prev.startsWith('Aplica ')) return p.slice(7);
+      return p[0].toLowerCase() + p.slice(1);
+    });
+    return low.length === 1 ? low[0] : low.length === 2 ? `${low[0]} y ${low[1]}` : `${low.slice(0, -1).join(', ')} y ${low[low.length - 1]}`;
+  };
+  if (!main.length && !own.length) return `Roba ${draw!.n} carta${draw!.n > 1 ? 's' : ''}.`;
+  let s = main.length ? join(main) : join(own);
+  if (main.length) {
+    if (target === 'allEnemies' && !special) s += ' a todos los enemigos';
+    if (target === 'allAllies') s += ' a todos los aliados';
+  }
+  if (main.length && own.length) s += `. ${join(own)}`;
   if (crit) s += '. Puede ser crítico';
   if (draw) s += `. Roba ${draw.n} carta${draw.n > 1 ? 's' : ''}`;
   if (ideal?.length && bonus?.length) {

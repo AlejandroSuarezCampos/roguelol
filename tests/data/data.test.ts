@@ -108,3 +108,17 @@ describe('campeones y enemigos', () => {
     }
   });
 });
+
+describe('Marcas y Cargas', () => {
+  it('quien las aplica tiene cartas que las gastan, y al revés (por sí solas no hacen nada)', () => {
+    for (const id of CHAMPION_IDS) {
+      const eff = CARD_LIST.filter((c) => c.owner === id).flatMap((c) => c.effects);
+      const apps = (st: string) => eff.filter((e) => e.type === 'applyStatus' && e.status === st).length;
+      const cons = (st: string) => eff.filter((e) => (e.type === 'damage' && e.consumeStatus?.status === st) || (e.type === 'convertStatus' && e.status === st)).length;
+      for (const st of ['mark', 'charge']) {
+        expect(apps(st) > 0 && cons(st) === 0, `${id} aplica ${st} y nadie lo gasta`).toBe(false);
+        expect(cons(st) > 0 && apps(st) === 0, `${id} gasta ${st} sin aplicarlo`).toBe(false);
+      }
+    }
+  });
+});

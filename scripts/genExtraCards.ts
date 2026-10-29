@@ -8,7 +8,7 @@ import { writeFileSync } from 'node:fs';
 import { BASE_CARD_LIST } from '../src/data/cards';
 import { buildExtra, type ExtraEffect, type ExtraSpec } from '../src/data/cardGen';
 import { MANUAL_SPECS } from '../src/data/cardsManual';
-import { CHAMPION_IDS, CHAMPIONS } from '../src/data/champions';
+import { CHAMPION_IDS, CHAMPIONS, CRISIS } from '../src/data/champions';
 import type { CardDef, CardType, Pos, Rarity, TargetKind } from '../src/engine/types';
 
 // ——— azar determinista ———
@@ -111,7 +111,7 @@ const jit = (n: number, rnd: () => number) => {
   const r = rnd();
   return Math.max(1, n + (r < 0.2 ? -w : r < 0.4 ? -Math.ceil(w / 2) : r < 0.6 ? 0 : r < 0.8 ? Math.ceil(w / 2) : w));
 };
-const D = (n: number, c: Ctx, over: Partial<Extract<ExtraEffect, { k: 'dmg' }>> = {}): ExtraEffect => ({ k: 'dmg', n: jit(n, c.rnd), t: c.p.dt, ...over });
+const D = (n: number, c: Ctx, over: Partial<Extract<ExtraEffect, { k: 'dmg' }>> = {}): ExtraEffect => ({ k: 'dmg', n: Math.max(2, jit(n, c.rnd)), t: c.p.dt, ...over });
 const B = (n: number, c: Ctx, self = false): ExtraEffect => ({ k: 'block', n: jit(n, c.rnd), ...(self ? { self: 1 as const } : {}) });
 const H = (n: number, c: Ctx, self = false): ExtraEffect => ({ k: 'heal', n: jit(n, c.rnd), ...(self ? { self: 1 as const } : {}) });
 const S = (n: number, c: Ctx, self = false): ExtraEffect => ({ k: 'stress', n: jit(n, c.rnd), ...(self ? { self: 1 as const } : {}) });
@@ -140,7 +140,7 @@ const RECIPES: Recipe[] = [
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 5, 7, 9), c), ST('mark', tier(c.r, 1, 2, 3))]) },
   { id: 'scorch', tags: ['burn'], rarities: ALL, stems: [['Llamarada', 'f'], ['Abrasador', 'm'], ['Incendio', 'm'], ['Chispazo', 'm']],
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 4, 6, 9), c), ST('burn', tier(c.r, 1, 2, 3))]) },
-  { id: 'sunder', tags: ['vuln'], rarities: ALL, stems: [['Quiebre', 'm'], ['Fisura', 'f'], ['Rotura', 'f'], ['Desgarro', 'm'], ['Debilitar', 'm']],
+  { id: 'sunder', tags: ['vuln'], rarities: ALL, stems: [['Quiebre', 'm'], ['Fisura', 'f'], ['Rotura', 'f'], ['Desgarro', 'm'], ['Debilitamiento', 'm']],
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 5, 7, 10), c), ST('vulnerable', tier(c.r, 1, 1, 2))]) },
   { id: 'shove', tags: ['move'], rarities: CR, stems: [['Empellón', 'm'], ['Rechazo', 'm'], ['Sacudida', 'f'], ['Repulsión', 'f'], ['Choque', 'm']],
     make: (c) => att(c, costOf(c.r), c.r === 'common' ? [D(5, c), { k: 'push' }] : [D(8, c), { k: 'push' }, ST('vulnerable')]) },
@@ -152,7 +152,7 @@ const RECIPES: Recipe[] = [
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 4, 6, 8), c, { cons: ['mark', 'target', tier(c.r, 3, 4, 6)] })]) },
   { id: 'charger', tags: ['charge', 'consume'], rarities: ALL, stems: [['Descarga', 'f'], ['Estallido', 'm'], ['Liberación', 'f'], ['Explosión', 'f'], ['Detonación', 'f']],
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 4, 6, 8), c, { cons: ['charge', 'self', tier(c.r, 3, 4, 6)] })]) },
-  { id: 'builder', tags: ['charge'], rarities: ALL, stems: [['Acumular', 'm'], ['Carga', 'f'], ['Concentración', 'f'], ['Impulso', 'm'], ['Reserva', 'f']],
+  { id: 'builder', tags: ['charge'], rarities: ALL, stems: [['Acopio', 'm'], ['Carga', 'f'], ['Concentración', 'f'], ['Impulso', 'm'], ['Reserva', 'f']],
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 5, 7, 10), c), ST('charge', tier(c.r, 1, 2, 3), true)]) },
   { id: 'drain', tags: ['drain', 'heal'], rarities: ALL, stems: [['Mordisco', 'm'], ['Succión', 'f'], ['Sed de sangre', 'f'], ['Absorción', 'f'], ['Festín', 'm']],
     make: (c) => att(c, costOf(c.r), [D(tier(c.r, 4, 7, 11), c), H(tier(c.r, 3, 6, 10), c, true)]) },
@@ -169,7 +169,7 @@ const RECIPES: Recipe[] = [
     make: (c) => aoe(costOf(c.r), [D(tier(c.r, 3, 5, 8), c)]) },
   { id: 'blight', tags: ['aoe', 'burn'], rarities: ALL, stems: [['Plaga', 'f'], ['Nube tóxica', 'f'], ['Veneno', 'm'], ['Fuego', 'm'], ['Marea ácida', 'f']],
     make: (c) => aoe(costOf(c.r), [D(tier(c.r, 3, 4, 7), c), ST('burn', tier(c.r, 1, 2, 2))]) },
-  { id: 'expose', tags: ['aoe', 'vuln'], rarities: ALL, stems: [['Debilitar', 'm'], ['Escarcha', 'f'], ['Grito', 'm'], ['Mirada', 'f'], ['Pavor', 'm']],
+  { id: 'expose', tags: ['aoe', 'vuln'], rarities: ALL, stems: [['Debilitamiento', 'm'], ['Escarcha', 'f'], ['Grito', 'm'], ['Mirada', 'f'], ['Pavor', 'm']],
     make: (c) => aoe(costOf(c.r), [D(tier(c.r, 3, 5, 7), c), ST('vulnerable', tier(c.r, 1, 1, 2))]) },
   { id: 'tag', tags: ['aoe', 'mark'], rarities: ALL, stems: [['Rastro', 'm'], ['Cacería', 'f'], ['Baliza', 'f'], ['Caza', 'f']],
     make: (c) => aoe(costOf(c.r), [D(tier(c.r, 2, 4, 6), c), ST('mark', tier(c.r, 1, 1, 2))]) },
@@ -204,14 +204,14 @@ const RECIPES: Recipe[] = [
   { id: 'rally', tags: ['heal', 'ally', 'aoe'], rarities: ALL, stems: [['Himno', 'm'], ['Plegaria', 'f'], ['Canción', 'f'], ['Rezo', 'm'], ['Bendición', 'f']],
     make: (c) => sup(costOf(c.r), 'allAllies', [H(tier(c.r, 3, 5, 8), c)]) },
   { id: 'soothe', tags: ['stress', 'ally'], rarities: ALL, stems: [['Calma', 'f'], ['Serenidad', 'f'], ['Sosiego', 'm'], ['Paz', 'f'], ['Alivio', 'm']],
-    make: (c) => sup(costOf(c.r), 'ally', [S(tier(c.r, 7, 11, 16), c)]) },
+    make: (c) => sup(costOf(c.r), 'ally', [S(tier(c.r, 9, 14, 20), c)]) },
   { id: 'calmall', tags: ['stress', 'ally', 'aoe'], rarities: ALL, stems: [['Armonía', 'f'], ['Melodía', 'f'], ['Quietud', 'f'], ['Tregua', 'f'], ['Murmullo', 'm']],
-    make: (c) => sup(costOf(c.r), 'allAllies', c.r === 'common' ? [S(4, c)] : [S(tier(c.r, 4, 6, 9), c), B(tier(c.r, 0, 2, 4), c)]) },
-  { id: 'renew', tags: ['heal', 'stress', 'ally', 'aoe'], rarities: RE, stems: [['Renacimiento', 'm'], ['Florecer', 'm'], ['Manantial', 'm'], ['Aurora', 'f'], ['Primavera', 'f']],
-    make: (c) => sup(costOf(c.r), 'allAllies', c.r === 'rare' ? [H(4, c), S(4, c)] : [H(7, c), S(6, c), B(4, c)]) },
+    make: (c) => sup(costOf(c.r), 'allAllies', c.r === 'common' ? [S(6, c)] : [S(tier(c.r, 6, 9, 13), c), B(tier(c.r, 0, 3, 5), c)]) },
+  { id: 'renew', tags: ['heal', 'stress', 'ally', 'aoe'], rarities: RE, stems: [['Renacimiento', 'm'], ['Floración', 'f'], ['Manantial', 'm'], ['Aurora', 'f'], ['Primavera', 'f']],
+    make: (c) => sup(costOf(c.r), 'allAllies', c.r === 'rare' ? [H(5, c), S(6, c)] : [H(8, c), S(9, c), B(5, c)]) },
   { id: 'revive', tags: ['heal', 'ally'], rarities: ['epic'], stems: [['Segunda oportunidad', 'f'], ['Resurrección', 'f'], ['Retorno', 'm'], ['Último aliento', 'm'], ['Despertar', 'm']],
     make: (c) => (c.p.hasRevive || (c.p.role !== 'support' && c.rnd() < 0.75) ? null : sup(3, 'ally', [{ k: 'revive', n: 20 }])) },
-  { id: 'selfheal', tags: ['heal', 'drain'], rarities: CR, stems: [['Meditación', 'f'], ['Trago', 'm'], ['Vigor', 'm'], ['Concentración curativa', 'f'], ['Rejuvenecer', 'm']],
+  { id: 'selfheal', tags: ['heal', 'drain'], rarities: CR, stems: [['Meditación', 'f'], ['Trago', 'm'], ['Vigor', 'm'], ['Concentración curativa', 'f'], ['Rejuvenecimiento', 'm']],
     make: (c) => sup(c.r === 'common' ? 1 : 2, 'self', c.r === 'common' ? [H(6, c, true)] : [H(10, c, true), B(4, c, true)]) },
   // ——— más variedad: precio en vida, debilitar sin dañar, combinaciones raras ———
   { id: 'bloodpact', tags: ['draw'], rarities: CR, stems: [['Pacto de sangre', 'm'], ['Sacrificio', 'm'], ['Ofrenda', 'f'], ['Apuesta', 'f'], ['Trueque', 'm']],
@@ -219,7 +219,7 @@ const RECIPES: Recipe[] = [
   { id: 'reckless', tags: ['drain'], rarities: ALL, stems: [['Arrebato', 'm'], ['Temeridad', 'f'], ['Locura', 'f'], ['Frenesí', 'm'], ['Desesperación', 'f']],
     make: (c) => att(c, tier(c.r, 1, 2, 3), [D(tier(c.r, 9, 14, 20), c), SD(tier(c.r, 3, 4, 5))]) },
   { id: 'compose', tags: ['stress', 'block'], rarities: CR, stems: [['Templanza', 'f'], ['Calma interior', 'f'], ['Respiración profunda', 'f'], ['Autodominio', 'm'], ['Mente fría', 'f']],
-    make: (c) => def(c.r === 'common' ? 1 : 2, 'self', [S(c.r === 'common' ? 8 : 14, c, true), B(c.r === 'common' ? 5 : 8, c, true)]) },
+    make: (c) => def(c.r === 'common' ? 1 : 2, 'self', [S(c.r === 'common' ? 12 : 20, c, true), B(c.r === 'common' ? 5 : 8, c, true)]) },
   { id: 'overload', tags: ['charge'], rarities: RE, stems: [['Sobrecarga', 'f'], ['Fusión', 'f'], ['Descontrol', 'm'], ['Ruptura de límites', 'f'], ['Pico de poder', 'm']],
     make: (c) => skl(c.r === 'rare' ? 1 : 2, [ST('charge', c.r === 'rare' ? 3 : 5, true), SD(c.r === 'rare' ? 3 : 4)]) },
   { id: 'warcry', tags: ['vuln', 'aoe'], rarities: CR, stems: [['Grito de guerra', 'm'], ['Desafío', 'm'], ['Bramido', 'm'], ['Provocación', 'f'], ['Aullido', 'm']],
@@ -247,9 +247,9 @@ const RECIPES: Recipe[] = [
     make: (c) => skl(c.r === 'rare' ? 1 : 2, c.r === 'rare' ? [DR(2)] : [DR(3), B(4, c, true)]) },
   { id: 'tempo', tags: ['draw', 'charge'], rarities: ['common'], stems: [['Ritmo', 'm'], ['Instinto', 'm'], ['Respiración', 'f'], ['Pulso', 'm']],
     make: () => skl(0, [ST('charge', 1, true), DR(1)]) },
-  { id: 'markall', tags: ['mark', 'aoe'], rarities: ALL, stems: [['Señalar', 'm'], ['Marcar', 'm'], ['Rastreo', 'm'], ['Escrutinio', 'm'], ['Lista negra', 'f']],
+  { id: 'markall', tags: ['mark', 'aoe'], rarities: ALL, stems: [['Señalamiento', 'm'], ['Marcaje', 'm'], ['Rastreo', 'm'], ['Escrutinio', 'm'], ['Lista negra', 'f']],
     make: (c) => aoe(tier(c.r, 1, 1, 2), tier<ExtraEffect[]>(c.r, [ST('mark')], [ST('mark'), DR(1)], [ST('mark', 2), DR(1)])) },
-  { id: 'hinder', tags: ['vuln'], rarities: ['common'], stems: [['Obstáculo', 'm'], ['Zancadilla', 'f'], ['Trampa', 'f'], ['Estorbo', 'm'], ['Hostigar', 'm']],
+  { id: 'hinder', tags: ['vuln'], rarities: ['common'], stems: [['Obstáculo', 'm'], ['Zancadilla', 'f'], ['Trampa', 'f'], ['Estorbo', 'm'], ['Hostigamiento', 'm']],
     make: (c) => ctl(1, [D(3, c), ST('vulnerable')]) },
 ];
 
@@ -348,6 +348,7 @@ function generate(id: string): ExtraSpec[] {
   const sigs = new Set(base.map(sig));
   const used = new Set<string>();
   const out: ExtraSpec[] = [];
+  const recipeOf: string[] = [];
   const champ = CHAMPIONS[id as keyof typeof CHAMPIONS].name;
   const traits = CHAMPIONS[id as keyof typeof CHAMPIONS].traits;
   // objetivo por campeón: 9 comunes, 7 raras y 4 épicas (las 8 primeras ya tienen su reparto)
@@ -376,7 +377,8 @@ function generate(id: string): ExtraSpec[] {
         }
       }
       const ctx = { r, p, rnd };
-      const d = rc.make(ctx);
+      let d = rc.make(ctx);
+      if (d && d.target === 'ally' && CRISIS[id as keyof typeof CRISIS] === 'rage') d = null; // en Ira no se puede apuntar a aliados
       if (d) rider(d, ctx);
       if (!d) {
         used.add(rc.id); // receta descartada para este campeón
@@ -402,8 +404,51 @@ function generate(id: string): ExtraSpec[] {
       if (spec.b) spec.i = [...p.sweet];
     }
     out.push(spec);
+    recipeOf.push(rc.id);
   }
+  repairStatuses(id, base, out, recipeOf, p, rnd, taken);
   return out;
+}
+
+/**
+ * Las Marcas y las Cargas no hacen nada por sí solas: solo valen si alguna carta las gasta. Si el campeón las aplica y nadie las
+ * consume (o al revés), cambia una carta genérica por la que falta.
+ */
+const GENERIC = ['strike', 'flurry', 'critical', 'shove', 'dash', 'cantrip', 'bruiser', 'volley', 'blight', 'expose', 'drain', 'sunder', 'scorch', 'hinder', 'brace', 'selfheal'];
+function statusCounts(cards: { effects: CardDef['effects'] }[]) {
+  const eff = cards.flatMap((c) => c.effects);
+  const apps = (st: string) => eff.filter((e) => e.type === 'applyStatus' && e.status === st).length;
+  const cons = (st: string) => eff.filter((e) => (e.type === 'damage' && e.consumeStatus?.status === st) || (e.type === 'convertStatus' && e.status === st)).length;
+  return { mApp: apps('mark'), mCons: cons('mark'), cApp: apps('charge'), cCons: cons('charge') };
+}
+function repairStatuses(id: string, base: CardDef[], out: ExtraSpec[], recipeOf: string[], p: Profile, rnd: () => number, taken: Set<string>): void {
+  const champ = CHAMPIONS[id as keyof typeof CHAMPIONS];
+  for (let round = 0; round < 8; round++) {
+    const all = [...base, ...out.map((o) => buildExtra(o).card)];
+    const c = statusCounts(all);
+    let want: string | null = null;
+    if (c.mApp > 0 && c.mCons === 0) want = 'finisher';
+    else if (c.mCons > 0 && c.mApp === 0) want = 'marker';
+    else if (c.cApp > 0 && c.cCons === 0) want = 'charger';
+    else if (c.cCons > 0 && c.cApp === 0) want = 'builder';
+    if (!want) return;
+    const rc = RECIPES.find((x) => x.id === want)!;
+    // la carta genérica de menos rareza que se pueda cambiar (nunca una épica si hay otra)
+    const defs = all.filter((x) => x.type === 'defense' || x.type === 'support').length;
+    const keep = (k: number) => !((out[k].type === 'defense' || out[k].type === 'support') && defs <= 4); // nunca se queda sin defensa
+    const order = out.map((o, i) => i).filter(keep).filter((i) => GENERIC.includes(recipeOf[i])).sort((a, b) => (out[a].rarity === 'epic' ? 1 : 0) - (out[b].rarity === 'epic' ? 1 : 0));
+    const plain = out.map((o, k) => k).filter(keep).filter((k) => !RECIPES.find((x) => x.id === recipeOf[k])!.tags.some((t) => t === 'mark' || t === 'charge' || t === 'consume') && recipeOf[k] !== want);
+    const i = order.find((k) => rc.rarities.includes(out[k].rarity)) ?? plain.find((k) => rc.rarities.includes(out[k].rarity) && out[k].rarity !== 'epic') ?? plain.find((k) => rc.rarities.includes(out[k].rarity));
+    if (i === undefined) throw new Error(`${id}: no se puede reparar (${want})`);
+    const old = out[i];
+    const d = rc.make({ r: old.rarity, p, rnd });
+    if (!d) throw new Error(`${id}: la receta ${want} no sale`);
+    const name = nameFor(rc, old.rarity, champ.name, champ.traits, taken, rnd);
+    taken.add(name.toLowerCase());
+    out[i] = { id: old.id, owner: id, name, cost: d.cost, type: d.type, target: d.target, rarity: old.rarity, e: d.e };
+    recipeOf[i] = rc.id;
+  }
+  throw new Error(`${id}: no se llega a un reparto coherente de Marcas y Cargas`);
 }
 
 const all: ExtraSpec[] = [];
