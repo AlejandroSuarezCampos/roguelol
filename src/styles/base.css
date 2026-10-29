@@ -75,6 +75,6 @@ body.calm *,body.calm *::before,body.calm *::after{animation:none!important;tran
 body.hc{--ink2:#e4dfd0;--ink3:#cfcbbd;--line:#6b86a3;--line2:#c8aa6e;--gold2:#c8aa6e}
 body.hc .panel,body.hc .btn,body.hc .tag{border-color:var(--gold)}
 body.hc .card{border-color:#fff}
-.settings{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.settings{border:0;padding:0;margin-inline:0;min-width:0;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:8px}
 .settings label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink2);cursor:pointer;min-height:32px}
 .settings input{width:18px;height:18px;accent-color:var(--magic)}
