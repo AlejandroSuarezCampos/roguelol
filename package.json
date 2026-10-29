@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "balance": "tsx tests/balance/sim.ts",
-    "import:lol": "tsx scripts/import-ddragon.ts"
+    "import:lol": "tsx scripts/import-ddragon.ts",
+    "gen:cards": "tsx scripts/genExtraCards.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

@@ -12,15 +12,15 @@ import { ally, enemy, give, makeState, u } from './fixtures';
 const TOPS: ChampionId[] = ['aatrox', 'ambessa', 'camille', 'chogath', 'darius', 'drmundo', 'fiora', 'gangplank', 'garen', 'gnar', 'gwen', 'illaoi', 'irelia', 'jax', 'jayce', 'kayle', 'kennen', 'kled', 'ksante', 'malphite', 'maokai', 'mordekaiser', 'nasus', 'ornn', 'pantheon', 'poppy', 'quinn', 'renekton', 'riven', 'rumble', 'sett', 'shen', 'singed', 'sion', 'tahmkench', 'teemo', 'trundle', 'tryndamere', 'urgot', 'volibear', 'yorick'];
 
 describe('línea superior: datos', () => {
-  it('son 41, con 8 cartas cada uno (1336 cartas en total con la jungla) y sin ids repetidos', () => {
+  it('son 41, con 8 cartas cada uno (3340 cartas en total) y sin ids repetidos', () => {
     expect(TOPS).toHaveLength(41);
-    expect(CARD_LIST).toHaveLength(167 * 8);
+    expect(CARD_LIST).toHaveLength(167 * 20);
   });
 
   for (const id of TOPS) {
-    it(`${CHAMPIONS[id].name}: 8 cartas con mejora, 5 de mazo inicial, daño, defensa y bloqueado hasta desbloquearlo`, () => {
+    it(`${CHAMPIONS[id].name}: 20 cartas con mejora, 5 de mazo inicial, daño, defensa y bloqueado hasta desbloquearlo`, () => {
       const cards = CARD_LIST.filter((c) => c.owner === id);
-      expect(cards).toHaveLength(8);
+      expect(cards).toHaveLength(20);
       expect(cards.every((c) => c.upgrade)).toBe(true);
       expect(cards.some((c) => c.rarity === 'epic')).toBe(true);
       expect(cards.filter((c) => c.effects.some((e) => e.type === 'damage')).length).toBeGreaterThanOrEqual(3);

@@ -15,9 +15,9 @@ const ALL_NEW = [...SUPPORTS, ...MORE_SUPPORTS];
 
 describe('apoyos nuevos: datos', () => {
   for (const id of ALL_NEW) {
-    it(`${CHAMPIONS[id].name}: 8 cartas con mejora, 5 de mazo inicial y bloqueado hasta desbloquearlo`, () => {
+    it(`${CHAMPIONS[id].name}: 20 cartas con mejora, 5 de mazo inicial y bloqueado hasta desbloquearlo`, () => {
       const cards = CARD_LIST.filter((c) => c.owner === id);
-      expect(cards).toHaveLength(8);
+      expect(cards).toHaveLength(20);
       expect(cards.every((c) => c.upgrade)).toBe(true);
       expect(cards.some((c) => c.rarity === 'epic')).toBe(true);
       expect(STARTER_DECK.filter((c) => CARDS[c].owner === id)).toHaveLength(5);
@@ -239,4 +239,18 @@ describe('todos los apoyos del LoL', () => {
       expect(['victory', 'defeat']).toContain(playExpedition(e, 5).status);
     });
   }
+});
+
+describe('cartas que cuestan vida', () => {
+  it('no se pueden jugar si matarían a quien las juega, y si no, restan la vida', () => {
+    const s = makeState({ cards: CARDS });
+    s.units = [ally('leona', 1, { hp: 3 }), ally('yasuo', 2), ally('lux', 3), ally('soraka', 4, { hp: 20 }), enemy('e1', 1), enemy('e2', 2)];
+    s.energy = 3;
+    const [c] = give(s, 's7'); // Sacrificio de Soraka: pierde 4
+    s.units.find((x) => x.id === 'soraka')!.hp = 4;
+    expect(() => playCard(s, c)).toThrow(/perdería toda su vida/);
+    s.units.find((x) => x.id === 'soraka')!.hp = 20;
+    playCard(s, c);
+    expect(u(s, 'soraka').hp).toBe(16);
+  });
 });

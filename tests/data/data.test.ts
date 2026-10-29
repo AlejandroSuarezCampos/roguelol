@@ -4,10 +4,42 @@ import { CHAMPION_IDS, CHAMPIONS } from '../../src/data/champions';
 import { ENCOUNTERS, ENEMIES } from '../../src/data/enemies';
 
 describe('cartas', () => {
-  it('hay 8 cartas por campeón con ids únicos', () => {
-    expect(CARD_LIST).toHaveLength(8 * CHAMPION_IDS.length);
+  it('hay 20 cartas por campeón con ids únicos', () => {
+    expect(CARD_LIST).toHaveLength(20 * CHAMPION_IDS.length);
     expect(new Set(CARD_LIST.map((c) => c.id)).size).toBe(CARD_LIST.length);
-    for (const id of CHAMPION_IDS) expect(CARD_LIST.filter((c) => c.owner === id)).toHaveLength(8);
+    for (const id of CHAMPION_IDS) expect(CARD_LIST.filter((c) => c.owner === id)).toHaveLength(20);
+  });
+
+  it('las 20 cartas de cada campeón son distintas: otro nombre, otros efectos y las tres rarezas', () => {
+    for (const id of CHAMPION_IDS) {
+      const own = CARD_LIST.filter((c) => c.owner === id);
+      expect(new Set(own.map((c) => c.name.toLowerCase())).size, `${id} nombres`).toBe(20);
+      expect(new Set(own.map((c) => JSON.stringify([c.cost, c.type, c.target, c.effects]))).size, `${id} efectos`).toBe(20);
+      const by = (r: string) => own.filter((c) => c.rarity === r).length;
+      expect(by('common'), `${id} comunes`).toBeGreaterThanOrEqual(8);
+      expect(by('rare'), `${id} raras`).toBeGreaterThanOrEqual(6);
+      expect(by('epic'), `${id} épicas`).toBeGreaterThanOrEqual(3);
+      expect(own.filter((c) => c.type === 'attack' || c.type === 'skill' || c.type === 'control').length, `${id} ofensivas`).toBeGreaterThanOrEqual(5);
+      expect(own.filter((c) => c.type === 'defense' || c.type === 'support').length, `${id} defensivas`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('las cartas épicas son más caras y más potentes que las comunes (coste medio)', () => {
+    const avg = (r: string) => {
+      const l = CARD_LIST.filter((c) => c.rarity === r);
+      return l.reduce((a, c) => a + c.cost, 0) / l.length;
+    };
+    expect(avg('epic')).toBeGreaterThan(avg('rare'));
+    expect(avg('rare')).toBeGreaterThan(avg('common'));
+  });
+
+  it('las mejoras nunca empeoran la carta: más números o un coste menor', () => {
+    for (const c of CARD_LIST) {
+      const u = c.upgrade!;
+      expect(u, c.id).toBeDefined();
+      expect(u.cost === undefined || u.cost < c.cost, c.id).toBe(true);
+      if (u.effects) expect(JSON.stringify(u.effects) !== JSON.stringify(c.effects), c.id).toBe(true);
+    }
   });
 
   it('cada carta tiene efectos, coste válido y un objetivo coherente con sus efectos', () => {

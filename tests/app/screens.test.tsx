@@ -678,7 +678,7 @@ describe('metaprogresión en pantalla', () => {
     expect(screen.getByText('Expediciones')).toBeInTheDocument();
   });
 
-  it('Equipo del menú: muestra las 8 cartas del campeón y alterna a la versión mejorada', async () => {
+  it('Equipo del menú: muestra las 20 cartas del campeón y alterna a la versión mejorada', async () => {
     const user = userEvent.setup();
     go(() => game.openMenuScreen('roster'));
     render(<App />);
@@ -686,7 +686,7 @@ describe('metaprogresión en pantalla', () => {
     expect(screen.getByText('Escudo del amanecer')).toBeInTheDocument();
     expect(screen.queryByText('Mejorada')).not.toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: /mejorada/ }));
-    expect(screen.getAllByText('Mejorada')).toHaveLength(8);
+    expect(screen.getAllByText('Mejorada')).toHaveLength(20);
     await user.click(screen.getByRole('button', { name: /^Yasuo/ }));
     expect(screen.getByRole('heading', { name: /Yasuo · Daño/ })).toBeInTheDocument();
   });

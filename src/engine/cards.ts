@@ -53,6 +53,9 @@ export function whyCannotPlay(s: CombatState, card: CardDef, target?: Unit): str
   const selfish = living(s, 'ally').find((u) => crisisOf(u) === 'selfish');
   if (selfish && selfish.id !== card.owner && s.otherCardsWhileSelfish >= 1)
     return `${selfish.name} en Egoísmo: solo 1 carta de otro campeón por turno`;
+  // El precio en vida de una carta nunca puede matar a quien la juega.
+  const selfCost = card.effects.reduce((a, x) => (x.type === 'damage' && x.on === 'self' ? a + x.amount : a), 0);
+  if (selfCost > 0 && o.hp + o.block <= selfCost) return `${o.name} perdería toda su vida`;
   const t = forcedTarget(s, card) ?? target;
   if (card.target === 'enemy') {
     if (!t) return 'Elige un objetivo';

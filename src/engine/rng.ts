@@ -25,4 +25,12 @@ export class Rng {
     }
     return a;
   }
+
+  /** Orden aleatorio donde los elementos de más peso tienden a salir antes (sin reposición): clave `u^(1/peso)`. */
+  weightedShuffle<T>(arr: readonly T[], weight: (x: T) => number): T[] {
+    return arr
+      .map((x) => ({ x, k: Math.pow(this.next(), 1 / Math.max(weight(x), 1e-6)) }))
+      .sort((a, b) => b.k - a.k)
+      .map((e) => e.x);
+  }
 }

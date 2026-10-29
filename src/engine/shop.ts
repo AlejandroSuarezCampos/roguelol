@@ -33,7 +33,7 @@ const priced = (e: Expedition, base: number): number => Math.round(base * modsOf
 export function openShop(e: Expedition): ShopState {
   if (e.shop) return e.shop;
   const rng = e.run.rng;
-  const cards = rng.shuffle(cardPool(e)).slice(0, CONFIG.shop.cards).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
+  const cards = rng.weightedShuffle(cardPool(e), (c) => CONFIG.cardRarityWeights[c.rarity]).slice(0, CONFIG.shop.cards).map((c) => ({ defId: c.id, price: priced(e, CONFIG.shop.cardPrice[c.rarity]), sold: false }));
   const potions = rng.shuffle(Object.keys(POTIONS) as PotionId[]).slice(0, 3).map((id) => ({ id, price: priced(e, CONFIG.shop.potionPrice[id]), sold: false }));
   const relics = rng
     .shuffle(relicPool(e))

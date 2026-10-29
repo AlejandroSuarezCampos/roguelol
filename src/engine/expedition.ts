@@ -330,7 +330,7 @@ export function finishCombat(e: Expedition, s: CombatState, kind: EncounterKind)
   }
   const base = rollRewards(e.run, kind, BASE_GOLD[kind]);
   base.gold = Math.round(base.gold * diff.gold * (F.actScaling.gold[e.act] ?? 1));
-  const pool = e.run.rng.shuffle(cardPool(e).map((c) => c.id));
+  const pool = e.run.rng.weightedShuffle(cardPool(e), (c) => CONFIG.cardRarityWeights[c.rarity]).map((c) => c.id);
   const potion = e.run.rng.next() < CONFIG.potions.drop[kind] * diff.potionDrop ? e.run.rng.pick(Object.keys(POTIONS) as PotionId[]) : undefined;
   const gear = e.run.rng.next() < CONFIG.gear.dropChance[kind] ? pickGear(e.run.rng, CONFIG.gear.rarityWeights[kind], CONFIG.gear.options) : undefined;
   const fresh = e.run.rng.shuffle(relicPool(e).map((r) => r.id));

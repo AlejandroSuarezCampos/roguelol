@@ -60,6 +60,8 @@ export const CONFIG = {
       boss: { common: 0, rare: 0.6, legendary: 0.4 },
     },
   },
+  /** Probabilidad relativa de que una carta salga en botín y tienda según su rareza (con 20 cartas por campeón, las épicas deben ser raras). */
+  cardRarityWeights: { common: 6, rare: 3, epic: 1 },
   shop: {
     /** Como en Slay the Spire: 6 cartas, 3 reliquias, 3 pociones y eliminar cartas. */
     cards: 6,

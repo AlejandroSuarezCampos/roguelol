@@ -87,6 +87,26 @@ export function fight(s: CombatState, rng: Rng, maxTurns = 40): { outcome: Comba
   return { outcome: s.outcome, turns: s.turn };
 }
 
+/** Lo que vale una carta a ojo: daño, bloqueo, curación y estados, menos lo que cuesta. Un jugador medio elige algo así. */
+export function cardScore(c: CardDef): number {
+  let v = 0;
+  for (const e of c.effects) {
+    if (e.type === 'damage') v += (e.amount + (e.consumeStatus ? e.consumeStatus.bonusPerStack * 1.5 : 0)) * (c.target === 'allEnemies' ? 1.8 : 1);
+    if (e.type === 'block') v += e.amount * 0.8 * (c.target === 'allAllies' ? 2 : 1);
+    if (e.type === 'heal') v += e.amount * 0.8 * (c.target === 'allAllies' ? 2 : 1);
+    if (e.type === 'reduceStress') v += e.amount * 0.3;
+    if (e.type === 'applyStatus') v += e.stacks * ({ stun: 6, vulnerable: 4, mark: 3, burn: 3, charge: 2, shadowMark: 3 }[e.status] ?? 2);
+    if (e.type === 'draw') v += e.amount * 3;
+    if (e.type === 'revive') v += 12;
+  }
+  return v - c.cost * 3;
+}
+
+/** Entre las cartas ofrecidas, la que más vale (empates: la primera). */
+function bestCard(ids: string[]): string {
+  return [...ids].sort((a, b) => cardScore(CARDS[b]) - cardScore(CARDS[a]))[0];
+}
+
 export interface RunReport {
   status: Expedition['status'];
   floorReached: number;
@@ -112,7 +132,7 @@ export function playExpedition(e: Expedition, seed: number): RunReport {
       const rewards = finishCombat(e, s, kind);
       if (rewards) {
         claimRewards(e, rewards);
-        claimCard(e, rng.next() < 0.7 ? rng.pick(rewards.cards) : null);
+        claimCard(e, rng.next() < 0.7 ? bestCard(rewards.cards) : null);
         if (rewards.potion) claimPotion(e, rewards.potion);
         if (rewards.gear) {
           claimGear(e, bestGear(e, rewards.gear));

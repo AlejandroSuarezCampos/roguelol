@@ -22,9 +22,9 @@ describe('tiradores: datos', () => {
   });
 
   for (const id of ADCS) {
-    it(`${CHAMPIONS[id].name}: 8 cartas con mejora, 5 de mazo inicial, daño de sobra y bloqueado hasta desbloquearlo`, () => {
+    it(`${CHAMPIONS[id].name}: 20 cartas con mejora, 5 de mazo inicial, daño de sobra y bloqueado hasta desbloquearlo`, () => {
       const cards = CARD_LIST.filter((c) => c.owner === id);
-      expect(cards).toHaveLength(8);
+      expect(cards).toHaveLength(20);
       expect(cards.every((c) => c.upgrade)).toBe(true);
       expect(cards.some((c) => c.rarity === 'epic')).toBe(true);
       expect(cards.filter((c) => c.effects.some((e) => e.type === 'damage')).length).toBeGreaterThanOrEqual(5);
