@@ -7,6 +7,7 @@ import { applySettings, loadSettings, saveSettings, type Settings } from '../sta
 
 const SECTIONS = [
   { screen: 'roster', icon: 'team', name: 'Equipo', text: 'Campeones, cartas y objeto inicial' },
+  { screen: 'daily', icon: 'flag', name: 'Desafío diario', text: 'Un reto nuevo cada día' },
   { screen: 'upgrades', icon: 'up', name: 'Desbloqueos', text: 'Contenido nuevo' },
   { screen: 'archive', icon: 'book', name: 'Archivo', text: 'Bestiario e historial' },
 ] as const;

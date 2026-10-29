@@ -10,6 +10,7 @@ import { CRISIS_INFO, OMEN_INFO } from '../data/glossary';
 import { CRISIS } from '../data/champions';
 import { ASCENSION_LEVELS } from '../data/ascension';
 import { CONFIG } from '../engine/config';
+import { dailyPlan } from '../engine/daily';
 import { modsOf } from '../engine/expedition';
 import type { ChampionId, Pos } from '../engine/types';
 import { game, useGame } from '../state/gameStore';
@@ -47,7 +48,7 @@ export function PartySetupScreen() {
           <h2 className="sh">
             <Icon name="team" /> Orden de combate
           </h2>
-          {available.length > PARTY_SIZE && (
+          {!e.daily && available.length > PARTY_SIZE && (
             <div className="partypick" role="group" aria-label="Campeones de la expedición">
               <small className="sub">Elige {PARTY_SIZE} campeones ({picked.length}/{PARTY_SIZE}):</small>
               {available.length > 12 && <ChampionFilter value={filter} onChange={setFilter} shown={shownIds.length} total={available.length} />}
@@ -106,7 +107,16 @@ export function PartySetupScreen() {
                 <p className="sub">{omen.text} Fijo toda la expedición.</p>
               </div>
             </div>
-            <fieldset className="diffpick">
+            {e.daily && (
+              <div className="warnbox">
+                <Icon name="flag" />
+                <div>
+                  <b>Desafío: {dailyPlan(e.daily.key).modifier.name}</b>
+                  <p className="sub">{dailyPlan(e.daily.key).modifier.text} Equipo y Ascensión {e.ascension} fijos; puedes reordenar la formación.</p>
+                </div>
+              </div>
+            )}
+            {!e.daily && <fieldset className="diffpick">
               <legend className="fd">Ascensión</legend>
               <div className="row">
                 <button className="btn sm" aria-label="Bajar Ascensión" disabled={e.ascension === 0} onClick={() => game.setAscension(e.ascension - 1)}>
@@ -131,7 +141,7 @@ export function PartySetupScreen() {
                   ))}
                 </ol>
               )}
-            </fieldset>
+            </fieldset>}
             {!modsOf(e).permadeath ? (
               <div className="warnbox">
                 <Icon name="wound" />

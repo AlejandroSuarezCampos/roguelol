@@ -72,3 +72,18 @@ describe('copia de seguridad', () => {
     expect(importBackup(full, exportBackup(filled())).ok).toBe(false);
   });
 });
+
+describe('copia con retos diarios', () => {
+  it('exporta e importa los resultados de los retos y rechaza datos ilegibles', () => {
+    const src = { m: {} as Record<string, string> };
+    const st = { getItem: (k: string) => src.m[k] ?? null, setItem: (k: string, v: string) => void (src.m[k] = v), removeItem: (k: string) => void delete src.m[k] };
+    st.setItem('shattered-runeterra:daily', JSON.stringify({ version: 1, records: {} }));
+    const text = exportBackup(st);
+    const dst = { m: {} as Record<string, string> };
+    const st2 = { getItem: (k: string) => dst.m[k] ?? null, setItem: (k: string, v: string) => void (dst.m[k] = v), removeItem: (k: string) => void delete dst.m[k] };
+    expect(importBackup(st2, text).ok).toBe(true);
+    expect(dst.m['shattered-runeterra:daily']).toBeDefined();
+    const bad = JSON.stringify({ ...JSON.parse(text), daily: '{no' });
+    expect(importBackup(st2, bad).ok).toBe(false);
+  });
+});

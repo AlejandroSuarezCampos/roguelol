@@ -261,3 +261,6 @@
 .lanes{flex-wrap:wrap;gap:6px}
 .champlist .cfilter{position:sticky;top:0;z-index:2;background:linear-gradient(#0a1428,#0a1428ee);padding:6px 0}
 .champlist{max-height:calc(100vh - 110px);overflow:auto}
+.dailybox{display:flex;flex-direction:column;gap:10px;padding:16px;margin-bottom:14px}
+.dailybox input{background:#0008;color:inherit;border:1px solid #fff4;border-radius:6px;padding:6px 10px;margin-left:8px}
+.dailyhist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}

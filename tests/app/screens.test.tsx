@@ -822,3 +822,26 @@ describe('pantalla del tesoro', () => {
     expect(game.getState().expedition!.run.relics).toHaveLength(0);
   });
 });
+
+describe('desafío diario', () => {
+  it('se abre desde el menú, muestra el reto de hoy y arranca con el equipo fijo', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: /Desafío diario/ }));
+    expect(screen.getByRole('heading', { name: /Hoy/ })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: /Jugar el reto de hoy|Jugar otra vez/ }));
+    expect(screen.getByText(/Desafío:/)).toBeTruthy();
+    expect(screen.queryByText(/Elige 4 campeones/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Subir Ascensión' })).toBeNull();
+  });
+
+  it('la semilla propia necesita texto', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: /Desafío diario/ }));
+    const btn = screen.getByRole('button', { name: 'Jugar esta semilla' }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    await userEvent.type(screen.getByLabelText('Semilla'), 'bruma');
+    expect(btn.disabled).toBe(false);
+    await userEvent.click(btn);
+    expect(game.getState().expedition!.daily!.key).toBe('seed:bruma');
+  });
+});

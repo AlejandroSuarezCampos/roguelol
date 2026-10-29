@@ -84,6 +84,8 @@ export interface Expedition {
   /** Ids de eventos ya vistos esta expedición. */
   seenEvents: string[];
   stats: { combats: number; elites: number };
+  /** Reto diario o de semilla propia (equipo y modificador fijos). Ausente en las expediciones normales. */
+  daily?: { key: string; modifier: string };
 }
 
 export interface ExpeditionRewards extends Rewards {

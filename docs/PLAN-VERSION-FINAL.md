@@ -56,7 +56,7 @@ Orden: campeones y sus cartas (con tests de datos y de balance por campeón) →
 
 - Estado de campeones y heridas entre expediciones (spec §14, «reglas de campaña»): ronda previa de preguntas al usuario, que el spec original exige para esta fase.
 - Logros y Archivo ampliado (bestiario, cartas vistas, reliquias vistas).
-- Desafíos diarios (sí): semilla derivada de la fecha, un campeón/modificador fijo por día, resultado guardado en local; más pantalla de semilla personalizada. El motor ya es determinista. Sin multijugador ni ranking en línea.
+- ✅ **Hecho** — Desafíos diarios (sí): semilla derivada de la fecha, un campeón/modificador fijo por día, resultado guardado en local; más pantalla de semilla personalizada. El motor ya es determinista. Sin multijugador ni ranking en línea. Implementado: `engine/daily.ts` (equipo de 4, Ascensión 0–4 y modificador salen de la clave `YYYY-MM-DD` o `seed:texto`), `save/dailyManager.ts` (mejor puntuación, intentos, racha, historial de 80 entradas, incluido en la copia de seguridad), pantalla «Desafío diario» y preparación con equipo/Ascensión fijos. Las Esquirlas se ganan igual; un reto no sube la Ascensión máxima.
 
 ## Fase 4 — Presentación visual (2 semanas)
 

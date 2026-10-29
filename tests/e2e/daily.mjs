@@ -1,0 +1,20 @@
+// Desafío diario en el navegador real: abrir, jugar el primer combate con el equipo fijo y comprobar el historial. Uso: node tests/e2e/daily.mjs <carpeta>
+import { open } from './play.mjs';
+const out = process.argv[2] ?? 'shots';
+const s = await open(out + '');
+const { page } = s;
+await page.getByRole('button', { name: /Desafío diario/ }).click();
+await page.screenshot({ path: `${out}/daily-1.png` });
+await page.getByRole('button', { name: /Jugar el reto de hoy/ }).click();
+const fixed = (await page.getByText(/Desafío:/).count()) === 1 && (await page.getByRole('button', { name: 'Subir Ascensión' }).count()) === 0;
+await page.screenshot({ path: `${out}/daily-2.png` });
+await page.getByRole('button', { name: /Comenzar/ }).click();
+await page.locator('.nd.available').first().click();
+await page.getByRole('button', { name: 'Entrar' }).click();
+const inBattle = (await page.locator('.cb').count()) === 1;
+await page.reload();
+await page.getByRole('button', { name: /Continuar/ }).click();
+const resumed = (await page.locator('.mapscreen, .cb').count()) >= 1;
+console.log({ fixed, inBattle, resumed, errors: s.errors() });
+await s.close();
+if (!fixed || !inBattle || !resumed || s.errors().length) process.exitCode = 1;

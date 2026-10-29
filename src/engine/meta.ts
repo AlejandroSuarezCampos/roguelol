@@ -68,7 +68,7 @@ export function recordRun(meta: MetaState, e: Expedition): { shards: number } {
   else h.retreats++;
   h.combatsWon += e.stats.combats;
   h.deaths += e.dead.length;
-  if (e.status === 'victory' && e.ascension >= meta.maxAscension && meta.maxAscension < MAX_ASCENSION) meta.maxAscension = e.ascension + 1;
+  if (e.status === 'victory' && !e.daily && e.ascension >= meta.maxAscension && meta.maxAscension < MAX_ASCENSION) meta.maxAscension = e.ascension + 1;
   h.bestFloor = Math.max(h.bestFloor, floorReached(e));
   for (const [id, c] of Object.entries(e.encounters)) {
     const b = (meta.bestiary[id] ??= { seen: 0, defeated: 0 });

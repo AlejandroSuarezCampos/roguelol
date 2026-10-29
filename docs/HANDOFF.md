@@ -14,7 +14,7 @@ Léelo entero antes de tocar nada en un chat nuevo.
 | Contenido | 167 campeones (Yasuo, los 26 apoyos, los 22 tiradores, 41 de la línea central, 41 de la superior y 36 de la jungla del LoL; todos desbloqueables salvo los 4 iniciales, 120 Esquirlas cada uno), 3340 cartas (20 por campeón, todas con mejora, de las tres rarezas), 60 objetos en 6 huecos con pasivas y desventajas (32 añadidos el 2026-10-24: componentes, raros y legendarios famosos del LoL), 21 reliquias (5 de jefe), 12 enemigos, 5 eventos y 3 santuarios; mapas de 15 pisos en 3 actos (Barón, Dragón anciano, Viego). |
 | Dificultad y meta | Ascensión 0–10 (nivel 10 = muerte permanente); Esquirlas y desbloqueos. |
 | Guardado | Expedición v7 (punto seguro + diario de acciones, reanuda exacto) y progreso permanente v3; los datos dañados se apartan. |
-| Pruebas | **867 tests en verde (40 ficheros)**, typecheck y build limpios; e2e con Playwright en `tests/e2e` sin errores de consola (`full.mjs` endurecido: su fallo era el botón «Ir al acto N»). |
+| Pruebas | **881 tests en verde (41 ficheros)**, typecheck y build limpios; e2e con Playwright en `tests/e2e` sin errores de consola (`full.mjs` endurecido: su fallo era el botón «Ir al acto N»). |
 | Equilibrio | Bot (`npm run balance`): gana ≈25 % en Ascensión 0 y ≈5 % en Ascensión 10. Un humano debería ganar más; falta validación humana. |
 | Git | Todo en `main` y en `origin/main`. |
 
@@ -50,7 +50,7 @@ Planes y specs de cada pieza (todos hechos): ver la carpeta `docs/superpowers/` 
 - **Vulnerable por ronda (confirmado por el usuario el 2026-10-19):** la regla aprobada («−1 al final del turno del afectado») hacía que el vulnerable de un aliado caducase antes de que atacasen los enemigos. El plan usa: aliados pierden 1 al empezar su siguiente turno; enemigos, justo después de actuar.
 - Guardado: punto seguro en el mapa/Equipo + **diario** de acciones del nodo en curso (`save/saveManager.ts`, `state/gameStore.ts`); al continuar se reproducen con el motor determinista. Cualquier acción nueva que cambie el estado dentro de un nodo debe llamar a `record(...)` y estar en `JOURNAL_ACTIONS`. Si cambias la forma de `Expedition`, sube `SAVE_VERSION` y escribe una migración o los guardados viejos se descartan.
 - Deriva (Presagio) combinada con revivir: comportamiento sin especificar.
-- El `CLAUDE_CODE_SPEC.md` original pide listar sus reglas ambiguas antes de programar cada fase: se hizo la fase 1 sin esa ronda de preguntas (el usuario delegó); hacerla antes de la fase 3.
+- El `CLAUDE_CODE_SPEC.md` original pide listar sus reglas ambiguas antes de programar cada fase: se hizo la fase 1 sin esa ronda de preguntas (el usuario delegó); hacerla antes del resto de la fase 3 (campaña §14, logros, Archivo ampliado). Ya está hecha la parte de desafíos diarios (`tests/e2e/daily.mjs`).
 - Equilibrio: ver la tabla de estado; cotas anchas en `tests/balance/balance.test.ts`; afinar en `src/data/` con `npm run balance`.
 - **Skills de Claude Code:** `superpowers`, `ui-ux-pro-max` y las demás no están preinstaladas en las sesiones en la nube; hay que volver a subirlas o instalarlas desde sus repos (`obra/superpowers`, `nextlevelbuilder/ui-ux-pro-max-skill`, `DietrichGebert/ponytail`, `nutlope/hallmark`, `microsoft/playwright-cli`, `vercel-labs/agent-skills`).
 

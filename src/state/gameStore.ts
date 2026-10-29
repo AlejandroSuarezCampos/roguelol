@@ -17,10 +17,12 @@ import { buyCard as engineBuyCard, buyPotion as engineBuyPotion, buyRelic as eng
 import type { ChampionId, CombatState, Pos } from '../engine/types';
 import { buyUnlock as engineBuyUnlock, newMeta, recordRun, setParty as engineSetParty, setStarter as engineSetStarter, setupFor, type MetaState } from '../engine/meta';
 import { createMetaManager, type MetaManager } from '../save/metaManager';
+import { createDailyManager, recordDaily, type DailyManager, type DailyRecords } from '../save/dailyManager';
+import { createDailyExpedition, dailyScore, dateKey } from '../engine/daily';
 import { browserStorage, cloneExpedition, createSaveManager, type JournalEntry, type SaveManager, type SaveSummary } from '../save/saveManager';
 import { intentView } from './selectors';
 
-export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'chest' | 'team' | 'result' | 'upgrades' | 'archive' | 'roster';
+export type Screen = 'menu' | 'prep' | 'map' | 'battle' | 'reward' | 'rest' | 'shop' | 'event' | 'chest' | 'team' | 'result' | 'upgrades' | 'archive' | 'roster' | 'daily';
 
 /** Número flotante sobre una unidad tras una acción (daño, curación, bloqueo o estrés). */
 export interface FxEvent {
@@ -44,6 +46,10 @@ export interface GameState {
   meta: MetaState;
   /** Esquirlas ganadas por la expedición que acaba de terminar (null si no procede). */
   lastShards: number | null;
+  /** Resultados de los retos diarios y de semilla propia. */
+  daily: DailyRecords;
+  /** Puntuación del reto que acaba de terminar (null si la expedición no era un reto). */
+  lastDaily: { score: number; best: number; won: boolean } | null;
   /** Resumen de la expedición guardada (null = no hay). */
   saved: SaveSummary | null;
   /** Aviso para el menú (p. ej. un guardado dañado que se descartó). */
@@ -65,12 +71,14 @@ export interface GameState {
 type Snap = Map<string, { hp: number; block: number; stress: number }>;
 const snapshot = (s: CombatState): Snap => new Map(s.units.map((u) => [u.id, { hp: u.hp, block: u.block, stress: u.stress }]));
 
-const initial = (meta: MetaState, saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
+const initial = (meta: MetaState, daily: DailyRecords, saved: SaveSummary | null = null, notice: string | null = null): GameState => ({
   screen: 'menu', expedition: null, combat: null, combatKind: null, rewards: null, cardClaimed: false, potionClaimed: false, gearClaimed: false, bossRelicClaimed: false,
-  meta, lastShards: null, saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [],
+  meta, daily, lastShards: null, lastDaily: null, saved, notice, event: null, eventOutcome: null, selectedUid: null, selectedPotion: null, hint: null, fx: [], activeRelics: [],
 });
 
-export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager } = {}) {
+export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager; daily?: DailyManager } = {}) {
+  const dailyStore = opts.daily;
+  const dailyRecords: DailyRecords = dailyStore?.load() ?? {};
   const save = opts.save;
   const metaStore = opts.meta;
   const loaded = metaStore?.load();
@@ -80,7 +88,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     loaded?.corrupt ? `El progreso permanente estaba dañado (${loaded.corrupt}) y se ha reiniciado.` : '',
     inspected?.corrupt ? `La expedición guardada estaba dañada (${inspected.corrupt}) y se ha descartado.` : '',
   ].filter(Boolean);
-  let state = initial(meta, inspected?.summary ?? null, notices.length ? `${notices.join(' ')} Se conserva una copia.` : null);
+  let state = initial(meta, dailyRecords, inspected?.summary ?? null, notices.length ? `${notices.join(' ')} Se conserva una copia.` : null);
   let fxKey = 0;
   const listeners = new Set<() => void>();
   // Punto seguro (el mapa) y acciones desde entonces: se guardan juntos para que recargar a mitad de un nodo lo reanude tal cual.
@@ -111,7 +119,16 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     }
     // Al terminar la expedición se suma una sola vez al progreso permanente.
     if (state.screen === 'result' && state.expedition && !state.expedition.recorded) {
-      state = { ...state, lastShards: recordRun(meta, state.expedition).shards };
+      const ex = state.expedition;
+      const d = ex.daily;
+      if (d && ex.status !== 'retreat') {
+        const score = dailyScore(ex);
+        const won = ex.status === 'victory';
+        recordDaily(dailyRecords, d.key, score, won);
+        dailyStore?.save(dailyRecords);
+        state = { ...state, lastDaily: { score, best: dailyRecords[d.key].best, won } };
+      }
+      state = { ...state, lastShards: recordRun(meta, ex).shards };
       metaStore?.save(meta);
     }
     listeners.forEach((l) => l());
@@ -192,13 +209,18 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     // ——— flujo general ———
     /** Nueva expedición en el nivel de Ascensión más alto desbloqueado (o el indicado, recortado a lo desbloqueado). */
     newExpedition(seed = Math.floor(Math.random() * 2 ** 31) || 1, ascension = meta.maxAscension) {
-      state = initial(meta, state.saved);
+      state = initial(meta, dailyRecords, state.saved);
       emit({ screen: 'prep', expedition: createExpedition(seed, Math.max(0, Math.min(ascension, meta.maxAscension)), setupFor(meta)) });
+    },
+    /** Reto diario (clave `YYYY-MM-DD`) o semilla propia (`seed:texto`): equipo, Ascensión y modificador fijos. */
+    startDaily(key: string = dateKey()) {
+      state = initial(meta, dailyRecords, state.saved);
+      emit({ screen: 'prep', expedition: createDailyExpedition(key) });
     },
     /** Cambia la Ascensión en la preparación (misma semilla, así que el Presagio no cambia; el mapa sí). Solo niveles desbloqueados. */
     setAscension(level: number) {
       const e = state.expedition;
-      if (!e || state.screen !== 'prep' || e.ascension === level || level < 0 || level > meta.maxAscension) return;
+      if (!e || e.daily || state.screen !== 'prep' || e.ascension === level || level < 0 || level > meta.maxAscension) return;
       const order = e.run.champions.map((c) => [c.id, c.pos] as const);
       const fresh = createExpedition(e.seed, level, setupFor(meta));
       for (const [id, pos] of order) fresh.run.champions.find((c) => c.id === id)!.pos = pos;
@@ -207,7 +229,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
     /** Cambia el equipo en la preparación (4 de los campeones disponibles). Se recuerda para la próxima expedición. */
     setParty(party: ChampionId[]) {
       const e = state.expedition;
-      if (!e || state.screen !== 'prep') return;
+      if (!e || e.daily || state.screen !== 'prep') return;
       try {
         engineSetParty(meta, party);
         metaStore?.save(meta);
@@ -221,7 +243,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (!save) return;
       const r = save.load();
       if (r.status === 'ok') {
-        state = initial(meta, state.saved);
+        state = initial(meta, dailyRecords, state.saved);
         replaying = true;
         replayFailed = false;
         checkpoint = cloneExpedition(r.expedition); // el punto al que se vuelve si la reproducción falla
@@ -238,7 +260,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
         replaying = false;
         if (replayFailed && checkpoint) {
           // Algo no cuadra: se vuelve al mapa tal y como estaba antes de entrar en el nodo.
-          state = initial(meta, state.saved, 'No se pudo reanudar lo que estabas haciendo; vuelves al mapa.');
+          state = initial(meta, dailyRecords, state.saved, 'No se pudo reanudar lo que estabas haciendo; vuelves al mapa.');
           emit({ screen: 'map', expedition: cloneExpedition(checkpoint) });
         } else if (r.journal.length && checkpoint) {
           journal = r.journal;
@@ -250,7 +272,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       } else emit({ saved: null });
     },
     /** Pantallas del menú (Desbloqueos, Archivo, Equipo). */
-    openMenuScreen(screen: 'upgrades' | 'archive' | 'roster') {
+    openMenuScreen(screen: 'upgrades' | 'archive' | 'roster' | 'daily') {
       emit({ screen, hint: null });
     },
     buyUnlock(id: string) {
@@ -291,7 +313,7 @@ export function createGameStore(opts: { save?: SaveManager; meta?: MetaManager }
       if (state.expedition) emit({ screen: 'map', hint: null });
     },
     toMenu() {
-      state = initial(meta, save?.inspect().summary ?? null);
+      state = initial(meta, dailyRecords, save?.inspect().summary ?? null);
       emit();
     },
     retreat() {
@@ -571,7 +593,7 @@ export type GameStore = ReturnType<typeof createGameStore>;
 const storage = browserStorage();
 /** Almacenamiento del navegador (o null), para la copia de seguridad del menú. */
 export const appStorage = storage;
-export const game = createGameStore({ save: createSaveManager(storage), meta: createMetaManager(storage) });
+export const game = createGameStore({ save: createSaveManager(storage), meta: createMetaManager(storage), daily: createDailyManager(storage) });
 
 export function useGame(store: GameStore = game): GameState {
   return useSyncExternalStore(store.subscribe, store.getState);
