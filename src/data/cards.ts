@@ -1,6 +1,7 @@
 import type { CardDef, CardUpgrade } from '../engine/types';
 import { block, magic, phys, status, up } from './cardHelpers';
 import { ADC_CARDS, ADC_UPGRADES } from './cardsAdc';
+import { JUNGLE_CARDS, JUNGLE_UPGRADES } from './cardsJungle';
 import { MID_CARDS, MID_UPGRADES } from './cardsMid';
 import { TOP_CARDS, TOP_UPGRADES } from './cardsTop';
 import { SUPPORT_CARDS, SUPPORT_UPGRADES } from './cardsSupports';
@@ -253,7 +254,7 @@ const UPGRADES: Record<string, CardUpgrade> = {
   t8: up('Inflige 8 y aplica 1 Vulnerable a todos los enemigos. Cuesta 2.', { cost: 2 }),
 };
 
-export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS, ...ADC_CARDS, ...MID_CARDS, ...TOP_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] ?? ADC_UPGRADES[c.id] ?? MID_UPGRADES[c.id] ?? TOP_UPGRADES[c.id] }));
+export const CARD_LIST: CardDef[] = [...BASE_CARDS, ...SUPPORT_CARDS, ...ADC_CARDS, ...MID_CARDS, ...TOP_CARDS, ...JUNGLE_CARDS].map((c) => ({ ...c, upgrade: UPGRADES[c.id] ?? SUPPORT_UPGRADES[c.id] ?? ADC_UPGRADES[c.id] ?? MID_UPGRADES[c.id] ?? TOP_UPGRADES[c.id] ?? JUNGLE_UPGRADES[c.id] }));
 
 export const CARDS: Record<string, CardDef> = Object.fromEntries(CARD_LIST.map((c) => [c.id, c]));
 
@@ -404,4 +405,40 @@ export const STARTER_DECK: string[] = [
   'urg1', 'urg2', 'urg5', 'urg6', 'urg7',
   'vol1', 'vol2', 'vol5', 'vol6', 'vol7',
   'yor1', 'yor3', 'yor5', 'yor6', 'yor7',
+  'amu1', 'amu2', 'amu3', 'amu5', 'amu7',
+  'bel1', 'bel2', 'bel5', 'bel6', 'bel7',
+  'bri1', 'bri2', 'bri5', 'bri6', 'bri7',
+  'eli1', 'eli2', 'eli5', 'eli6', 'eli7',
+  'eve1', 'eve3', 'eve5', 'eve6', 'eve7',
+  'fid1', 'fid3', 'fid5', 'fid6', 'fid7',
+  'gra1', 'gra2', 'gra3', 'gra5', 'gra7',
+  'grv1', 'grv2', 'grv3', 'grv5', 'grv7',
+  'hec1', 'hec2', 'hec5', 'hec6', 'hec7',
+  'ive2', 'ive3', 'ive5', 'ive6', 'ive7',
+  'jar1', 'jar2', 'jar5', 'jar6', 'jar7',
+  'kar1', 'kar3', 'kar5', 'kar6', 'kar7',
+  'kyn1', 'kyn2', 'kyn3', 'kyn5', 'kyn7',
+  'kha1', 'kha3', 'kha5', 'kha7', 'kha8',
+  'kin1', 'kin2', 'kin5', 'kin6', 'kin7',
+  'lee1', 'lee3', 'lee5', 'lee6', 'lee8',
+  'lil1', 'lil2', 'lil3', 'lil5', 'lil6',
+  'myi1', 'myi2', 'myi3', 'myi5', 'myi7',
+  'nid1', 'nid2', 'nid3', 'nid5', 'nid6',
+  'noc1', 'noc2', 'noc3', 'noc6', 'noc7',
+  'nun1', 'nun2', 'nun3', 'nun5', 'nun6',
+  'ola1', 'ola2', 'ola3', 'ola5', 'ola7',
+  'ram1', 'ram3', 'ram4', 'ram6', 'ram7',
+  'rek1', 'rek2', 'rek5', 'rek6', 'rek7',
+  'rgr1', 'rgr2', 'rgr5', 'rgr6', 'rgr7',
+  'sej1', 'sej2', 'sej3', 'sej5', 'sej7',
+  'sha1', 'sha3', 'sha5', 'sha6', 'sha7',
+  'shy1', 'shy2', 'shy3', 'shy5', 'shy7',
+  'ske1', 'ske2', 'ske5', 'ske6', 'ske7',
+  'udy1', 'udy2', 'udy5', 'udy6', 'udy7',
+  'vii1', 'vii3', 'vii5', 'vii6', 'vii7',
+  'vie1', 'vie2', 'vie3', 'vie5', 'vie7',
+  'war1', 'war2', 'war5', 'war6', 'war7',
+  'wuk1', 'wuk2', 'wuk5', 'wuk6', 'wuk7',
+  'xin1', 'xin3', 'xin5', 'xin6', 'xin7',
+  'zac1', 'zac2', 'zac5', 'zac6', 'zac7',
 ];

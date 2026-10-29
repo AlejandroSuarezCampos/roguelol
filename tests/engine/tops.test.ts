@@ -12,9 +12,9 @@ import { ally, enemy, give, makeState, u } from './fixtures';
 const TOPS: ChampionId[] = ['aatrox', 'ambessa', 'camille', 'chogath', 'darius', 'drmundo', 'fiora', 'gangplank', 'garen', 'gnar', 'gwen', 'illaoi', 'irelia', 'jax', 'jayce', 'kayle', 'kennen', 'kled', 'ksante', 'malphite', 'maokai', 'mordekaiser', 'nasus', 'ornn', 'pantheon', 'poppy', 'quinn', 'renekton', 'riven', 'rumble', 'sett', 'shen', 'singed', 'sion', 'tahmkench', 'teemo', 'trundle', 'tryndamere', 'urgot', 'volibear', 'yorick'];
 
 describe('línea superior: datos', () => {
-  it('son 41, con 8 cartas cada uno (1048 cartas en total) y sin ids repetidos', () => {
+  it('son 41, con 8 cartas cada uno (1336 cartas en total con la jungla) y sin ids repetidos', () => {
     expect(TOPS).toHaveLength(41);
-    expect(CARD_LIST).toHaveLength(131 * 8);
+    expect(CARD_LIST).toHaveLength(167 * 8);
   });
 
   for (const id of TOPS) {
